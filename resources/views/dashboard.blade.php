@@ -407,7 +407,7 @@
     function updateIncrementStatus() {
         const statusEl = document.getElementById('incrementStatus');
         if (incrementPerSecond > 0) {
-            statusEl.textContent = 'INCREMENTING (WORK!)';
+            statusEl.textContent = 'INCREMENTING (GET TO WORK!)';
             statusEl.style.color = '#6c757d';
         } else {
             statusEl.textContent = 'NOT INCREMENTING (RELAX!)';
