@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Personal Finance Counter</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
     @livewireStyles
     <style>
         body {
@@ -59,9 +60,6 @@
     <section class="counter-wrap mb-4">
         <div class="counter-label mb-2">Current Counter</div>
         <div id="counterValue" class="counter-value">RM {{ number_format($snapshot['counter'], 2) }}</div>
-        <div class="text-muted mt-2">
-            As of <span id="asOfValue">{{ $snapshot['as_of'] }}</span>
-        </div>
     </section>
 
     <div class="row g-3 mb-4">
@@ -108,7 +106,8 @@
 
                         <div class="mb-3">
                             <label class="form-label" for="datetime">Date and Time</label>
-                            <input class="form-control" type="datetime-local" name="datetime" id="datetime" required>
+
+                            <input class="form-control" type="text" name="datetime" id="datetime" placeholder="DD/MM/YYYY HH:MM" value="{{ old('datetime') }}" required>
                         </div>
 
                         <div class="mb-3">
@@ -153,7 +152,7 @@
                             <tbody>
                             @forelse ($transactions as $transaction)
                                 <tr>
-                                    <td>{{ $transaction->datetime?->format('Y-m-d H:i') }}</td>
+                                    <td>{{ $transaction->datetime?->format('d/m/Y H:i') }}</td>
                                     <td>{{ ucfirst($transaction->type) }}</td>
                                     <td>{{ $transaction->category?->name }}</td>
                                     <td class="text-end">RM {{ number_format($transaction->amount, 2) }}</td>
@@ -174,9 +173,9 @@
     <livewire:workday-calendar />
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
     const counterElement = document.getElementById('counterValue');
-    const asOfElement = document.getElementById('asOfValue');
     const accruedSalaryElement = document.getElementById('accruedSalaryValue');
     const datetimeInput = document.getElementById('datetime');
     const typeInput = document.getElementById('type');
@@ -247,13 +246,15 @@
 
         renderCounter();
         renderAccruedSalary();
-        asOfElement.textContent = data.as_of;
     }
 
     if (datetimeInput) {
-        const now = new Date();
-        const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-        datetimeInput.value = local;
+        flatpickr(datetimeInput, {
+            enableTime: true,
+            time_24hr: true,
+            dateFormat: 'd/m/Y H:i',
+            defaultDate: datetimeInput.value || new Date(),
+        });
     }
 
     if (typeInput) {

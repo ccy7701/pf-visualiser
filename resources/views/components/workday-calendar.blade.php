@@ -108,7 +108,7 @@ new class extends Component
                                         wire:click="toggleWorkday('{{ $cell['date'] }}')"
                                         wire:key="{{ $cell['date'] }}"
                                         wire:loading.attr="disabled"
-                                        title="{{ $cell['date'] }}"
+                                        title="{{ \Carbon\Carbon::parse($cell['date'])->format('d/m/Y') }}"
                                     >
                                         {{ $cell['day'] }}
                                     </button>

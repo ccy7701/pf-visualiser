@@ -14,11 +14,13 @@ class TransactionController extends Controller
     {
         $validated = $request->validate([
             'type' => ['required', Rule::in(['income', 'expense'])],
-            'datetime' => ['required', 'date'],
+            'datetime' => ['required', 'date_format:d/m/Y H:i'],
             'category_id' => ['required', 'exists:categories,id'],
             'note' => ['nullable', 'string'],
             'amount' => ['required', 'numeric', 'min:0.01'],
         ]);
+
+        $validated['datetime'] = \Carbon\Carbon::createFromFormat('d/m/Y H:i', $validated['datetime'], 'Asia/Kuala_Lumpur');
 
         $category = Category::query()->findOrFail($validated['category_id']);
 
