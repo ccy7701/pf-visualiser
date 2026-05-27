@@ -18,6 +18,20 @@ new class extends Component
         $this->buildCalendar();
     }
 
+    public function goToPreviousMonth(): void
+    {
+        $monthStart = Carbon::createFromFormat('Y-m', $this->month, 'Asia/Kuala_Lumpur')->startOfMonth();
+        $this->month = $monthStart->copy()->subMonth()->format('Y-m');
+        $this->buildCalendar();
+    }
+
+    public function goToNextMonth(): void
+    {
+        $monthStart = Carbon::createFromFormat('Y-m', $this->month, 'Asia/Kuala_Lumpur')->startOfMonth();
+        $this->month = $monthStart->copy()->addMonth()->format('Y-m');
+        $this->buildCalendar();
+    }
+
     public function toggleWorkday(string $date): void
     {
         $selectedDate = Carbon::parse($date, 'Asia/Kuala_Lumpur')->startOfDay();
@@ -80,8 +94,29 @@ new class extends Component
 
 <div class="card data-card">
     <div class="card-body p-4">
-        <h2 class="h5 mb-1">Workday Calendar</h2>
-        <p class="text-muted small mb-3">{{ $calendarMonthLabel }} · Click a date to toggle workday (green) or non-workday (grey).</p>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                wire:click="goToPreviousMonth"
+                wire:loading.attr="disabled"
+            >
+                {{ \Carbon\Carbon::createFromFormat('Y-m', $month, 'Asia/Kuala_Lumpur')->startOfMonth()->subMonth()->format('F') }}
+            </button>
+
+            <h2 class="h5 mb-0">{{ $calendarMonthLabel }}</h2>
+
+            <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                wire:click="goToNextMonth"
+                wire:loading.attr="disabled"
+            >
+                {{ \Carbon\Carbon::createFromFormat('Y-m', $month, 'Asia/Kuala_Lumpur')->startOfMonth()->addMonth()->format('F') }}
+            </button>
+        </div>
+
+        <p class="text-muted small mb-3">Click a date to toggle workday (green) or non-workday (grey).</p>
 
         <div class="table-responsive">
             <table class="table table-bordered align-middle text-center mb-0">
