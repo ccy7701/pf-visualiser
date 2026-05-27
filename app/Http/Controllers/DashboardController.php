@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Setting;
 use App\Models\Transaction;
 use App\Services\CounterService;
 use Illuminate\Http\JsonResponse;
@@ -17,9 +18,11 @@ class DashboardController extends Controller
     public function index(): View
     {
         $snapshot = $this->counterService->snapshot();
+        $theme = Setting::getValue('theme', 'light');
 
         return view('dashboard', [
             'snapshot' => $snapshot,
+            'theme' => $theme,
             'categories' => Category::query()->orderBy('type')->orderBy('name')->get(),
             'transactions' => Transaction::query()
                 ->with('category')

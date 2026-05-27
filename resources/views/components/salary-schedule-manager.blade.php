@@ -127,6 +127,7 @@ new class extends Component
                     <tr>
                         <th>From</th>
                         <th>Until</th>
+                        <th>Note</th>
                         <th class="text-end">Salary (RM)</th>
                         <th class="text-end">Action</th>
                     </tr>
@@ -136,6 +137,7 @@ new class extends Component
                         <tr>
                             <td>{{ $schedule['effective_from'] }}</td>
                             <td>{{ $schedule['effective_until'] }}</td>
+                            <td>{{ $schedule['notes'] }}</td>
                             <td class="text-end">{{ $schedule['monthly_net_salary'] }}</td>
                             <td class="text-end" style="white-space: nowrap;">
                                 <button class="btn btn-sm py-0 px-1 border-0 me-1" wire:click="startEdit({{ $schedule['id'] }})" title="Edit" style="color: #000;">
@@ -152,7 +154,6 @@ new class extends Component
                             </td>
                         </tr>
                     @empty
-                        <tr>
                             <td colspan="4" class="text-center text-muted">No salary schedules found.</td>
                         </tr>
                     @endforelse
@@ -170,12 +171,12 @@ new class extends Component
                 <div class="row g-2 mb-2">
                     <div class="col-6">
                         <label class="form-label" style="font-size:0.75rem;">Effective From</label>
-                        <input wire:model="editEffectiveFrom" class="form-control form-control-sm" placeholder="DD/MM/YYYY" type="text">
+                        <input wire:model="editEffectiveFrom" class="form-control form-control-sm datepicker" placeholder="DD/MM/YYYY" type="text" data-target="editEffectiveFrom" autocomplete="off">
                         @error('editEffectiveFrom') <div class="text-danger" style="font-size:0.7rem;">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-6">
                         <label class="form-label" style="font-size:0.75rem;">Effective Until</label>
-                        <input wire:model="editEffectiveUntil" class="form-control form-control-sm" placeholder="DD/MM/YYYY" type="text">
+                        <input wire:model="editEffectiveUntil" class="form-control form-control-sm datepicker" placeholder="DD/MM/YYYY" type="text" data-target="editEffectiveUntil" autocomplete="off">
                         @error('editEffectiveUntil') <div class="text-danger" style="font-size:0.7rem;">{{ $message }}</div> @enderror
                     </div>
                 </div>
@@ -210,7 +211,7 @@ new class extends Component
                 </div>
                 <div class="col-6">
                     <label class="form-label" style="font-size:0.75rem;">Effective Until</label>
-                    <input wire:model="newEffectiveUntil" class="form-control form-control-sm" placeholder="DD/MM/YYYY" type="text">
+                    <input wire:model="newEffectiveUntil" class="form-control form-control-sm datepicker" placeholder="DD/MM/YYYY" type="text" data-target="newEffectiveUntil" autocomplete="off">
                     @error('newEffectiveUntil') <div class="text-danger" style="font-size:0.7rem;">{{ $message }}</div> @enderror
                 </div>
             </div>
@@ -231,3 +232,28 @@ new class extends Component
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('livewire:init', function () {
+        function initDatepickers() {
+            document.querySelectorAll('.datepicker:not(.flatpickr-input)').forEach(el => {
+                const target = el.dataset.target;
+                flatpickr(el, {
+                    dateFormat: 'd/m/Y',
+                    allowInput: true,
+                    onChange: function(selectedDates, dateStr) {
+                        @this.set(target, dateStr);
+                    }
+                });
+            });
+        }
+
+        initDatepickers();
+
+        Livewire.hook('message.processed', () => {
+            initDatepickers();
+        });
+    });
+</script>
+@endpush

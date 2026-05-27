@@ -201,6 +201,75 @@
             box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.12);
         }
 
+        /* ── dark mode overrides ── */
+        [data-bs-theme="dark"] body {
+            background: #121212 !important;
+        }
+        [data-bs-theme="dark"] .counter-value {
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .counter-label,
+        [data-bs-theme="dark"] #incrementStatus {
+            color: #aaa !important;
+        }
+        [data-bs-theme="dark"] .fab-btn {
+            background: #343a40;
+        }
+        [data-bs-theme="dark"] .fab-btn.open {
+            background: #c82333;
+        }
+        [data-bs-theme="dark"] .tab-selector-popup,
+        [data-bs-theme="dark"] .content-popup {
+            background: #1e1e1e;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+        }
+        [data-bs-theme="dark"] .tab-selector-popup button {
+            color: #e0e0e0;
+            border-bottom-color: #333;
+        }
+        [data-bs-theme="dark"] .tab-selector-popup button:hover {
+            background: #333;
+        }
+        [data-bs-theme="dark"] .content-popup-header {
+            border-bottom-color: #333;
+        }
+        [data-bs-theme="dark"] .content-popup-header .btn-back,
+        [data-bs-theme="dark"] .content-popup-header .btn-close-popup {
+            color: #aaa;
+        }
+        [data-bs-theme="dark"] .content-popup-header .btn-back:hover,
+        [data-bs-theme="dark"] .content-popup-header .btn-close-popup:hover {
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .data-card {
+            background: #1e1e1e;
+            box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.4);
+        }
+        [data-bs-theme="dark"] .data-card .card-body {
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select {
+            background: #2a2a2a;
+            border-color: #444;
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .form-control:focus,
+        [data-bs-theme="dark"] .form-select:focus {
+            background: #2a2a2a;
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .table {
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .modal-content {
+            background: #1e1e1e;
+            color: #e0e0e0;
+        }
+
         @media (max-width: 576px) {
             .content-popup {
                 width: 85vw;
@@ -474,6 +543,21 @@
 
     // Update counter when a transaction is saved/deleted inside the Livewire component
     window.addEventListener('counter-updated', syncSnapshot);
+
+    /* ── theme ── */
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        localStorage.setItem('theme', theme);
+    }
+
+    // Apply stored theme on page load
+    const storedTheme = localStorage.getItem('theme') || '{{ $theme }}';
+    applyTheme(storedTheme);
+
+    // Listen for theme changes from the Livewire settings component
+    window.addEventListener('theme-changed', (e) => {
+        applyTheme(e.detail.theme);
+    });
 </script>
 @livewireScripts
 </body>
