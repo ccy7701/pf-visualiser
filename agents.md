@@ -357,7 +357,7 @@ The system SHALL prioritise manual configurability over automatic holiday logic.
 ## Core Formula
 
 ```text
-Current Counter
+Current Counter Value
 =
 Starting Amount
 + Net Transactions
@@ -388,7 +388,11 @@ Computation:
 Total Income - Total Expenses
 ```
 
-This shall be dynamically summed from the transactions table.
+Meanwhile, the main Counter formula is as follows:
+
+```text
+Counter = Starting Amount + Salary Accrual + Net Transactions
+```
 
 ---
 
@@ -542,7 +546,7 @@ Suggested flow:
 
 1. Backend returns:
 
-   * current Counter,
+   * current Counter value,
    * increment rate.
 
 2. Frontend:

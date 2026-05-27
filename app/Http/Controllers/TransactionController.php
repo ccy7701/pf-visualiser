@@ -35,4 +35,37 @@ class TransactionController extends Controller
 
         return redirect()->route('dashboard')->with('status', 'Transaction recorded successfully.');
     }
+
+    public function update(Request $request, Transaction $transaction): RedirectResponse
+    {
+        $validated = $request->validate([
+            'type' => ['required', Rule::in(['income', 'expense'])],
+            'datetime' => ['required', 'date_format:d/m/Y H:i'],
+            'category_id' => ['required', 'exists:categories,id'],
+            'note' => ['nullable', 'string'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+        ]);
+
+        $validated['datetime'] = \Carbon\Carbon::createFromFormat('d/m/Y H:i', $validated['datetime'], 'Asia/Kuala_Lumpur');
+
+        $category = Category::query()->findOrFail($validated['category_id']);
+
+        if ($category->type && $category->type !== $validated['type']) {
+            return redirect()
+                ->route('dashboard')
+                ->withErrors(['category_id' => 'Category type does not match transaction type.'])
+                ->withInput();
+        }
+
+        $transaction->update($validated);
+
+        return redirect()->route('dashboard')->with('status', 'Transaction updated successfully.');
+    }
+
+    public function destroy(Transaction $transaction): RedirectResponse
+    {
+        $transaction->delete();
+
+        return redirect()->route('dashboard')->with('status', 'Transaction deleted successfully.');
+    }
 }

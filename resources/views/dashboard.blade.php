@@ -143,15 +143,16 @@
         /* ── content popup (step 2) ── */
         .content-popup {
             position: fixed;
-            bottom: 96px;
-            right: 24px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             z-index: 1060;
             background: #fff;
             border-radius: 12px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.18);
             display: none;
             width: 60vw;
-            max-width: 480px;
+            max-width: 600px;
             max-height: 70vh;
             overflow: hidden;
             flex-direction: column;
@@ -228,7 +229,7 @@
 
 {{-- Main counter (always visible) ──── --}}
 <div class="counter-fullscreen">
-    <div class="counter-label">Current Counter</div>
+    {{-- <div class="counter-label">Current Counter</div> --}}
     <div id="counterValue" class="counter-value">RM {{ number_format($snapshot['counter'], 2) }}</div>
 
     {{-- Incrementing status indicator --}}
@@ -288,7 +289,8 @@
     /* ── DOM refs ── */
     const counterElement = document.getElementById('counterValue');
 
-    const accruedSalaryElement = null;
+
+    const accruedSalarySummary = document.getElementById('accruedSalarySummary');
     const datetimeInput = null;
     const typeInput = null;
     const categoryInput = null;
@@ -321,8 +323,9 @@
         counterElement.textContent = `RM ${formatter.format(currentValue)}`;
     }
     function renderAccruedSalary() {
-        if (accruedSalaryElement) {
-            accruedSalaryElement.textContent = `RM ${formatter.format(accruedSalaryValue)}`;
+        const el = document.getElementById('accruedSalarySummary');
+        if (el) {
+            el.textContent = `RM ${formatter.format(accruedSalaryValue)}`;
         }
     }
 
@@ -335,10 +338,10 @@
     function updateIncrementStatus() {
         const statusEl = document.getElementById('incrementStatus');
         if (incrementPerSecond > 0) {
-            statusEl.textContent = 'INCREMENTING...';
-            statusEl.style.color = '#28a745';
+            statusEl.textContent = 'INCREMENTING (WORK!)';
+            statusEl.style.color = '#6c757d';
         } else {
-            statusEl.textContent = 'NOT INCREMENTING (OUTSIDE WORKING HOURS)';
+            statusEl.textContent = 'NOT INCREMENTING (RELAX!)';
             statusEl.style.color = '#6c757d';
         }
     }
@@ -468,6 +471,9 @@
     updateIncrementStatus();
     setInterval(tick, 1000);
     setInterval(syncSnapshot, 60000);
+
+    // Update counter when a transaction is saved/deleted inside the Livewire component
+    window.addEventListener('counter-updated', syncSnapshot);
 </script>
 @livewireScripts
 </body>
