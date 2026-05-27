@@ -90,7 +90,7 @@ new class extends Component
 
         $this->editingTransactionId = $transaction->id;
         $this->type = $transaction->type;
-        $this->datetime = Carbon::parse($transaction->datetime)->format('d/m/Y H:i');
+        $this->datetime = Carbon::parse($transaction->datetime)->setTimezone('Asia/Kuala_Lumpur')->format('d/m/Y H:i');
         $this->category_id = (string) $transaction->category_id;
         $this->amount = (string) $transaction->amount;
         $this->note = $transaction->note ?? '';
@@ -309,7 +309,7 @@ new class extends Component
                     <tbody>
                     @forelse ($transactions as $tx)
                         <tr>
-                            <td>{{ $tx['datetime'] ? \Carbon\Carbon::parse($tx['datetime'])->format('d/m/Y H:i') : '' }}</td>
+                            <td>{{ $tx['datetime'] ? \Carbon\Carbon::parse($tx['datetime'])->setTimezone('Asia/Kuala_Lumpur')->format('d/m/Y H:i') : '' }}</td>
                             <td>{{ $tx['category']['name'] ?? '' }}</td>
                             <td>{{ $tx['note'] ?? '' }}</td>
                             <td class="text-end">

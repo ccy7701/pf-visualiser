@@ -410,7 +410,7 @@
             statusEl.textContent = 'INCREMENTING (GET TO WORK!)';
             statusEl.style.color = '#6c757d';
         } else {
-            statusEl.textContent = 'NOT INCREMENTING (RELAX!)';
+            statusEl.textContent = 'PAUSED INCREMENT (RELAX!)';
             statusEl.style.color = '#6c757d';
         }
     }
