@@ -40,10 +40,19 @@ class ProjectionServiceTest extends TestCase
             ],
             'bnpl' => [
                 [
-                    'name' => 'Phone',
-                    'monthly_amount' => 20,
-                    'start_month' => '2026-06',
-                    'end_month' => '2026-08',
+                    'month' => '2026-06',
+                    'amount' => 20,
+                    'note' => 'Phone',
+                ],
+                [
+                    'month' => '2026-07',
+                    'amount' => 20,
+                    'note' => 'Phone',
+                ],
+                [
+                    'month' => '2026-08',
+                    'amount' => 20,
+                    'note' => 'Phone',
                 ],
             ],
             'events' => [],
@@ -77,8 +86,8 @@ class ProjectionServiceTest extends TestCase
         $this->assertSame(150.0, $months[1]['living_expenses']);
         $this->assertSame(300.0, $months[2]['living_expenses']);
 
-        // COH can go negative.
-        $this->assertSame(-130.0, $months[0]['closing_coh']);
+        // COH can go negative. ELR schedule amount is interpreted as daily contribution.
+        $this->assertSame(-420.0, $months[0]['closing_coh']);
 
         // EPF from gross salary only, fixed rates.
         $this->assertSame(300.0, $months[1]['closing_epf']);

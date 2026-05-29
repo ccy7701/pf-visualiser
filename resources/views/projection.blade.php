@@ -351,10 +351,9 @@
                         <table class="table table-sm">
                             <thead>
                             <tr>
-                                <th>Name</th>
+                                <th>Month</th>
                                 <th>Amount</th>
-                                <th>Start</th>
-                                <th>End</th>
+                                <th>Note</th>
                                 <th></th>
                             </tr>
                             </thead>
@@ -587,10 +586,9 @@
     function createBnplRow(data = {}) {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><input type="text" class="form-control form-control-sm" data-bnpl="name" value="${data.name ?? ''}"></td>
-            <td><input type="number" step="0.01" class="form-control form-control-sm" data-bnpl="monthly_amount" value="${data.monthly_amount ?? 0}"></td>
-            <td><input type="text" class="form-control form-control-sm month-input" data-bnpl="start_month" value="${data.start_month ?? ''}"></td>
-            <td><input type="text" class="form-control form-control-sm month-input" data-bnpl="end_month" value="${data.end_month ?? ''}"></td>
+            <td><input type="text" class="form-control form-control-sm month-input" data-bnpl="month" value="${data.month ?? ''}"></td>
+            <td><input type="number" step="0.01" class="form-control form-control-sm" data-bnpl="amount" value="${data.amount ?? 0}"></td>
+            <td><input type="text" class="form-control form-control-sm" data-bnpl="note" value="${data.note ?? ''}" placeholder="Optional note"></td>
             <td><button type="button" class="btn btn-sm btn-outline-danger">×</button></td>
         `;
         row.querySelector('button').addEventListener('click', () => row.remove());
@@ -604,15 +602,15 @@
             <td><input type="text" class="form-control form-control-sm month-input" data-event="month" value="${data.month ?? ''}"></td>
             <td>
                 <select class="form-select form-select-sm" data-event="type">
-                    <option value="allowance">allowance</option>
-                    <option value="household">household</option>
-                    <option value="one_off_income">one_off_income</option>
-                    <option value="one_off_expense">one_off_expense</option>
-                    <option value="elr_override">elr_override</option>
+                    <option value="allowance">Allowance</option>
+                    <option value="household">Household Contribution</option>
+                    <option value="one_off_income">One-off Income</option>
+                    <option value="one_off_expense">One-off Expense</option>
+                    <option value="elr_override">ELR Override</option>
                 </select>
             </td>
             <td><input type="number" step="0.01" class="form-control form-control-sm" data-event="amount" value="${data.amount ?? 0}"></td>
-            <td><input type="text" class="form-control form-control-sm" data-event="note" value="${data.note ?? ''}"></td>
+            <td><input type="text" class="form-control form-control-sm" data-event="note" value="${data.note ?? ''}" placeholder="Optional note"></td>
             <td><button type="button" class="btn btn-sm btn-outline-danger">×</button></td>
         `;
         row.querySelector('[data-event="type"]').value = data.type ?? 'one_off_expense';
@@ -636,11 +634,10 @@
 
     function collectPayload() {
         const bnpl = Array.from(document.querySelectorAll('#bnplRows tr')).map((row) => ({
-            name: row.querySelector('[data-bnpl="name"]').value.trim(),
-            monthly_amount: toNumber(row.querySelector('[data-bnpl="monthly_amount"]').value, 0),
-            start_month: toMonthOrNull(row.querySelector('[data-bnpl="start_month"]').value),
-            end_month: toMonthOrNull(row.querySelector('[data-bnpl="end_month"]').value),
-        })).filter((item) => item.name && item.start_month && item.end_month);
+            month: toMonthOrNull(row.querySelector('[data-bnpl="month"]').value),
+            amount: toNumber(row.querySelector('[data-bnpl="amount"]').value, 0),
+            note: row.querySelector('[data-bnpl="note"]').value.trim(),
+        })).filter((item) => item.month);
 
         const events = Array.from(document.querySelectorAll('#eventRows tr')).map((row) => ({
             month: toMonthOrNull(row.querySelector('[data-event="month"]').value),
@@ -730,7 +727,7 @@
         document.getElementById('bnplRows').innerHTML = '';
         (payload.bnpl || []).forEach(createBnplRow);
         if (!payload.bnpl || payload.bnpl.length === 0) {
-            createBnplRow({ name: 'BNPL', monthly_amount: 0, start_month: scenario.start_month || '', end_month: scenario.end_month || '' });
+            createBnplRow({ month: scenario.start_month || '', amount: 0, note: '' });
         }
 
         document.getElementById('eventRows').innerHTML = '';
@@ -957,10 +954,9 @@
     }
 
     document.getElementById('addBnplBtn').addEventListener('click', () => createBnplRow({
-        name: 'BNPL',
-        monthly_amount: 0,
-        start_month: toMonthOrNull(document.getElementById('startMonth').value),
-        end_month: toMonthOrNull(document.getElementById('endMonth').value),
+        month: toMonthOrNull(document.getElementById('startMonth').value),
+        amount: 0,
+        note: '',
     }));
 
     document.getElementById('addEventBtn').addEventListener('click', () => createEventRow({
@@ -1084,17 +1080,16 @@
     initMonthPickers();
 
     createBnplRow({
-        name: 'BNPL',
-        monthly_amount: 0,
-        start_month: toMonthOrNull(document.getElementById('startMonth').value),
-        end_month: toMonthOrNull(document.getElementById('endMonth').value),
+        month: toMonthOrNull(document.getElementById('startMonth').value),
+        amount: 0,
+        note: '',
     });
 
     createEventRow({
         month: toMonthOrNull(document.getElementById('startMonth').value),
         type: 'one_off_expense',
         amount: 0,
-        note: 'Initial placeholder',
+        note: '',
     });
 </script>
 </body>

@@ -2,6 +2,8 @@
 
 namespace App\Services\Projection;
 
+use Carbon\Carbon;
+
 class ELRCalculator
 {
     public function allocationForMonth(string $month, array $elr, array $events = []): float
@@ -40,7 +42,10 @@ class ELRCalculator
             $endIndex = MonthHelper::toIndex((string) $end);
 
             if ($monthIndex >= $startIndex && $monthIndex <= $endIndex) {
-                return (float) ($schedule['amount'] ?? 0);
+                $dailyAmount = (float) ($schedule['amount'] ?? 0);
+                $daysInMonth = Carbon::createFromFormat('Y-m', $month)->daysInMonth;
+
+                return $dailyAmount * $daysInMonth;
             }
         }
 

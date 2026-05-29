@@ -87,10 +87,19 @@ class ProjectionModuleTest extends TestCase
             ],
             'bnpl' => [
                 [
-                    'name' => 'Phone',
-                    'monthly_amount' => 150,
-                    'start_month' => '2026-06',
-                    'end_month' => '2026-08',
+                    'month' => '2026-06',
+                    'amount' => 150,
+                    'note' => 'Phone',
+                ],
+                [
+                    'month' => '2026-07',
+                    'amount' => 150,
+                    'note' => 'Phone',
+                ],
+                [
+                    'month' => '2026-08',
+                    'amount' => 150,
+                    'note' => 'Phone',
                 ],
             ],
             'events' => [

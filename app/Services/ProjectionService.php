@@ -62,6 +62,7 @@ class ProjectionService
             $household = $this->sumEventsByType($monthEvents, 'household');
             $oneOffIncome = $this->sumEventsByType($monthEvents, 'one_off_income');
             $oneOffExpense = $this->sumEventsByType($monthEvents, 'one_off_expense');
+            $netIncomeDisplay = $netIncome + $allowances + $oneOffIncome;
 
             $livingExpenses = $this->expenseCalculator->livingCostForMonth($month, $costOfLiving) + $household;
             $bnplRepayment = $this->bnplCalculator->repaymentForMonth($month, $bnpl);
@@ -90,7 +91,7 @@ class ProjectionService
                 'opening_epf' => round($openingEpf, 2),
                 'closing_epf' => round($closingEpf, 2),
                 'gross_income' => round($grossIncome, 2),
-                'net_income' => round($netIncome, 2),
+                'net_income' => round($netIncomeDisplay, 2),
                 'allowances' => round($allowances, 2),
                 'one_off_income' => round($oneOffIncome, 2),
                 'expenses' => round($livingExpenses + $oneOffExpense, 2),
@@ -162,10 +163,9 @@ class ProjectionService
             ],
             'bnpl' => array_values(array_map(function (array $item) {
                 return [
-                    'name' => (string) ($item['name'] ?? ''),
-                    'monthly_amount' => (float) ($item['monthly_amount'] ?? 0),
-                    'start_month' => MonthHelper::normalize((string) $item['start_month']),
-                    'end_month' => MonthHelper::normalize((string) $item['end_month']),
+                    'month' => MonthHelper::normalize((string) $item['month']),
+                    'amount' => (float) ($item['amount'] ?? 0),
+                    'note' => (string) ($item['note'] ?? ''),
                 ];
             }, array_filter($bnpl, fn ($item) => is_array($item)))),
             'events' => array_values(array_map(function (array $item) {

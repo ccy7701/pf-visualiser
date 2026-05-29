@@ -172,10 +172,9 @@ class ProjectionController extends Controller
             'ptptn.repayment_start_month' => ['nullable', 'regex:/^\d{4}-\d{2}$/'],
 
             'bnpl' => ['required', 'array'],
-            'bnpl.*.name' => ['required', 'string', 'max:100'],
-            'bnpl.*.monthly_amount' => ['required', 'numeric', 'min:0'],
-            'bnpl.*.start_month' => ['required', 'regex:/^\d{4}-\d{2}$/'],
-            'bnpl.*.end_month' => ['required', 'regex:/^\d{4}-\d{2}$/'],
+            'bnpl.*.month' => ['required', 'regex:/^\d{4}-\d{2}$/'],
+            'bnpl.*.amount' => ['required', 'numeric', 'min:0'],
+            'bnpl.*.note' => ['nullable', 'string', 'max:200'],
 
             'events' => ['required', 'array'],
             'events.*.month' => ['required', 'regex:/^\d{4}-\d{2}$/'],
