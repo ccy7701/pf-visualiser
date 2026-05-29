@@ -48,13 +48,17 @@ class ProjectionServiceTest extends TestCase
             ],
             'events' => [],
             'elr' => [
-                'daily_contribution' => 0,
-                'monthly_contribution' => 10,
-                'schedules' => [],
+                'schedules' => [
+                    [
+                        'start_month' => '2026-06',
+                        'end_month' => '2026-08',
+                        'amount' => 10,
+                    ],
+                ],
             ],
             'epf' => [
-                'employee_rate' => 0.10,
-                'employer_rate' => 0.20,
+                'employee_rate_percent' => 10.0,
+                'employer_rate_percent' => 20.0,
             ],
         ];
 

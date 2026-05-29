@@ -182,7 +182,7 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
             <h1 class="h3 mb-1">Cumulative COH Projection</h1>
-            <p class="text-secondary mb-0">First iteration projection engine with saved scenario comparison.</p>
+            <p class="text-secondary mb-2">Projection engine to visualise budget plans over time</p>
         </div>
     </div>
 
@@ -385,21 +385,6 @@
                     </div>
 
                     <div class="input-subcard">
-                    <h2 class="section-subtitle">ELR</h2>
-                    <hr class="section-divider">
-                    <div class="row g-2 mb-2">
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Daily Contribution</label>
-                            <input id="elrDailyContribution" type="number" step="0.01" class="form-control compact-input" value="0.00">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Monthly Contribution</label>
-                            <input id="elrMonthlyContribution" type="number" step="0.01" class="form-control compact-input" value="50.00">
-                        </div>
-                    </div>
-                    </div>
-
-                    <div class="input-subcard">
                     <h2 class="section-subtitle d-flex justify-content-between align-items-center">ELR Schedules
                         <button id="addElrScheduleBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
                     </h2>
@@ -424,12 +409,12 @@
                     <hr class="section-divider">
                     <div class="row g-2">
                         <div class="col-6">
-                            <label class="form-label form-label-sm">Employee Rate</label>
-                            <input id="employeeEpfRate" type="number" step="0.01" class="form-control compact-input" value="0.11">
+                            <label class="form-label form-label-sm">Employee EPF (%)</label>
+                            <input id="employeeEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="11.00">
                         </div>
                         <div class="col-6">
-                            <label class="form-label form-label-sm">Employer Rate</label>
-                            <input id="employerEpfRate" type="number" step="0.01" class="form-control compact-input" value="0.13">
+                            <label class="form-label form-label-sm">Employer EPF (%)</label>
+                            <input id="employerEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="13.00">
                         </div>
                     </div>
                     </div>
@@ -700,13 +685,11 @@
             bnpl,
             events,
             elr: {
-                daily_contribution: toNumber(document.getElementById('elrDailyContribution').value, 0),
-                monthly_contribution: toNumber(document.getElementById('elrMonthlyContribution').value, 0),
                 schedules,
             },
             epf: {
-                employee_rate: toNumber(document.getElementById('employeeEpfRate').value, 0),
-                employer_rate: toNumber(document.getElementById('employerEpfRate').value, 0),
+                employee_rate_percent: toNumber(document.getElementById('employeeEpfRatePercent').value, 0),
+                employer_rate_percent: toNumber(document.getElementById('employerEpfRatePercent').value, 0),
             },
         };
     }
@@ -741,11 +724,8 @@
         document.getElementById('ptptnMonthlyRepayment').value = ptptn.monthly_repayment ?? 0;
         document.getElementById('ptptnRepaymentStartMonth').value = ptptn.repayment_start_month || '';
 
-        document.getElementById('elrDailyContribution').value = elr.daily_contribution ?? 0;
-        document.getElementById('elrMonthlyContribution').value = elr.monthly_contribution ?? 0;
-
-        document.getElementById('employeeEpfRate').value = epf.employee_rate ?? 0;
-        document.getElementById('employerEpfRate').value = epf.employer_rate ?? 0;
+        document.getElementById('employeeEpfRatePercent').value = epf.employee_rate_percent ?? 0;
+        document.getElementById('employerEpfRatePercent').value = epf.employer_rate_percent ?? 0;
 
         document.getElementById('bnplRows').innerHTML = '';
         (payload.bnpl || []).forEach(createBnplRow);

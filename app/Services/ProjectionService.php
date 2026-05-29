@@ -10,6 +10,7 @@ use App\Services\Projection\MonthHelper;
 use App\Services\Projection\PTPTNCalculator;
 use App\Services\Projection\ProjectionResultBuilder;
 use App\Services\Projection\SalaryCalculator;
+use App\Services\Projection\StatutoryDeductionResolver;
 
 class ProjectionService
 {
@@ -20,6 +21,7 @@ class ProjectionService
         private readonly PTPTNCalculator $ptptnCalculator,
         private readonly ELRCalculator $elrCalculator,
         private readonly EPFCalculator $epfCalculator,
+        private readonly StatutoryDeductionResolver $statutoryDeductionResolver,
         private readonly ProjectionResultBuilder $projectionResultBuilder,
     ) {
     }
@@ -51,7 +53,10 @@ class ProjectionService
             $grossIncome = $this->salaryCalculator->grossForMonth($month, $employment);
             $employeeEpf = $this->epfCalculator->employeeContribution($grossIncome, $epf);
             $employerEpf = $this->epfCalculator->employerContribution($grossIncome, $epf);
-            $netIncome = $grossIncome - $employeeEpf;
+            $statutory = $this->statutoryDeductionResolver->resolve($grossIncome);
+            $socso = (float) ($statutory['socso'] ?? 0);
+            $eis = (float) ($statutory['eis'] ?? 0);
+            $netIncome = $grossIncome - $employeeEpf - $socso - $eis;
 
             $allowances = $this->sumEventsByType($monthEvents, 'allowance');
             $household = $this->sumEventsByType($monthEvents, 'household');
@@ -97,6 +102,8 @@ class ProjectionService
                 'elr_contribution' => round($elrContribution, 2),
                 'employee_epf' => round($employeeEpf, 2),
                 'employer_epf' => round($employerEpf, 2),
+                'socso' => round($socso, 2),
+                'eis' => round($eis, 2),
             ];
 
             $openingCoh = $closingCoh;
@@ -170,8 +177,6 @@ class ProjectionService
                 ];
             }, array_filter($events, fn ($item) => is_array($item)))),
             'elr' => [
-                'daily_contribution' => (float) ($elr['daily_contribution'] ?? 0),
-                'monthly_contribution' => (float) ($elr['monthly_contribution'] ?? 0),
                 'schedules' => array_values(array_map(function (array $schedule) {
                     return [
                         'start_month' => MonthHelper::normalize((string) $schedule['start_month']),
@@ -181,8 +186,8 @@ class ProjectionService
                 }, array_filter($elr['schedules'] ?? [], fn ($schedule) => is_array($schedule)))),
             ],
             'epf' => [
-                'employee_rate' => (float) ($epf['employee_rate'] ?? 0),
-                'employer_rate' => (float) ($epf['employer_rate'] ?? 0),
+                'employee_rate_percent' => (float) ($epf['employee_rate_percent'] ?? 0),
+                'employer_rate_percent' => (float) ($epf['employer_rate_percent'] ?? 0),
             ],
         ];
     }

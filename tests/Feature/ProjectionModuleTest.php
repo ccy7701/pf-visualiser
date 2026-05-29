@@ -102,13 +102,17 @@ class ProjectionModuleTest extends TestCase
                 ],
             ],
             'elr' => [
-                'daily_contribution' => 0,
-                'monthly_contribution' => 50,
-                'schedules' => [],
+                'schedules' => [
+                    [
+                        'start_month' => '2026-06',
+                        'end_month' => '2026-08',
+                        'amount' => 50,
+                    ],
+                ],
             ],
             'epf' => [
-                'employee_rate' => 0.11,
-                'employer_rate' => 0.13,
+                'employee_rate_percent' => 11.0,
+                'employer_rate_percent' => 13.0,
             ],
         ];
     }

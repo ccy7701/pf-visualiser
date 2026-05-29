@@ -184,16 +184,14 @@ class ProjectionController extends Controller
             'events.*.note' => ['nullable', 'string', 'max:200'],
 
             'elr' => ['required', 'array'],
-            'elr.daily_contribution' => ['nullable', 'numeric', 'min:0'],
-            'elr.monthly_contribution' => ['nullable', 'numeric', 'min:0'],
             'elr.schedules' => ['nullable', 'array'],
             'elr.schedules.*.start_month' => ['required_with:elr.schedules', 'regex:/^\d{4}-\d{2}$/'],
             'elr.schedules.*.end_month' => ['required_with:elr.schedules', 'regex:/^\d{4}-\d{2}$/'],
             'elr.schedules.*.amount' => ['required_with:elr.schedules', 'numeric', 'min:0'],
 
             'epf' => ['required', 'array'],
-            'epf.employee_rate' => ['required', 'numeric', 'min:0', 'max:1'],
-            'epf.employer_rate' => ['required', 'numeric', 'min:0', 'max:1'],
+            'epf.employee_rate_percent' => ['required', 'numeric', 'min:0', 'max:100'],
+            'epf.employer_rate_percent' => ['required', 'numeric', 'min:0', 'max:100'],
         ];
     }
 }
