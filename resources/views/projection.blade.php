@@ -102,6 +102,13 @@
             border: 0;
             border-top: 1px solid #dee2e6;
         }
+        .input-subcard {
+            border: 1px solid #dee2e6;
+            border-radius: 0.65rem;
+            padding: 0.75rem;
+            background: #fff;
+            margin-bottom: 0.75rem;
+        }
 
         .results-wrap {
             max-height: 55vh;
@@ -124,6 +131,20 @@
 
         .negative-value {
             color: #dc3545;
+        }
+        .projection-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        .projection-table th,
+        .projection-table td {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chart-wrap {
+            position: relative;
+            height: 420px;
+            width: 100%;
         }
 
         #statusMessage {
@@ -169,26 +190,32 @@
         <div class="col-xl-4">
             <div class="card panel-card mb-3">
                 <div class="card-header">Scenario Controls</div>
-                <div class="card-body">
-                    <div class="mb-2">
-                        <label for="saveName" class="form-label form-label-sm">Scenario Name</label>
-                        <input id="saveName" type="text" class="form-control compact-input" placeholder="Example: Base Case 2026">
-                    </div>
-                    <div class="mb-3">
-                        <label for="saveNotes" class="form-label form-label-sm">Notes</label>
-                        <textarea id="saveNotes" class="form-control compact-input" rows="2" placeholder="Optional notes"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="savedScenarioId" class="form-label form-label-sm">Load Scenario</label>
-                        <div class="input-group">
-                            <select id="savedScenarioId" class="form-select compact-input"></select>
-                            <button id="loadScenarioBtn" class="btn btn-outline-secondary" type="button">Load</button>
+                <div class="card-body mb-0">
+                    <div class="input-subcard">
+                        <div class="mb-2">
+                            <label for="saveName" class="form-label form-label-sm">Scenario Name</label>
+                            <input id="saveName" type="text" class="form-control compact-input" placeholder="Example: Base Case 2026">
+                        </div>
+                        <div class="mb-3">
+                            <label for="saveNotes" class="form-label form-label-sm">Notes</label>
+                            <textarea id="saveNotes" class="form-control compact-input" rows="2" placeholder="Optional notes"></textarea>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button id="runProjectionBtn" class="btn btn-dark">Run Projection</button>
+                            <button id="saveScenarioBtn" class="btn btn-outline-dark">Save Scenario</button>
                         </div>
                     </div>
-                    <div class="d-grid gap-2">
-                        <button id="runProjectionBtn" class="btn btn-dark">Run Projection</button>
-                        <button id="saveScenarioBtn" class="btn btn-outline-dark">Save Scenario</button>
+
+                    <div class="input-subcard mb-0">
+                        <div class="mb-0">
+                            <label for="savedScenarioId" class="form-label form-label-sm">Load Scenario</label>
+                            <div class="input-group">
+                                <select id="savedScenarioId" class="form-select compact-input"></select>
+                                <button id="loadScenarioBtn" class="btn btn-outline-secondary" type="button">Load</button>
+                            </div>
+                        </div>
                     </div>
+
                     <div id="statusMessage" class="mt-2 small text-secondary"></div>
                 </div>
             </div>
@@ -211,9 +238,10 @@
             <div class="card panel-card">
                 <div class="card-header">Projection Inputs</div>
                 <div class="card-body">
+                    <div class="input-subcard">
                     <h2 class="section-subtitle">Scenario</h2>
                     <hr class="section-divider">
-                    <div class="row g-2 mb-3">
+                    <div class="row g-2">
                         <div class="col-6">
                             <label class="form-label form-label-sm">Start Month</label>
                             <input id="startMonth" type="text" class="form-control compact-input month-input" value="{{ now('Asia/Kuala_Lumpur')->startOfMonth()->format('Y-m') }}">
@@ -235,7 +263,9 @@
                             <input id="startingEpf" type="number" step="0.01" class="form-control compact-input" value="0.00">
                         </div>
                     </div>
+                    </div>
 
+                    <div class="input-subcard">
                     <h2 class="section-subtitle">Employment</h2>
                     <hr class="section-divider">
                     <div class="row g-2 mb-3">
@@ -262,7 +292,9 @@
                             </div>
                         </div>
                     </div>
+                    </div>
 
+                    <div class="input-subcard">
                     <h2 class="section-subtitle">Cost of Living</h2>
                     <hr class="section-divider">
                     <div class="row g-2 mb-3">
@@ -287,7 +319,9 @@
                             <input id="fcolMaxStartMonth" type="text" class="form-control compact-input month-input">
                         </div>
                     </div>
+                    </div>
 
+                    <div class="input-subcard">
                     <h2 class="section-subtitle">PTPTN</h2>
                     <hr class="section-divider">
                     <div class="row g-2 mb-3">
@@ -306,7 +340,9 @@
                             </div>
                         </div>
                     </div>
+                    </div>
 
+                    <div class="input-subcard">
                     <h2 class="section-subtitle d-flex justify-content-between align-items-center">BNPL
                         <button id="addBnplBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
                     </h2>
@@ -325,7 +361,9 @@
                             <tbody id="bnplRows"></tbody>
                         </table>
                     </div>
+                    </div>
 
+                    <div class="input-subcard">
                     <h2 class="section-subtitle d-flex justify-content-between align-items-center">Events
                         <button id="addEventBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
                     </h2>
@@ -344,7 +382,9 @@
                             <tbody id="eventRows"></tbody>
                         </table>
                     </div>
+                    </div>
 
+                    <div class="input-subcard">
                     <h2 class="section-subtitle">ELR</h2>
                     <hr class="section-divider">
                     <div class="row g-2 mb-2">
@@ -357,7 +397,9 @@
                             <input id="elrMonthlyContribution" type="number" step="0.01" class="form-control compact-input" value="50.00">
                         </div>
                     </div>
+                    </div>
 
+                    <div class="input-subcard">
                     <h2 class="section-subtitle d-flex justify-content-between align-items-center">ELR Schedules
                         <button id="addElrScheduleBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
                     </h2>
@@ -375,7 +417,9 @@
                             <tbody id="elrScheduleRows"></tbody>
                         </table>
                     </div>
+                    </div>
 
+                    <div class="input-subcard">
                     <h2 class="section-subtitle">EPF</h2>
                     <hr class="section-divider">
                     <div class="row g-2">
@@ -387,6 +431,7 @@
                             <label class="form-label form-label-sm">Employer Rate</label>
                             <input id="employerEpfRate" type="number" step="0.01" class="form-control compact-input" value="0.13">
                         </div>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -426,14 +471,33 @@
             </div>
 
             <div class="card panel-card mb-3">
+                <div class="card-header">Projection Chart</div>
+                <div class="card-body">
+                    <div class="mb-2" style="max-width: 260px;">
+                        <label for="chartType" class="form-label form-label-sm">Chart Type</label>
+                        <select id="chartType" class="form-select form-select-sm">
+                            <option value="line">Multi-line</option>
+                            <option value="stacked_bar">Stacked Bar</option>
+                        </select>
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="projectionStackedChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card panel-card mb-3">
                 <div class="card-header">Projections by Month</div>
                 <div class="card-body p-0">
                     <div class="results-wrap">
                         <div class="table-responsive">
-                            <table class="table table-striped table-sm mb-0">
+                            <table class="table table-striped table-sm mb-0 projection-table">
+                                <colgroup>
+                                    <col span="8" style="width:12.5%">
+                                </colgroup>
                                 <thead class="table-light sticky-top">
                                 <tr>
-                                    <th>Month</th>
+                                    <th class="text-start">Month</th>
                                     <th class="text-end">Opening COH</th>
                                     <th class="text-end">Net Income</th>
                                     <th class="text-end">Expenses</th>
@@ -489,6 +553,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const runEndpoint = '{{ route('projection.run') }}';
     const saveEndpoint = '{{ route('projection.scenarios.save') }}';
@@ -500,6 +565,8 @@
 
     const money = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const monthLabelFormatter = new Intl.DateTimeFormat('en-MY', { month: 'short', year: 'numeric' });
+    let projectionChart = null;
+    let currentProjectionMonths = [];
 
     function toNumber(value, fallback = 0) {
         const parsed = Number(value);
@@ -696,6 +763,7 @@
 
     function renderProjection(result) {
         const months = result.months || [];
+        currentProjectionMonths = months;
         const summary = result.summary || {};
 
         const finalCoh = toNumber(summary.final_coh, 0);
@@ -721,18 +789,96 @@
 
         for (const row of months) {
             const tr = document.createElement('tr');
+            const openingCoh = toNumber(row.opening_coh, 0);
+            const netIncome = toNumber(row.net_income, 0);
+            const expenses = toNumber(row.expenses, 0);
+            const debtServicing = toNumber(row.debt_servicing, 0);
+            const closingCoh = toNumber(row.closing_coh, 0);
+            const closingElr = toNumber(row.closing_elr, 0);
+            const closingEpf = toNumber(row.closing_epf, 0);
             tr.innerHTML = `
                 <td>${formatMonthLabel(row.month)}</td>
-                <td class="text-end">${money.format(row.opening_coh)}</td>
-                <td class="text-end">${money.format(row.net_income)}</td>
-                <td class="text-end ${row.expenses < 0 ? 'negative-value' : ''}">${money.format(row.expenses)}</td>
-                <td class="text-end ${row.debt_servicing < 0 ? 'negative-value' : ''}">${money.format(row.debt_servicing)}</td>
-                <td class="text-end ${row.closing_coh < 0 ? 'negative-value' : ''}">${money.format(row.closing_coh)}</td>
-                <td class="text-end ${row.closing_elr < 0 ? 'negative-value' : ''}">${money.format(row.closing_elr)}</td>
-                <td class="text-end ${row.closing_epf < 0 ? 'negative-value' : ''}">${money.format(row.closing_epf)}</td>
+                <td class="text-end ${openingCoh < 0 ? 'negative-value' : ''}">${money.format(openingCoh)}</td>
+                <td class="text-end ${netIncome < 0 ? 'negative-value' : ''}">${money.format(netIncome)}</td>
+                <td class="text-end ${expenses < 0 ? 'negative-value' : ''}">${money.format(expenses)}</td>
+                <td class="text-end ${debtServicing < 0 ? 'negative-value' : ''}">${money.format(debtServicing)}</td>
+                <td class="text-end ${closingCoh < 0 ? 'negative-value' : ''}">${money.format(closingCoh)}</td>
+                <td class="text-end ${closingElr < 0 ? 'negative-value' : ''}">${money.format(closingElr)}</td>
+                <td class="text-end ${closingEpf < 0 ? 'negative-value' : ''}">${money.format(closingEpf)}</td>
             `;
             tbody.appendChild(tr);
         }
+
+        renderProjectionChart(months);
+    }
+
+    function renderProjectionChart(months) {
+        const ctx = document.getElementById('projectionStackedChart');
+        if (!ctx) return;
+        const selectedType = document.getElementById('chartType')?.value || 'line';
+        const isStackedBar = selectedType === 'stacked_bar';
+
+        const labels = months.map((row) => formatMonthLabel(row.month));
+        const coh = months.map((row) => toNumber(row.closing_coh, 0));
+        const elr = months.map((row) => toNumber(row.closing_elr, 0));
+        const epf = months.map((row) => toNumber(row.closing_epf, 0));
+
+        if (projectionChart) {
+            projectionChart.destroy();
+        }
+
+        projectionChart = new Chart(ctx, {
+            type: isStackedBar ? 'bar' : 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Closing COH',
+                        data: coh,
+                        borderColor: '#495057',
+                        backgroundColor: isStackedBar ? '#495057' : 'rgba(73,80,87,0.15)',
+                        pointRadius: isStackedBar ? 0 : 2,
+                        pointHoverRadius: isStackedBar ? 0 : 4,
+                        borderWidth: 2,
+                        tension: 0.25,
+                        fill: false,
+                    },
+                    {
+                        label: 'ELR',
+                        data: elr,
+                        borderColor: '#198754',
+                        backgroundColor: isStackedBar ? '#198754' : 'rgba(25,135,84,0.15)',
+                        pointRadius: isStackedBar ? 0 : 2,
+                        pointHoverRadius: isStackedBar ? 0 : 4,
+                        borderWidth: 2,
+                        tension: 0.25,
+                        fill: false,
+                    },
+                    {
+                        label: 'EPF',
+                        data: epf,
+                        borderColor: '#0d6efd',
+                        backgroundColor: isStackedBar ? '#0d6efd' : 'rgba(13,110,253,0.15)',
+                        pointRadius: isStackedBar ? 0 : 2,
+                        pointHoverRadius: isStackedBar ? 0 : 4,
+                        borderWidth: 2,
+                        tension: 0.25,
+                        fill: false,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: isStackedBar },
+                    y: { stacked: isStackedBar },
+                },
+                plugins: {
+                    legend: { position: 'top' },
+                },
+            },
+        });
     }
 
     function renderComparison(comparisons) {
@@ -945,6 +1091,12 @@
             setStatus('Comparison completed.');
         } catch (error) {
             setStatus(error.message, true);
+        }
+    });
+
+    document.getElementById('chartType').addEventListener('change', () => {
+        if (currentProjectionMonths.length > 0) {
+            renderProjectionChart(currentProjectionMonths);
         }
     });
 
