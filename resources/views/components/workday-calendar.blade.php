@@ -32,23 +32,33 @@ new class extends Component
         $this->buildCalendar();
     }
 
-    public function toggleWorkday(string $date): void
+    public function cycleDayStatus(string $date): void
     {
         $selectedDate = Carbon::parse($date, 'Asia/Kuala_Lumpur')->startOfDay();
 
         $workday = Workday::query()->firstOrCreate(
             ['date' => $selectedDate->toDateString()],
             [
+                'status' => $selectedDate->isWeekday() ? Workday::STATUS_WORKDAY : Workday::STATUS_HOLIDAY,
                 'is_workday' => $selectedDate->isWeekday(),
                 'notes' => null,
             ]
         );
 
+        $current = $this->normalizeStatus((string) ($workday->status ?? ''));
+        $next = match ($current) {
+            Workday::STATUS_WORKDAY => Workday::STATUS_ABSENCE,
+            Workday::STATUS_ABSENCE => Workday::STATUS_HOLIDAY,
+            default => Workday::STATUS_WORKDAY,
+        };
+
         $workday->update([
-            'is_workday' => ! $workday->is_workday,
+            'status' => $next,
+            'is_workday' => $next === Workday::STATUS_WORKDAY,
         ]);
 
         $this->buildCalendar();
+        $this->dispatch('counter-updated');
     }
 
     private function buildCalendar(): void
@@ -72,11 +82,14 @@ new class extends Component
         while ($cursor->lte($monthEnd)) {
             $dateKey = $cursor->toDateString();
             $workday = $workdays->get($dateKey);
+            $status = $this->resolveStatus($workday, $cursor);
 
             $cells[] = [
                 'date' => $dateKey,
                 'day' => $cursor->day,
-                'is_workday' => $workday ? (bool) $workday->is_workday : $cursor->isWeekday(),
+                'status' => $status,
+                'status_label' => ucfirst($status),
+                'button_class' => $this->buttonClass($status),
             ];
 
             $cursor->addDay();
@@ -88,6 +101,47 @@ new class extends Component
 
         $this->calendarCells = $cells;
         $this->calendarMonthLabel = $monthStart->format('F Y');
+    }
+
+    private function normalizeStatus(string $status): string
+    {
+        $status = strtolower(trim($status));
+
+        if ($status === 'absense') {
+            return Workday::STATUS_ABSENCE;
+        }
+
+        if (in_array($status, [Workday::STATUS_WORKDAY, Workday::STATUS_ABSENCE, Workday::STATUS_HOLIDAY], true)) {
+            return $status;
+        }
+
+        return Workday::STATUS_HOLIDAY;
+    }
+
+    private function resolveStatus(?Workday $workday, Carbon $date): string
+    {
+        if ($workday) {
+            $status = $this->normalizeStatus((string) ($workday->status ?? ''));
+
+            if ($status !== Workday::STATUS_HOLIDAY || ! empty($workday->status)) {
+                return $status;
+            }
+
+            if (isset($workday->is_workday)) {
+                return $workday->is_workday ? Workday::STATUS_WORKDAY : Workday::STATUS_HOLIDAY;
+            }
+        }
+
+        return $date->isWeekday() ? Workday::STATUS_WORKDAY : Workday::STATUS_HOLIDAY;
+    }
+
+    private function buttonClass(string $status): string
+    {
+        return match ($status) {
+            Workday::STATUS_WORKDAY => 'btn-success',
+            Workday::STATUS_ABSENCE => 'btn-warning',
+            default => 'btn-secondary',
+        };
     }
 };
 ?>
@@ -116,7 +170,7 @@ new class extends Component
             </button>
         </div>
 
-        <p class="text-muted small mb-3">Click a date to toggle workday (green) or non-workday (grey).</p>
+        <p class="text-muted small mb-3">Click a date to cycle status: Workday (green) -> Absence (yellow) -> Holiday (grey).</p>
 
         <div class="table-responsive">
             <table class="table table-bordered align-middle text-center mb-0">
@@ -139,11 +193,11 @@ new class extends Component
                                 <td class="p-1">
                                     <button
                                         type="button"
-                                        class="btn btn-sm w-100 {{ $cell['is_workday'] ? 'btn-success' : 'btn-secondary' }}"
-                                        wire:click="toggleWorkday('{{ $cell['date'] }}')"
+                                        class="btn btn-sm w-100 {{ $cell['button_class'] }}"
+                                        wire:click="cycleDayStatus('{{ $cell['date'] }}')"
                                         wire:key="{{ $cell['date'] }}"
                                         wire:loading.attr="disabled"
-                                        title="{{ \Carbon\Carbon::parse($cell['date'])->format('d/m/Y') }}"
+                                        title="{{ \Carbon\Carbon::parse($cell['date'])->format('d/m/Y') }} - {{ $cell['status_label'] }}"
                                     >
                                         {{ $cell['day'] }}
                                     </button>

@@ -31,6 +31,7 @@ new class extends Component
         Setting::setValue('starting_amount', number_format((float) $this->startingAmount, 2, '.', ''));
 
         $this->statusMessage = 'Settings saved successfully.';
+        $this->dispatch('counter-updated');
     }
 };
 ?>

@@ -33,8 +33,8 @@ class CounterService
             'net_transactions' => round($netTransactions, 2),
             'accrued_salary' => round($salary['accrued_salary'], 2),
             'counter' => round($counter, 2),
-            'increment_per_second' => round(((float) $salary['minute_rate']) / 60, 8),
-            'minute_rate' => round((float) $salary['minute_rate'], 8),
+            'increment_per_second' => round((float) $salary['increment_per_second'], 10),
+            'minute_rate' => round(((float) $salary['increment_per_second']) * 60, 8),
         ];
     }
 
