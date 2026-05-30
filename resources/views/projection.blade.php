@@ -302,7 +302,7 @@
                 <div class="card-header">Projection Inputs</div>
                 <div class="card-body">
                     <div class="projection-input-tabs nav" id="projectionInputTabs" role="tablist">
-                        <button class="projection-input-tab active" id="tab-scenario" data-bs-toggle="tab" data-bs-target="#pane-scenario" type="button" role="tab" aria-controls="pane-scenario" aria-selected="true" data-bs-title="Scenario" data-bs-placement="top"><i class="fa-solid fa-calendar-days"></i></button>
+                        <button class="projection-input-tab active" id="tab-scenario" data-bs-toggle="tab" data-bs-target="#pane-scenario" type="button" role="tab" aria-controls="pane-scenario" aria-selected="true" data-bs-title="Starting Parameters" data-bs-placement="top"><i class="fa-solid fa-calendar-days"></i></button>
                         <button class="projection-input-tab" id="tab-employment" data-bs-toggle="tab" data-bs-target="#pane-employment" type="button" role="tab" aria-controls="pane-employment" aria-selected="false" data-bs-title="Employment" data-bs-placement="top"><i class="fa-solid fa-briefcase"></i></button>
                         <button class="projection-input-tab" id="tab-col" data-bs-toggle="tab" data-bs-target="#pane-col" type="button" role="tab" aria-controls="pane-col" aria-selected="false" data-bs-title="Cost of Living" data-bs-placement="top"><i class="fa-solid fa-basket-shopping"></i></button>
                         <button class="projection-input-tab" id="tab-ptptn" data-bs-toggle="tab" data-bs-target="#pane-ptptn" type="button" role="tab" aria-controls="pane-ptptn" aria-selected="false" data-bs-title="PTPTN" data-bs-placement="top"><i class="fa-solid fa-graduation-cap"></i></button>
@@ -315,7 +315,7 @@
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="pane-scenario" role="tabpanel" aria-labelledby="tab-scenario" tabindex="0">
                             <div class="input-subcard mb-0">
-                                <h2 class="section-subtitle">Scenario</h2>
+                                <h2 class="section-subtitle">Starting Parameters</h2>
                                 <hr class="section-divider">
                                 <div class="row g-2">
                                     <div class="col-6">
@@ -405,14 +405,8 @@
                                         <tbody id="costAllocationRows"></tbody>
                                     </table>
                                 </div>
-                                <div class="d-flex justify-content-end mb-3">
-                                    <small class="text-secondary" id="budgetTotalsSummary"></small>
-                                </div>
 
-                                <h3 class="section-subtitle d-flex justify-content-between align-items-center">
-                                    Monthly Budget Selection
-                                    <button id="addMonthlyBudgetBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
-                                </h3>
+                                <h3 class="section-subtitle">Monthly Budget Selection</h3>
                                 <div class="table-responsive mb-2">
                                     <table class="table table-sm">
                                         <thead>
@@ -668,7 +662,6 @@
         compareEndpoint: '{{ route('projection.compare') }}',
         showScenarioBase: '{{ url('/projection/scenarios') }}',
         initialScenarios: @json($initialScenarios),
-        expenseCategories: @json($expenseCategories),
     };
 </script>
 <script src="{{ asset('js/projection-page.js') }}"></script>

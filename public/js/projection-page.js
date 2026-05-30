@@ -7,7 +7,20 @@
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     const initialScenarios = projectionConfig.initialScenarios || [];
-    const expenseCategories = projectionConfig.expenseCategories || [];
+    const expenseCategories = [
+        { id: 'food', name: 'Food' },
+        { id: 'groceries', name: 'Groceries' },
+        { id: 'personal_care', name: 'Personal care' },
+        { id: 'subscriptions', name: 'Subscriptions' },
+        { id: 'household', name: 'Household' },
+        { id: 'health', name: 'Health' },
+        { id: 'apparel', name: 'Apparel' },
+        { id: 'transportation', name: 'Transportation' },
+        { id: 'entertainment', name: 'Entertainment' },
+        { id: 'prepaid_reload', name: 'Prepaid reload' },
+        { id: 'books_stationery', name: 'Books and stationery' },
+        { id: 'others', name: 'Others' },
+    ];
     const budgetKeys = ['bcol', 'fcol_lite', 'fcol_max'];
 
     const money = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -84,8 +97,8 @@
             allocationsByBudget[key] = {};
             const allocations = budgets[key]?.category_allocations || [];
             allocations.forEach((allocation) => {
-                const categoryId = Number(allocation.category_id || 0);
-                allocationsByBudget[key][categoryId] = toNumber(allocation.amount, 0);
+                const categoryKey = String(allocation.category_id || allocation.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                allocationsByBudget[key][categoryKey] = toNumber(allocation.amount, 0);
             });
         });
 
@@ -115,9 +128,33 @@
             tbody.appendChild(row);
         });
 
+        const totalRow = document.createElement('tr');
+        totalRow.className = 'table-light fw-semibold';
+        totalRow.innerHTML = `
+            <td>Total</td>
+            <td>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">RM</span>
+                    <input type="text" class="form-control form-control-sm" data-col-total="bcol" value="0.00" readonly>
+                </div>
+            </td>
+            <td>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">RM</span>
+                    <input type="text" class="form-control form-control-sm" data-col-total="fcol_lite" value="0.00" readonly>
+                </div>
+            </td>
+            <td>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">RM</span>
+                    <input type="text" class="form-control form-control-sm" data-col-total="fcol_max" value="0.00" readonly>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(totalRow);
+
         normalizeDecimalInputs(tbody);
         attachBudgetAllocationListeners();
-        updateBudgetTotalsSummary();
     }
 
     function createMonthlyBudgetRow(data = {}) {
@@ -137,6 +174,54 @@
         row.querySelector('button').addEventListener('click', () => row.remove());
         document.getElementById('monthlyBudgetRows').appendChild(row);
         initMonthPickers();
+    }
+
+    function monthSequence(startMonth, endMonth) {
+        const start = toMonthOrNull(startMonth);
+        const end = toMonthOrNull(endMonth);
+        if (!start || !end) return [];
+
+        const [startYear, startMon] = start.split('-').map(Number);
+        const [endYear, endMon] = end.split('-').map(Number);
+        const startDate = new Date(startYear, startMon - 1, 1);
+        const endDate = new Date(endYear, endMon - 1, 1);
+        if (endDate < startDate) return [];
+
+        const months = [];
+        const cursor = new Date(startDate.getTime());
+        while (cursor <= endDate) {
+            const y = cursor.getFullYear();
+            const m = String(cursor.getMonth() + 1).padStart(2, '0');
+            months.push(`${y}-${m}`);
+            cursor.setMonth(cursor.getMonth() + 1);
+        }
+
+        return months;
+    }
+
+    function syncMonthlyBudgetRows(preselected = []) {
+        const months = monthSequence(
+            document.getElementById('startMonth').value,
+            document.getElementById('endMonth').value,
+        );
+        const selectedMap = new Map((preselected || []).map((item) => [item.month, item.budget]));
+        const existingMap = new Map(
+            Array.from(document.querySelectorAll('#monthlyBudgetRows tr'))
+                .map((row) => [
+                    toMonthOrNull(row.querySelector('[data-col-month]')?.value),
+                    row.querySelector('[data-col-budget]')?.value || 'bcol',
+                ])
+                .filter(([month]) => Boolean(month)),
+        );
+
+        document.getElementById('monthlyBudgetRows').innerHTML = '';
+
+        months.forEach((month) => {
+            createMonthlyBudgetRow({
+                month,
+                budget: selectedMap.get(month) || existingMap.get(month) || 'bcol',
+            });
+        });
     }
 
     function collectCostOfLivingPayload() {
@@ -172,6 +257,7 @@
     function attachBudgetAllocationListeners() {
         document.querySelectorAll('[data-col-budget][data-col-category-id]').forEach((input) => {
             input.addEventListener('blur', updateBudgetTotalsSummary);
+            input.addEventListener('input', updateBudgetTotalsSummary);
         });
     }
 
@@ -180,7 +266,14 @@
         const bcolTotal = (payload.budgets.bcol?.category_allocations || []).reduce((carry, item) => carry + toNumber(item.amount, 0), 0);
         const liteTotal = (payload.budgets.fcol_lite?.category_allocations || []).reduce((carry, item) => carry + toNumber(item.amount, 0), 0);
         const maxTotal = (payload.budgets.fcol_max?.category_allocations || []).reduce((carry, item) => carry + toNumber(item.amount, 0), 0);
-        document.getElementById('budgetTotalsSummary').textContent = `BCOL: RM ${money.format(bcolTotal)} | FCOL Lite: RM ${money.format(liteTotal)} | FCOL Max: RM ${money.format(maxTotal)}`;
+        const totalInputs = {
+            bcol: document.querySelector('[data-col-total="bcol"]'),
+            fcol_lite: document.querySelector('[data-col-total="fcol_lite"]'),
+            fcol_max: document.querySelector('[data-col-total="fcol_max"]'),
+        };
+        if (totalInputs.bcol) totalInputs.bcol.value = money.format(bcolTotal);
+        if (totalInputs.fcol_lite) totalInputs.fcol_lite.value = money.format(liteTotal);
+        if (totalInputs.fcol_max) totalInputs.fcol_max.value = money.format(maxTotal);
     }
 
     function initProjectionInputTabUI() {
@@ -368,8 +461,7 @@
             }
         }
         createCostAllocationRows(cost.budgets ? cost : legacyCost);
-        document.getElementById('monthlyBudgetRows').innerHTML = '';
-        (cost.monthly_budget_selection || []).forEach(createMonthlyBudgetRow);
+        syncMonthlyBudgetRows(cost.monthly_budget_selection || []);
 
         document.getElementById('ptptnWaiverGranted').checked = Boolean(ptptn.waiver_granted);
         document.getElementById('ptptnMonthlyRepayment').value = ptptn.monthly_repayment ?? 0;
@@ -602,6 +694,7 @@
                 defaultDate: toMonthOrNull(input.value) ? `${toMonthOrNull(input.value)}-01` : null,
                 onChange: (_selectedDates, dateStr) => {
                     input.value = toMonthOrNull(dateStr) || '';
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
                 },
             });
         });
@@ -626,10 +719,8 @@
         amount: 0,
     }));
 
-    document.getElementById('addMonthlyBudgetBtn').addEventListener('click', () => createMonthlyBudgetRow({
-        month: toMonthOrNull(document.getElementById('startMonth').value),
-        budget: 'bcol',
-    }));
+    document.getElementById('startMonth').addEventListener('change', () => syncMonthlyBudgetRows());
+    document.getElementById('endMonth').addEventListener('change', () => syncMonthlyBudgetRows());
 
     document.getElementById('runProjectionBtn').addEventListener('click', async () => {
         setStatus('Running projection...');
@@ -740,10 +831,7 @@
     createCostAllocationRows();
     initMonthPickers();
     normalizeDecimalInputs();
-    createMonthlyBudgetRow({
-        month: toMonthOrNull(document.getElementById('startMonth').value),
-        budget: 'bcol',
-    });
+    syncMonthlyBudgetRows();
 
     createBnplRow({
         month: toMonthOrNull(document.getElementById('startMonth').value),

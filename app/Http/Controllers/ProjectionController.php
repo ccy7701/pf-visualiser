@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
 use App\Models\ProjectionScenario;
 use App\Services\ProjectionService;
 use Illuminate\Http\JsonResponse;
@@ -25,10 +24,6 @@ class ProjectionController extends Controller
                 ->latest('updated_at')
                 ->limit(30)
                 ->get(['id', 'name', 'notes', 'updated_at']),
-            'expenseCategories' => Category::query()
-                ->where('type', 'expense')
-                ->orderBy('name')
-                ->get(['id', 'name']),
         ]);
     }
 
@@ -170,7 +165,7 @@ class ProjectionController extends Controller
             'cost_of_living.budgets.fcol_lite' => ['required', 'array'],
             'cost_of_living.budgets.fcol_max' => ['required', 'array'],
             'cost_of_living.budgets.*.category_allocations' => ['required', 'array'],
-            'cost_of_living.budgets.*.category_allocations.*.category_id' => ['required', 'integer', 'exists:categories,id'],
+            'cost_of_living.budgets.*.category_allocations.*.category_id' => ['nullable'],
             'cost_of_living.budgets.*.category_allocations.*.name' => ['required', 'string', 'max:120'],
             'cost_of_living.budgets.*.category_allocations.*.amount' => ['required', 'numeric', 'min:0'],
             'cost_of_living.monthly_budget_selection' => ['nullable', 'array'],
