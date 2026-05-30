@@ -148,7 +148,30 @@
         }
 
         #statusMessage {
-            min-height: 1.2rem;
+            position: fixed;
+            right: 1rem;
+            bottom: 1rem;
+            z-index: 1100;
+            max-width: 360px;
+            width: calc(100% - 2rem);
+            padding: 0.65rem 0.85rem;
+            border-radius: 0.5rem;
+            color: #fff;
+            background: rgba(33, 37, 41, 0.95);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        #statusMessage.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #statusMessage.is-error {
+            background: rgba(220, 53, 69, 0.95);
         }
 
         @media (max-width: 991px) {
@@ -190,7 +213,7 @@
         <div class="col-xl-4">
             <div class="card panel-card mb-3">
                 <div class="card-header">Scenario Controls</div>
-                <div class="card-body mb-0">
+                <div class="card-body py-3">
                     <div class="input-subcard">
                         <div class="mb-2">
                             <label for="saveName" class="form-label form-label-sm">Scenario Name</label>
@@ -216,7 +239,6 @@
                         </div>
                     </div>
 
-                    <div id="statusMessage" class="mt-2 small text-secondary"></div>
                 </div>
             </div>
 
@@ -525,6 +547,7 @@
         </div>
     </div>
 </div>
+<div id="statusMessage" class="small" role="status" aria-live="polite"></div>
 
 @php
     $initialScenarios = $scenarios->map(fn ($scenario) => [
@@ -551,6 +574,7 @@
     const monthLabelFormatter = new Intl.DateTimeFormat('en-MY', { month: 'short', year: 'numeric' });
     let projectionChart = null;
     let currentProjectionMonths = [];
+    let statusTimer = null;
 
     function toNumber(value, fallback = 0) {
         const parsed = Number(value);
@@ -579,8 +603,12 @@
     function setStatus(message, isError = false) {
         const el = document.getElementById('statusMessage');
         el.textContent = message;
-        el.classList.toggle('text-danger', isError);
-        el.classList.toggle('text-secondary', !isError);
+        el.classList.toggle('is-error', isError);
+        el.classList.add('is-visible');
+        if (statusTimer) clearTimeout(statusTimer);
+        statusTimer = setTimeout(() => {
+            el.classList.remove('is-visible');
+        }, 3200);
     }
 
     function createBnplRow(data = {}) {
