@@ -6,6 +6,7 @@
     <title>Personal Finance Counter</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     @livewireStyles
     <style>
         /* ── prevent page scroll ── */
@@ -55,6 +56,63 @@
             text-transform: uppercase;
             letter-spacing: 0.10em;
             margin-bottom: 0.5rem;
+        }
+
+        /* ── module navigation button ── */
+        .module-nav-dock {
+            position: fixed;
+            top: 50vh;
+            right: 14px;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1050;
+        }
+
+        .module-nav-label {
+            background: rgba(255, 255, 255, 0.92);
+            color: #212529;
+            border: 1px solid #dee2e6;
+            border-radius: 999px;
+            padding: 0.25rem 0.65rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(6px);
+            pointer-events: none;
+            transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+        }
+
+        .module-nav-dock:hover .module-nav-label,
+        .module-nav-dock:focus-within .module-nav-label {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .module-nav-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #212529;
+            color: #fff;
+            border: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .module-nav-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+            color: #fff;
         }
 
         /* ── FAB button ── */
@@ -218,6 +276,11 @@
         [data-bs-theme="dark"] .fab-btn.open {
             background: #c82333;
         }
+        [data-bs-theme="dark"] .module-nav-label {
+            background: rgba(30, 30, 30, 0.96);
+            color: #e0e0e0;
+            border-color: #3c3c3c;
+        }
         [data-bs-theme="dark"] .tab-selector-popup,
         [data-bs-theme="dark"] .content-popup {
             background: #1e1e1e;
@@ -275,6 +338,22 @@
                 width: 85vw;
                 max-width: none;
             }
+
+            .module-nav-dock {
+                right: 8px;
+                gap: 0.35rem;
+            }
+
+            .module-nav-label {
+                font-size: 0.72rem;
+                padding: 0.2rem 0.5rem;
+            }
+
+            .module-nav-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.4rem;
+            }
         }
     </style>
 </head>
@@ -305,12 +384,19 @@
     <div id="incrementStatus" class="mt-2" style="font-size: 0.9rem; min-height: 1.2rem;"></div>
 </div>
 
+<div class="module-nav-dock" aria-label="Projection navigation">
+    <span class="module-nav-label">Projection</span>
+    <a href="{{ route('projection.index') }}" class="module-nav-btn" aria-label="Go to projection">
+        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+    </a>
+</div>
+
 {{-- Backdrop ────────────────────────── --}}
 <div class="popup-backdrop" id="popupBackdrop"></div>
 
 {{-- FAB button ──────────────────────── --}}
 <button class="fab-btn" id="fabBtn" type="button" aria-label="Open menu">
-    ☰
+    <i class="fa-solid fa-bars" aria-hidden="true"></i>
 </button>
 
 {{-- Step 1: tab selector popup ──────── --}}
@@ -324,9 +410,13 @@
 {{-- Step 2: content popup ────────────── --}}
 <div class="content-popup" id="contentPopup">
     <div class="content-popup-header">
-        <button class="btn-back" id="btnBack" type="button" aria-label="Back">←</button>
+        <button class="btn-back" id="btnBack" type="button" aria-label="Back">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+        </button>
         <span class="title" id="popupTitle">Transaction Log</span>
-        <button class="btn-close-popup" id="btnClosePopup" type="button" aria-label="Close">✕</button>
+        <button class="btn-close-popup" id="btnClosePopup" type="button" aria-label="Close">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
     </div>
     <div class="content-popup-body" id="contentPopupBody">
         {{-- Transaction Log content ──── --}}
