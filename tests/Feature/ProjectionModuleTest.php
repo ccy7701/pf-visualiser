@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\ProjectionScenario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -12,7 +13,20 @@ class ProjectionModuleTest extends TestCase
 
     public function test_projection_endpoints_run_save_load_and_compare(): void
     {
-        $payload = $this->payload();
+        $expenseCategories = Category::query()->insertGetId([
+            'name' => 'Food',
+            'type' => 'expense',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $transportCategory = Category::query()->insertGetId([
+            'name' => 'Transportation',
+            'type' => 'expense',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $payload = $this->payload($expenseCategories, $transportCategory);
 
         $runResponse = $this->postJson(route('projection.run'), $payload);
         $runResponse->assertOk();
@@ -56,7 +70,7 @@ class ProjectionModuleTest extends TestCase
         $compareResponse->assertJsonCount(2, 'comparisons');
     }
 
-    private function payload(): array
+    private function payload(int $foodCategoryId, int $transportCategoryId): array
     {
         return [
             'scenario' => [
@@ -74,11 +88,30 @@ class ProjectionModuleTest extends TestCase
                 'salary_paid_in_arrears' => true,
             ],
             'cost_of_living' => [
-                'bcol_amount' => 700,
-                'fcol_lite_amount' => 900,
-                'fcol_max_amount' => 1200,
-                'fcol_lite_start_month' => '2026-07',
-                'fcol_max_start_month' => '2026-08',
+                'budgets' => [
+                    'bcol' => [
+                        'category_allocations' => [
+                            ['category_id' => $foodCategoryId, 'name' => 'Food', 'amount' => 500],
+                            ['category_id' => $transportCategoryId, 'name' => 'Transportation', 'amount' => 200],
+                        ],
+                    ],
+                    'fcol_lite' => [
+                        'category_allocations' => [
+                            ['category_id' => $foodCategoryId, 'name' => 'Food', 'amount' => 650],
+                            ['category_id' => $transportCategoryId, 'name' => 'Transportation', 'amount' => 250],
+                        ],
+                    ],
+                    'fcol_max' => [
+                        'category_allocations' => [
+                            ['category_id' => $foodCategoryId, 'name' => 'Food', 'amount' => 850],
+                            ['category_id' => $transportCategoryId, 'name' => 'Transportation', 'amount' => 350],
+                        ],
+                    ],
+                ],
+                'monthly_budget_selection' => [
+                    ['month' => '2026-07', 'budget' => 'fcol_lite'],
+                    ['month' => '2026-08', 'budget' => 'fcol_max'],
+                ],
             ],
             'ptptn' => [
                 'waiver_granted' => false,

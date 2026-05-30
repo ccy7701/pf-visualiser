@@ -109,6 +109,39 @@
             background: #fff;
             margin-bottom: 0.75rem;
         }
+        .projection-input-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .projection-input-tab {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid #212529;
+            background: #fff;
+            color: #212529;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+        }
+        .projection-input-tab:hover,
+        .projection-input-tab:focus-visible {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+            color: #fff;
+            background: #212529;
+        }
+        .projection-input-tab.active {
+            background: #212529;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+        }
 
         .results-wrap {
             max-height: 55vh;
@@ -260,211 +293,242 @@
             <div class="card panel-card">
                 <div class="card-header">Projection Inputs</div>
                 <div class="card-body">
-                    <div class="input-subcard">
-                    <h2 class="section-subtitle">Scenario</h2>
-                    <hr class="section-divider">
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Start Month</label>
-                            <input id="startMonth" type="text" class="form-control compact-input month-input" value="{{ now('Asia/Kuala_Lumpur')->startOfMonth()->format('Y-m') }}">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">End Month</label>
-                            <input id="endMonth" type="text" class="form-control compact-input month-input" value="{{ now('Asia/Kuala_Lumpur')->addMonths(11)->startOfMonth()->format('Y-m') }}">
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label form-label-sm">Starting COH</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">RM</span>
-                                <input id="startingCoh" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label form-label-sm">Starting ELR</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">RM</span>
-                                <input id="startingElr" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label form-label-sm">Starting EPF</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">RM</span>
-                                <input id="startingEpf" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
-                            </div>
-                        </div>
-                    </div>
+                    <div class="projection-input-tabs nav" id="projectionInputTabs" role="tablist">
+                        <button class="projection-input-tab active" id="tab-scenario" data-bs-toggle="tab" data-bs-target="#pane-scenario" type="button" role="tab" aria-controls="pane-scenario" aria-selected="true" data-bs-title="Scenario" data-bs-placement="top"><i class="fa-solid fa-calendar-days"></i></button>
+                        <button class="projection-input-tab" id="tab-employment" data-bs-toggle="tab" data-bs-target="#pane-employment" type="button" role="tab" aria-controls="pane-employment" aria-selected="false" data-bs-title="Employment" data-bs-placement="top"><i class="fa-solid fa-briefcase"></i></button>
+                        <button class="projection-input-tab" id="tab-col" data-bs-toggle="tab" data-bs-target="#pane-col" type="button" role="tab" aria-controls="pane-col" aria-selected="false" data-bs-title="Cost of Living" data-bs-placement="top"><i class="fa-solid fa-basket-shopping"></i></button>
+                        <button class="projection-input-tab" id="tab-ptptn" data-bs-toggle="tab" data-bs-target="#pane-ptptn" type="button" role="tab" aria-controls="pane-ptptn" aria-selected="false" data-bs-title="PTPTN" data-bs-placement="top"><i class="fa-solid fa-graduation-cap"></i></button>
+                        <button class="projection-input-tab" id="tab-bnpl" data-bs-toggle="tab" data-bs-target="#pane-bnpl" type="button" role="tab" aria-controls="pane-bnpl" aria-selected="false" data-bs-title="BNPL" data-bs-placement="top"><i class="fa-solid fa-credit-card"></i></button>
+                        <button class="projection-input-tab" id="tab-events" data-bs-toggle="tab" data-bs-target="#pane-events" type="button" role="tab" aria-controls="pane-events" aria-selected="false" data-bs-title="Events" data-bs-placement="top"><i class="fa-solid fa-calendar-plus"></i></button>
+                        <button class="projection-input-tab" id="tab-elr" data-bs-toggle="tab" data-bs-target="#pane-elr" type="button" role="tab" aria-controls="pane-elr" aria-selected="false" data-bs-title="ELR Schedules" data-bs-placement="top"><i class="fa-solid fa-piggy-bank"></i></button>
+                        <button class="projection-input-tab" id="tab-epf" data-bs-toggle="tab" data-bs-target="#pane-epf" type="button" role="tab" aria-controls="pane-epf" aria-selected="false" data-bs-title="EPF" data-bs-placement="top"><i class="fa-solid fa-percent"></i></button>
                     </div>
 
-                    <div class="input-subcard">
-                    <h2 class="section-subtitle">Employment</h2>
-                    <hr class="section-divider">
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Probation Salary</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">RM</span>
-                                <input id="probationSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="1800.00">
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="pane-scenario" role="tabpanel" aria-labelledby="tab-scenario" tabindex="0">
+                            <div class="input-subcard mb-0">
+                                <h2 class="section-subtitle">Scenario</h2>
+                                <hr class="section-divider">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label form-label-sm">Start Month</label>
+                                        <input id="startMonth" type="text" class="form-control compact-input month-input" value="{{ now('Asia/Kuala_Lumpur')->startOfMonth()->format('Y-m') }}">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label form-label-sm">End Month</label>
+                                        <input id="endMonth" type="text" class="form-control compact-input month-input" value="{{ now('Asia/Kuala_Lumpur')->addMonths(11)->startOfMonth()->format('Y-m') }}">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label form-label-sm">Starting COH</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RM</span>
+                                            <input id="startingCoh" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label form-label-sm">Starting ELR</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RM</span>
+                                            <input id="startingElr" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label form-label-sm">Starting EPF</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RM</span>
+                                            <input id="startingEpf" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Confirmed Salary</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">RM</span>
-                                <input id="confirmedSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="2200.00">
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Probation Months</label>
-                            <input id="probationDuration" type="number" min="0" class="form-control compact-input" value="3">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Salary Start Month</label>
-                            <input id="salaryStartMonth" type="text" class="form-control compact-input month-input" value="{{ now('Asia/Kuala_Lumpur')->startOfMonth()->format('Y-m') }}">
-                        </div>
-                        <div class="col-12">
-                            <div class="form-check mt-1">
-                                <input id="salaryPaidInArrears" class="form-check-input" type="checkbox" checked>
-                                <label class="form-check-label" for="salaryPaidInArrears">Salary paid in arrears (full-month lag)</label>
-                            </div>
-                        </div>
-                    </div>
-                    </div>
 
-                    <div class="input-subcard">
-                    <h2 class="section-subtitle">Cost of Living</h2>
-                    <hr class="section-divider">
-                    <div class="row g-2 mb-3">
-                        <div class="col-4">
-                            <label class="form-label form-label-sm">BCOL</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">RM</span>
-                                <input id="bcolAmount" type="text" inputmode="decimal" class="form-control compact-input money-input" value="700.00">
+                        <div class="tab-pane fade" id="pane-employment" role="tabpanel" aria-labelledby="tab-employment" tabindex="0">
+                            <div class="input-subcard mb-0">
+                                <h2 class="section-subtitle">Employment</h2>
+                                <hr class="section-divider">
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label form-label-sm">Probation Salary</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RM</span>
+                                            <input id="probationSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="1800.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label form-label-sm">Confirmed Salary</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RM</span>
+                                            <input id="confirmedSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="2200.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label form-label-sm">Probation Months</label>
+                                        <input id="probationDuration" type="number" min="0" class="form-control compact-input" value="3">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label form-label-sm">Salary Start Month</label>
+                                        <input id="salaryStartMonth" type="text" class="form-control compact-input month-input" value="{{ now('Asia/Kuala_Lumpur')->startOfMonth()->format('Y-m') }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check mt-1">
+                                            <input id="salaryPaidInArrears" class="form-check-input" type="checkbox" checked>
+                                            <label class="form-check-label" for="salaryPaidInArrears">Salary paid in arrears (full-month lag)</label>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-4">
-                            <label class="form-label form-label-sm">FCOL Lite</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">RM</span>
-                                <input id="fcolLiteAmount" type="text" inputmode="decimal" class="form-control compact-input money-input" value="900.00">
+
+                        <div class="tab-pane fade" id="pane-col" role="tabpanel" aria-labelledby="tab-col" tabindex="0">
+                            <div class="input-subcard mb-0">
+                                <h2 class="section-subtitle">Cost of Living</h2>
+                                <hr class="section-divider">
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm">
+                                        <thead>
+                                        <tr>
+                                            <th>Expense Category</th>
+                                            <th>BCOL</th>
+                                            <th>FCOL Lite</th>
+                                            <th>FCOL Max</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="costAllocationRows"></tbody>
+                                    </table>
+                                </div>
+                                <div class="d-flex justify-content-end mb-3">
+                                    <small class="text-secondary" id="budgetTotalsSummary"></small>
+                                </div>
+
+                                <h3 class="section-subtitle d-flex justify-content-between align-items-center">
+                                    Monthly Budget Selection
+                                    <button id="addMonthlyBudgetBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
+                                </h3>
+                                <div class="table-responsive mb-2">
+                                    <table class="table table-sm">
+                                        <thead>
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Budget</th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="monthlyBudgetRows"></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-4">
-                            <label class="form-label form-label-sm">FCOL Max</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">RM</span>
-                                <input id="fcolMaxAmount" type="text" inputmode="decimal" class="form-control compact-input money-input" value="1200.00">
+
+                        <div class="tab-pane fade" id="pane-ptptn" role="tabpanel" aria-labelledby="tab-ptptn" tabindex="0">
+                            <div class="input-subcard mb-0">
+                                <h2 class="section-subtitle">PTPTN</h2>
+                                <hr class="section-divider">
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label form-label-sm">Monthly Repayment</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RM</span>
+                                            <input id="ptptnMonthlyRepayment" type="number" step="0.01" class="form-control compact-input" value="120.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label form-label-sm">Repayment Start Month</label>
+                                        <input id="ptptnRepaymentStartMonth" type="text" class="form-control compact-input month-input">
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check mt-1">
+                                            <input id="ptptnWaiverGranted" class="form-check-input" type="checkbox">
+                                            <label class="form-check-label" for="ptptnWaiverGranted">PTPTN waiver granted (permanent)</label>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">FCOL Lite Start</label>
-                            <input id="fcolLiteStartMonth" type="text" class="form-control compact-input month-input">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">FCOL Max Start</label>
-                            <input id="fcolMaxStartMonth" type="text" class="form-control compact-input month-input">
-                        </div>
-                    </div>
-                    </div>
 
-                    <div class="input-subcard">
-                    <h2 class="section-subtitle">PTPTN</h2>
-                    <hr class="section-divider">
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Monthly Repayment</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">RM</span>
-                                <input id="ptptnMonthlyRepayment" type="number" step="0.01" class="form-control compact-input" value="120.00">
+                        <div class="tab-pane fade" id="pane-bnpl" role="tabpanel" aria-labelledby="tab-bnpl" tabindex="0">
+                            <div class="input-subcard mb-0">
+                                <h2 class="section-subtitle d-flex justify-content-between align-items-center">BNPL
+                                    <button id="addBnplBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
+                                </h2>
+                                <hr class="section-divider">
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm">
+                                        <thead>
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Amount</th>
+                                            <th>Note</th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="bnplRows"></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Repayment Start Month</label>
-                            <input id="ptptnRepaymentStartMonth" type="text" class="form-control compact-input month-input">
-                        </div>
-                        <div class="col-12">
-                            <div class="form-check mt-1">
-                                <input id="ptptnWaiverGranted" class="form-check-input" type="checkbox">
-                                <label class="form-check-label" for="ptptnWaiverGranted">PTPTN waiver granted (permanent)</label>
+
+                        <div class="tab-pane fade" id="pane-events" role="tabpanel" aria-labelledby="tab-events" tabindex="0">
+                            <div class="input-subcard mb-0">
+                                <h2 class="section-subtitle d-flex justify-content-between align-items-center">Events
+                                    <button id="addEventBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
+                                </h2>
+                                <hr class="section-divider">
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm">
+                                        <thead>
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Type</th>
+                                            <th>Amount</th>
+                                            <th>Note</th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="eventRows"></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    </div>
 
-                    <div class="input-subcard">
-                    <h2 class="section-subtitle d-flex justify-content-between align-items-center">BNPL
-                        <button id="addBnplBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
-                    </h2>
-                    <hr class="section-divider">
-                    <div class="table-responsive mb-3">
-                        <table class="table table-sm">
-                            <thead>
-                            <tr>
-                                <th>Month</th>
-                                <th>Amount</th>
-                                <th>Note</th>
-                                <th></th>
-                            </tr>
-                            </thead>
-                            <tbody id="bnplRows"></tbody>
-                        </table>
-                    </div>
-                    </div>
-
-                    <div class="input-subcard">
-                    <h2 class="section-subtitle d-flex justify-content-between align-items-center">Events
-                        <button id="addEventBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
-                    </h2>
-                    <hr class="section-divider">
-                    <div class="table-responsive mb-3">
-                        <table class="table table-sm">
-                            <thead>
-                            <tr>
-                                <th>Month</th>
-                                <th>Type</th>
-                                <th>Amount</th>
-                                <th>Note</th>
-                                <th></th>
-                            </tr>
-                            </thead>
-                            <tbody id="eventRows"></tbody>
-                        </table>
-                    </div>
-                    </div>
-
-                    <div class="input-subcard">
-                    <h2 class="section-subtitle d-flex justify-content-between align-items-center">ELR Schedules
-                        <button id="addElrScheduleBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
-                    </h2>
-                    <hr class="section-divider">
-                    <div class="table-responsive mb-3">
-                        <table class="table table-sm">
-                            <thead>
-                            <tr>
-                                <th>Start</th>
-                                <th>End</th>
-                                <th>Amount</th>
-                                <th></th>
-                            </tr>
-                            </thead>
-                            <tbody id="elrScheduleRows"></tbody>
-                        </table>
-                    </div>
-                    </div>
-
-                    <div class="input-subcard">
-                    <h2 class="section-subtitle">EPF</h2>
-                    <hr class="section-divider">
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Employee EPF (%)</label>
-                            <input id="employeeEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="11.00">
+                        <div class="tab-pane fade" id="pane-elr" role="tabpanel" aria-labelledby="tab-elr" tabindex="0">
+                            <div class="input-subcard mb-0">
+                                <h2 class="section-subtitle d-flex justify-content-between align-items-center">ELR Schedules
+                                    <button id="addElrScheduleBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
+                                </h2>
+                                <hr class="section-divider">
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm">
+                                        <thead>
+                                        <tr>
+                                            <th>Start</th>
+                                            <th>End</th>
+                                            <th>Amount</th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="elrScheduleRows"></tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Employer EPF (%)</label>
-                            <input id="employerEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="13.00">
+
+                        <div class="tab-pane fade" id="pane-epf" role="tabpanel" aria-labelledby="tab-epf" tabindex="0">
+                            <div class="input-subcard mb-0">
+                                <h2 class="section-subtitle">EPF</h2>
+                                <hr class="section-divider">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label form-label-sm">Employee EPF (%)</label>
+                                        <input id="employeeEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="11.00">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label form-label-sm">Employer EPF (%)</label>
+                                        <input id="employerEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="13.00">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
                     </div>
                 </div>
             </div>
@@ -588,6 +652,7 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const runEndpoint = '{{ route('projection.run') }}';
     const saveEndpoint = '{{ route('projection.scenarios.save') }}';
@@ -596,12 +661,20 @@
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     const initialScenarios = @json($initialScenarios);
+    const expenseCategories = @json($expenseCategories);
+    const budgetKeys = ['bcol', 'fcol_lite', 'fcol_max'];
 
     const money = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const monthLabelFormatter = new Intl.DateTimeFormat('en-MY', { month: 'short', year: 'numeric' });
     let projectionChart = null;
     let currentProjectionMonths = [];
     let statusTimer = null;
+
+    function budgetLabel(budget) {
+        if (budget === 'fcol_lite') return 'FCOL Lite';
+        if (budget === 'fcol_max') return 'FCOL Max';
+        return 'BCOL';
+    }
 
     function toNumber(value, fallback = 0) {
         const parsed = Number(value);
@@ -650,6 +723,130 @@
 
             input.addEventListener('blur', () => {
                 input.value = formatToTwoDp(input.value);
+            });
+        });
+    }
+
+    function createCostAllocationRows(cost = {}) {
+        const tbody = document.getElementById('costAllocationRows');
+        tbody.innerHTML = '';
+
+        const budgets = cost.budgets || {};
+        const allocationsByBudget = {};
+
+        budgetKeys.forEach((key) => {
+            allocationsByBudget[key] = {};
+            const allocations = budgets[key]?.category_allocations || [];
+            allocations.forEach((allocation) => {
+                const categoryId = Number(allocation.category_id || 0);
+                allocationsByBudget[key][categoryId] = toNumber(allocation.amount, 0);
+            });
+        });
+
+        expenseCategories.forEach((category) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${category.name}</td>
+                <td>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">RM</span>
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm money-input" data-col-budget="bcol" data-col-category-id="${category.id}" value="${allocationsByBudget.bcol[category.id] ?? 0}">
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">RM</span>
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm money-input" data-col-budget="fcol_lite" data-col-category-id="${category.id}" value="${allocationsByBudget.fcol_lite[category.id] ?? 0}">
+                    </div>
+                </td>
+                <td>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">RM</span>
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm money-input" data-col-budget="fcol_max" data-col-category-id="${category.id}" value="${allocationsByBudget.fcol_max[category.id] ?? 0}">
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        normalizeDecimalInputs(tbody);
+        attachBudgetAllocationListeners();
+        updateBudgetTotalsSummary();
+    }
+
+    function createMonthlyBudgetRow(data = {}) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="text" class="form-control form-control-sm month-input" data-col-month value="${data.month ?? ''}"></td>
+            <td>
+                <select class="form-select form-select-sm" data-col-budget>
+                    <option value="bcol">BCOL</option>
+                    <option value="fcol_lite">FCOL Lite</option>
+                    <option value="fcol_max">FCOL Max</option>
+                </select>
+            </td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger">×</button></td>
+        `;
+        row.querySelector('[data-col-budget]').value = data.budget || 'bcol';
+        row.querySelector('button').addEventListener('click', () => row.remove());
+        document.getElementById('monthlyBudgetRows').appendChild(row);
+        initMonthPickers();
+    }
+
+    function collectCostOfLivingPayload() {
+        const budgets = {};
+
+        budgetKeys.forEach((budgetKey) => {
+            const allocations = expenseCategories.map((category) => {
+                const input = document.querySelector(`[data-col-budget="${budgetKey}"][data-col-category-id="${category.id}"]`);
+
+                return {
+                    category_id: category.id,
+                    name: category.name,
+                    amount: toNumber(input?.value ?? 0, 0),
+                };
+            });
+
+            budgets[budgetKey] = {
+                category_allocations: allocations,
+            };
+        });
+
+        const monthlyBudgetSelection = Array.from(document.querySelectorAll('#monthlyBudgetRows tr')).map((row) => ({
+            month: toMonthOrNull(row.querySelector('[data-col-month]').value),
+            budget: row.querySelector('[data-col-budget]').value,
+        })).filter((item) => item.month && budgetKeys.includes(item.budget));
+
+        return {
+            budgets,
+            monthly_budget_selection: monthlyBudgetSelection,
+        };
+    }
+
+    function attachBudgetAllocationListeners() {
+        document.querySelectorAll('[data-col-budget][data-col-category-id]').forEach((input) => {
+            input.addEventListener('blur', updateBudgetTotalsSummary);
+        });
+    }
+
+    function updateBudgetTotalsSummary() {
+        const payload = collectCostOfLivingPayload();
+        const bcolTotal = (payload.budgets.bcol?.category_allocations || []).reduce((carry, item) => carry + toNumber(item.amount, 0), 0);
+        const liteTotal = (payload.budgets.fcol_lite?.category_allocations || []).reduce((carry, item) => carry + toNumber(item.amount, 0), 0);
+        const maxTotal = (payload.budgets.fcol_max?.category_allocations || []).reduce((carry, item) => carry + toNumber(item.amount, 0), 0);
+        document.getElementById('budgetTotalsSummary').textContent = `BCOL: RM ${money.format(bcolTotal)} | FCOL Lite: RM ${money.format(liteTotal)} | FCOL Max: RM ${money.format(maxTotal)}`;
+    }
+
+    function initProjectionInputTabUI() {
+        document.querySelectorAll('#projectionInputTabs [data-bs-title]').forEach((el) => {
+            new bootstrap.Tooltip(el);
+        });
+
+        document.querySelectorAll('#projectionInputTabs [data-bs-toggle="tab"]').forEach((tabButton) => {
+            tabButton.addEventListener('shown.bs.tab', () => {
+                document.querySelectorAll('#projectionInputTabs .projection-input-tab').forEach((btn) => {
+                    btn.classList.toggle('active', btn === tabButton);
+                });
             });
         });
     }
@@ -757,11 +954,7 @@
                 salary_paid_in_arrears: document.getElementById('salaryPaidInArrears').checked,
             },
             cost_of_living: {
-                bcol_amount: toNumber(document.getElementById('bcolAmount').value, 0),
-                fcol_lite_amount: toNumber(document.getElementById('fcolLiteAmount').value, 0),
-                fcol_max_amount: toNumber(document.getElementById('fcolMaxAmount').value, 0),
-                fcol_lite_start_month: toMonthOrNull(document.getElementById('fcolLiteStartMonth').value),
-                fcol_max_start_month: toMonthOrNull(document.getElementById('fcolMaxStartMonth').value),
+                ...collectCostOfLivingPayload(),
             },
             ptptn: {
                 waiver_granted: document.getElementById('ptptnWaiverGranted').checked,
@@ -800,11 +993,37 @@
         document.getElementById('salaryStartMonth').value = employment.salary_start_month || '';
         document.getElementById('salaryPaidInArrears').checked = Boolean(employment.salary_paid_in_arrears);
 
-        document.getElementById('bcolAmount').value = cost.bcol_amount ?? 0;
-        document.getElementById('fcolLiteAmount').value = cost.fcol_lite_amount ?? 0;
-        document.getElementById('fcolMaxAmount').value = cost.fcol_max_amount ?? 0;
-        document.getElementById('fcolLiteStartMonth').value = cost.fcol_lite_start_month || '';
-        document.getElementById('fcolMaxStartMonth').value = cost.fcol_max_start_month || '';
+        const legacyCost = {
+            budgets: {
+                bcol: { category_allocations: [] },
+                fcol_lite: { category_allocations: [] },
+                fcol_max: { category_allocations: [] },
+            },
+            monthly_budget_selection: [],
+        };
+        if (cost.bcol_amount !== undefined || cost.fcol_lite_amount !== undefined || cost.fcol_max_amount !== undefined) {
+            const fallbackCategory = expenseCategories.find((item) => item.name === 'Others') || expenseCategories[0];
+            if (fallbackCategory) {
+                legacyCost.budgets.bcol.category_allocations.push({
+                    category_id: fallbackCategory.id,
+                    name: fallbackCategory.name,
+                    amount: toNumber(cost.bcol_amount, 0),
+                });
+                legacyCost.budgets.fcol_lite.category_allocations.push({
+                    category_id: fallbackCategory.id,
+                    name: fallbackCategory.name,
+                    amount: toNumber(cost.fcol_lite_amount, 0),
+                });
+                legacyCost.budgets.fcol_max.category_allocations.push({
+                    category_id: fallbackCategory.id,
+                    name: fallbackCategory.name,
+                    amount: toNumber(cost.fcol_max_amount, 0),
+                });
+            }
+        }
+        createCostAllocationRows(cost.budgets ? cost : legacyCost);
+        document.getElementById('monthlyBudgetRows').innerHTML = '';
+        (cost.monthly_budget_selection || []).forEach(createMonthlyBudgetRow);
 
         document.getElementById('ptptnWaiverGranted').checked = Boolean(ptptn.waiver_granted);
         document.getElementById('ptptnMonthlyRepayment').value = ptptn.monthly_repayment ?? 0;
@@ -1061,6 +1280,11 @@
         amount: 0,
     }));
 
+    document.getElementById('addMonthlyBudgetBtn').addEventListener('click', () => createMonthlyBudgetRow({
+        month: toMonthOrNull(document.getElementById('startMonth').value),
+        budget: 'bcol',
+    }));
+
     document.getElementById('runProjectionBtn').addEventListener('click', async () => {
         setStatus('Running projection...');
 
@@ -1166,8 +1390,14 @@
     });
 
     populateScenarioSelects(initialScenarios);
+    initProjectionInputTabUI();
+    createCostAllocationRows();
     initMonthPickers();
     normalizeDecimalInputs();
+    createMonthlyBudgetRow({
+        month: toMonthOrNull(document.getElementById('startMonth').value),
+        budget: 'bcol',
+    });
 
     createBnplRow({
         month: toMonthOrNull(document.getElementById('startMonth').value),

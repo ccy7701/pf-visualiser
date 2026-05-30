@@ -6,20 +6,29 @@ class ExpenseCalculator
 {
     public function livingCostForMonth(string $month, array $costOfLiving): float
     {
-        $bcol = (float) ($costOfLiving['bcol_amount'] ?? 0);
-        $lite = (float) ($costOfLiving['fcol_lite_amount'] ?? 0);
-        $max = (float) ($costOfLiving['fcol_max_amount'] ?? 0);
-        $liteStart = $costOfLiving['fcol_lite_start_month'] ?? null;
-        $maxStart = $costOfLiving['fcol_max_start_month'] ?? null;
+        $budgets = $costOfLiving['budgets'] ?? [];
+        $budgetSelections = $costOfLiving['monthly_budget_selection'] ?? [];
+        $budgetKey = $this->budgetForMonth($month, $budgetSelections);
+        $selectedBudget = $budgets[$budgetKey] ?? ['category_allocations' => []];
 
-        if ($maxStart && MonthHelper::isSameOrAfter($month, (string) $maxStart)) {
-            return $max;
+        return array_reduce($selectedBudget['category_allocations'] ?? [], function (float $carry, array $allocation): float {
+            return $carry + (float) ($allocation['amount'] ?? 0);
+        }, 0.0);
+    }
+
+    private function budgetForMonth(string $month, array $budgetSelections): string
+    {
+        foreach ($budgetSelections as $selection) {
+            if (($selection['month'] ?? null) !== $month) {
+                continue;
+            }
+
+            $budget = (string) ($selection['budget'] ?? 'bcol');
+            if (in_array($budget, ['bcol', 'fcol_lite', 'fcol_max'], true)) {
+                return $budget;
+            }
         }
 
-        if ($liteStart && MonthHelper::isSameOrAfter($month, (string) $liteStart)) {
-            return $lite;
-        }
-
-        return $bcol;
+        return 'bcol';
     }
 }

@@ -27,11 +27,30 @@ class ProjectionServiceTest extends TestCase
                 'salary_paid_in_arrears' => true,
             ],
             'cost_of_living' => [
-                'bcol_amount' => 100,
-                'fcol_lite_amount' => 150,
-                'fcol_max_amount' => 300,
-                'fcol_lite_start_month' => '2026-07',
-                'fcol_max_start_month' => '2026-08',
+                'budgets' => [
+                    'bcol' => [
+                        'category_allocations' => [
+                            ['category_id' => 1, 'name' => 'Food', 'amount' => 60],
+                            ['category_id' => 2, 'name' => 'Transport', 'amount' => 40],
+                        ],
+                    ],
+                    'fcol_lite' => [
+                        'category_allocations' => [
+                            ['category_id' => 1, 'name' => 'Food', 'amount' => 90],
+                            ['category_id' => 2, 'name' => 'Transport', 'amount' => 60],
+                        ],
+                    ],
+                    'fcol_max' => [
+                        'category_allocations' => [
+                            ['category_id' => 1, 'name' => 'Food', 'amount' => 180],
+                            ['category_id' => 2, 'name' => 'Transport', 'amount' => 120],
+                        ],
+                    ],
+                ],
+                'monthly_budget_selection' => [
+                    ['month' => '2026-07', 'budget' => 'fcol_lite'],
+                    ['month' => '2026-08', 'budget' => 'fcol_max'],
+                ],
             ],
             'ptptn' => [
                 'waiver_granted' => false,
@@ -81,7 +100,7 @@ class ProjectionServiceTest extends TestCase
         $this->assertSame(1000.0, $months[1]['gross_income']);
         $this->assertSame(2000.0, $months[2]['gross_income']);
 
-        // COL tier override precedence: BCOL -> FCOL Lite -> FCOL Max.
+        // Month-specific budget selection: BCOL -> FCOL Lite -> FCOL Max.
         $this->assertSame(100.0, $months[0]['living_expenses']);
         $this->assertSame(150.0, $months[1]['living_expenses']);
         $this->assertSame(300.0, $months[2]['living_expenses']);

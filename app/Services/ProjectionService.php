@@ -150,11 +150,13 @@ class ProjectionService
                 'salary_paid_in_arrears' => filter_var($employment['salary_paid_in_arrears'] ?? false, FILTER_VALIDATE_BOOL),
             ],
             'cost_of_living' => [
-                'bcol_amount' => (float) ($costOfLiving['bcol_amount'] ?? 0),
-                'fcol_lite_amount' => (float) ($costOfLiving['fcol_lite_amount'] ?? 0),
-                'fcol_max_amount' => (float) ($costOfLiving['fcol_max_amount'] ?? 0),
-                'fcol_lite_start_month' => $this->normalizeOptionalMonth($costOfLiving['fcol_lite_start_month'] ?? null),
-                'fcol_max_start_month' => $this->normalizeOptionalMonth($costOfLiving['fcol_max_start_month'] ?? null),
+                'budgets' => $this->normalizeCostOfLivingBudgets($costOfLiving),
+                'monthly_budget_selection' => array_values(array_map(function (array $selection) {
+                    return [
+                        'month' => MonthHelper::normalize((string) $selection['month']),
+                        'budget' => (string) ($selection['budget'] ?? 'bcol'),
+                    ];
+                }, array_filter($costOfLiving['monthly_budget_selection'] ?? [], fn ($selection) => is_array($selection)))),
             ],
             'ptptn' => [
                 'waiver_granted' => filter_var($ptptn['waiver_granted'] ?? false, FILTER_VALIDATE_BOOL),
@@ -199,6 +201,58 @@ class ProjectionService
         }
 
         return MonthHelper::normalize($month);
+    }
+
+    private function normalizeCostOfLivingBudgets(array $costOfLiving): array
+    {
+        $budgetKeys = ['bcol', 'fcol_lite', 'fcol_max'];
+        $hasNewStructure = isset($costOfLiving['budgets']) && is_array($costOfLiving['budgets']);
+
+        if ($hasNewStructure) {
+            $normalized = [];
+
+            foreach ($budgetKeys as $key) {
+                $budget = $costOfLiving['budgets'][$key] ?? [];
+                $allocations = array_values(array_map(function (array $item): array {
+                    return [
+                        'category_id' => (int) ($item['category_id'] ?? 0),
+                        'name' => (string) ($item['name'] ?? ''),
+                        'amount' => (float) ($item['amount'] ?? 0),
+                    ];
+                }, array_filter($budget['category_allocations'] ?? [], fn ($item) => is_array($item))));
+
+                $normalized[$key] = [
+                    'category_allocations' => $allocations,
+                ];
+            }
+
+            return $normalized;
+        }
+
+        // Backward compatibility with old payload shape.
+        return [
+            'bcol' => [
+                'category_allocations' => [[
+                    'category_id' => 0,
+                    'name' => 'Legacy Total',
+                    'amount' => (float) ($costOfLiving['bcol_amount'] ?? 0),
+                ]],
+            ],
+            'fcol_lite' => [
+                'category_allocations' => [[
+                    'category_id' => 0,
+                    'name' => 'Legacy Total',
+                    'amount' => (float) ($costOfLiving['fcol_lite_amount'] ?? 0),
+                ]],
+            ],
+            'fcol_max' => [
+                'category_allocations' => [[
+                    'category_id' => 0,
+                    'name' => 'Legacy Total',
+                    'amount' => (float) ($costOfLiving['fcol_max_amount'] ?? 0),
+                ]],
+            ],
+        ];
     }
 
     private function eventsForMonth(array $events, string $month): array

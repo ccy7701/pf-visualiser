@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\ProjectionScenario;
 use App\Services\ProjectionService;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +25,10 @@ class ProjectionController extends Controller
                 ->latest('updated_at')
                 ->limit(30)
                 ->get(['id', 'name', 'notes', 'updated_at']),
+            'expenseCategories' => Category::query()
+                ->where('type', 'expense')
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 
@@ -160,11 +165,17 @@ class ProjectionController extends Controller
             'employment.salary_paid_in_arrears' => ['required', 'boolean'],
 
             'cost_of_living' => ['required', 'array'],
-            'cost_of_living.bcol_amount' => ['required', 'numeric', 'min:0'],
-            'cost_of_living.fcol_lite_amount' => ['required', 'numeric', 'min:0'],
-            'cost_of_living.fcol_max_amount' => ['required', 'numeric', 'min:0'],
-            'cost_of_living.fcol_lite_start_month' => ['nullable', 'regex:/^\d{4}-\d{2}$/'],
-            'cost_of_living.fcol_max_start_month' => ['nullable', 'regex:/^\d{4}-\d{2}$/'],
+            'cost_of_living.budgets' => ['required', 'array'],
+            'cost_of_living.budgets.bcol' => ['required', 'array'],
+            'cost_of_living.budgets.fcol_lite' => ['required', 'array'],
+            'cost_of_living.budgets.fcol_max' => ['required', 'array'],
+            'cost_of_living.budgets.*.category_allocations' => ['required', 'array'],
+            'cost_of_living.budgets.*.category_allocations.*.category_id' => ['required', 'integer', 'exists:categories,id'],
+            'cost_of_living.budgets.*.category_allocations.*.name' => ['required', 'string', 'max:120'],
+            'cost_of_living.budgets.*.category_allocations.*.amount' => ['required', 'numeric', 'min:0'],
+            'cost_of_living.monthly_budget_selection' => ['nullable', 'array'],
+            'cost_of_living.monthly_budget_selection.*.month' => ['required_with:cost_of_living.monthly_budget_selection', 'regex:/^\d{4}-\d{2}$/'],
+            'cost_of_living.monthly_budget_selection.*.budget' => ['required_with:cost_of_living.monthly_budget_selection', 'in:bcol,fcol_lite,fcol_max'],
 
             'ptptn' => ['required', 'array'],
             'ptptn.waiver_granted' => ['required', 'boolean'],
