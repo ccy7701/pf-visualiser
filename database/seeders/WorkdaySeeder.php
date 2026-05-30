@@ -18,7 +18,10 @@ class WorkdaySeeder extends Seeder
         while ($cursor->lte($end)) {
             Workday::query()->updateOrCreate(
                 ['date' => $cursor->toDateString()],
-                ['is_workday' => $cursor->isWeekday()]
+                [
+                    'status' => $cursor->isWeekday() ? Workday::STATUS_WORKDAY : Workday::STATUS_HOLIDAY,
+                    'is_workday' => $cursor->isWeekday(),
+                ]
             );
 
             $cursor->addDay();

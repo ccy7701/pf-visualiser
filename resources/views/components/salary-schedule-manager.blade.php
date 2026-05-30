@@ -59,6 +59,7 @@ new class extends Component
 
         $this->reset(['newEffectiveFrom', 'newEffectiveUntil', 'newMonthlyNetSalary', 'newNotes']);
         $this->loadSchedules();
+        $this->dispatch('counter-updated');
     }
 
     public function startEdit(int $id): void
@@ -98,6 +99,7 @@ new class extends Component
 
         $this->cancelEdit();
         $this->loadSchedules();
+        $this->dispatch('counter-updated');
     }
 
     public function cancelEdit(): void
@@ -114,6 +116,7 @@ new class extends Component
         }
 
         $this->loadSchedules();
+        $this->dispatch('counter-updated');
     }
 };
 ?>

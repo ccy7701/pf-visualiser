@@ -9,10 +9,16 @@ class Workday extends Model
 {
     use HasFactory;
 
+    public const STATUS_WORKDAY = 'workday';
+    public const STATUS_ABSENCE = 'absence';
+    public const STATUS_HOLIDAY = 'holiday';
+
     protected $fillable = [
         'date',
-        'is_workday',
+        'status',
         'notes',
+        // kept for backward compatibility with existing rows/code paths
+        'is_workday',
     ];
 
     protected function casts(): array

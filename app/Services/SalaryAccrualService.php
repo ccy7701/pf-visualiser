@@ -8,6 +8,8 @@ use Carbon\CarbonInterface;
 
 class SalaryAccrualService
 {
+    private const WORK_SECONDS_PER_DAY = 28800;
+
     private const WORK_WINDOWS = [
         ['08:30', '12:30'],
         ['13:30', '17:30'],
@@ -24,7 +26,7 @@ class SalaryAccrualService
         if (! $firstSchedule) {
             return [
                 'accrued_salary' => 0.0,
-                'minute_rate' => 0.0,
+                'increment_per_second' => 0.0,
             ];
         }
 
@@ -33,7 +35,7 @@ class SalaryAccrualService
         if ($asOf->lte($accrualStart)) {
             return [
                 'accrued_salary' => 0.0,
-                'minute_rate' => 0.0,
+                'increment_per_second' => 0.0,
             ];
         }
 
@@ -44,14 +46,14 @@ class SalaryAccrualService
         while ($cursor->lte($asOf)) {
             $schedule = $this->scheduleForDate($cursor);
 
-            if ($schedule && $this->workdayService->isWorkday($cursor)) {
+            if ($schedule) {
                 $monthCacheKey = $schedule->id.'-'.$cursor->format('Y-m');
-                $workdaysInMonth = $cache[$monthCacheKey] ??= $this->workdayService->countWorkdaysInMonth($cursor);
+                $scheduledWorkdays = $cache[$monthCacheKey] ??= $this->workdayService->countScheduledWorkdaysInMonth($cursor);
 
-                if ($workdaysInMonth > 0) {
-                    $minuteRate = (float) $schedule->monthly_net_salary / ($workdaysInMonth * $this->workMinutesPerDay());
-                    $minutes = $this->eligibleMinutesForDay($cursor, $accrualStart, $asOf);
-                    $totalAccrued += $minuteRate * $minutes;
+                if ($scheduledWorkdays > 0 && $this->workdayService->isWorkday($cursor)) {
+                    $dailyAccruedSalary = (float) $schedule->monthly_net_salary / $scheduledWorkdays;
+                    $eligibleSeconds = $this->eligibleWorkingSecondsForDay($cursor, $accrualStart, $asOf);
+                    $totalAccrued += $dailyAccruedSalary * ($eligibleSeconds / self::WORK_SECONDS_PER_DAY);
                 }
             }
 
@@ -59,12 +61,12 @@ class SalaryAccrualService
         }
 
         return [
-            'accrued_salary' => round($totalAccrued, 2),
-            'minute_rate' => $this->currentMinuteRate($asOf),
+            'accrued_salary' => $totalAccrued,
+            'increment_per_second' => $this->currentIncrementPerSecond($asOf),
         ];
     }
 
-    public function currentMinuteRate(CarbonInterface $at): float
+    public function currentIncrementPerSecond(CarbonInterface $at): float
     {
         $schedule = $this->scheduleForDate($at);
 
@@ -72,13 +74,15 @@ class SalaryAccrualService
             return 0.0;
         }
 
-        $workdaysInMonth = $this->workdayService->countWorkdaysInMonth($at);
+        $scheduledWorkdays = $this->workdayService->countScheduledWorkdaysInMonth($at);
 
-        if ($workdaysInMonth === 0) {
+        if ($scheduledWorkdays === 0) {
             return 0.0;
         }
 
-        return (float) $schedule->monthly_net_salary / ($workdaysInMonth * $this->workMinutesPerDay());
+        $dailyAccruedSalary = (float) $schedule->monthly_net_salary / $scheduledWorkdays;
+
+        return $dailyAccruedSalary / self::WORK_SECONDS_PER_DAY;
     }
 
     private function scheduleForDate(CarbonInterface $date): ?SalarySchedule
@@ -93,7 +97,7 @@ class SalaryAccrualService
             ->first();
     }
 
-    private function eligibleMinutesForDay(CarbonInterface $day, CarbonInterface $periodStart, CarbonInterface $periodEnd): int
+    private function eligibleWorkingSecondsForDay(CarbonInterface $day, CarbonInterface $periodStart, CarbonInterface $periodEnd): int
     {
         $dayStart = Carbon::parse($day)->startOfDay();
         $dayEnd = Carbon::parse($day)->endOfDay();
@@ -105,7 +109,7 @@ class SalaryAccrualService
             return 0;
         }
 
-        $eligibleMinutes = 0;
+        $eligibleSeconds = 0;
 
         foreach (self::WORK_WINDOWS as [$windowStartTime, $windowEndTime]) {
             $windowStart = Carbon::parse($day)->setTimeFromTimeString($windowStartTime);
@@ -115,11 +119,11 @@ class SalaryAccrualService
             $segmentEnd = $end->lessThan($windowEnd) ? $end : $windowEnd;
 
             if ($segmentEnd->gt($segmentStart)) {
-                $eligibleMinutes += (int) floor($segmentStart->diffInSeconds($segmentEnd) / 60);
+                $eligibleSeconds += (int) $segmentStart->diffInSeconds($segmentEnd);
             }
         }
 
-        return $eligibleMinutes;
+        return $eligibleSeconds;
     }
 
     private function isWithinWorkingWindow(CarbonInterface $at): bool
@@ -135,18 +139,4 @@ class SalaryAccrualService
 
         return false;
     }
-
-    private function workMinutesPerDay(): int
-    {
-        $minutes = 0;
-
-        foreach (self::WORK_WINDOWS as [$windowStartTime, $windowEndTime]) {
-            $windowStart = Carbon::createFromFormat('H:i', $windowStartTime);
-            $windowEnd = Carbon::createFromFormat('H:i', $windowEndTime);
-            $minutes += $windowStart->diffInMinutes($windowEnd);
-        }
-
-        return $minutes;
-    }
 }
-
