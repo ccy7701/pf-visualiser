@@ -5,6 +5,7 @@
     const compareEndpoint = projectionConfig.compareEndpoint || '';
     const showScenarioBase = projectionConfig.showScenarioBase || '';
     const deleteScenarioBase = projectionConfig.deleteScenarioBase || '';
+    const statutoryBrackets = projectionConfig.statutoryBrackets || { socso: [], eis: [] };
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     const initialScenarios = projectionConfig.initialScenarios || [];
@@ -32,6 +33,7 @@
     let loadedScenarioContext = { id: null, name: '' };
     let loadedScenarioSnapshot = '';
     let savedScenariosModal = null;
+    let scenarioComparisonModal = null;
     let confirmActionModal = null;
 
     function budgetLabel(budget) {
@@ -281,6 +283,53 @@
         if (totalInputs.fcol_max) totalInputs.fcol_max.value = money.format(maxTotal);
     }
 
+    function findStatutoryBracket(brackets, grossSalary) {
+        if (!Array.isArray(brackets)) return null;
+
+        for (const bracket of brackets) {
+            if (!bracket || typeof bracket !== 'object') continue;
+            const min = Number(bracket.min ?? 0);
+            const max = bracket.max === null || bracket.max === undefined ? null : Number(bracket.max);
+            if (grossSalary >= min && (max === null || grossSalary <= max)) {
+                return bracket;
+            }
+        }
+
+        return null;
+    }
+
+    function resolveStatutoryDeductions(grossSalary) {
+        if (grossSalary <= 0) {
+            return { socso: 0, eis: 0 };
+        }
+
+        const socsoBracket = findStatutoryBracket(statutoryBrackets.socso, grossSalary);
+        const eisBracket = findStatutoryBracket(statutoryBrackets.eis, grossSalary);
+
+        return {
+            socso: toNumber(socsoBracket?.employee_cat1 ?? 0, 0),
+            eis: toNumber(eisBracket?.employee ?? 0, 0),
+        };
+    }
+
+    function updateEmploymentContributionSummary() {
+        const probationSalary = toNumber(document.getElementById('probationSalary')?.value ?? 0, 0);
+        const confirmedSalary = toNumber(document.getElementById('confirmedSalary')?.value ?? 0, 0);
+
+        const probation = resolveStatutoryDeductions(probationSalary);
+        const confirmed = resolveStatutoryDeductions(confirmedSalary);
+
+        const probationSocso = document.getElementById('probationSocsoAmount');
+        const probationEis = document.getElementById('probationEisAmount');
+        const confirmedSocso = document.getElementById('confirmedSocsoAmount');
+        const confirmedEis = document.getElementById('confirmedEisAmount');
+
+        if (probationSocso) probationSocso.textContent = `RM ${money.format(probation.socso)}`;
+        if (probationEis) probationEis.textContent = `RM ${money.format(probation.eis)}`;
+        if (confirmedSocso) confirmedSocso.textContent = `RM ${money.format(confirmed.socso)}`;
+        if (confirmedEis) confirmedEis.textContent = `RM ${money.format(confirmed.eis)}`;
+    }
+
     function initProjectionInputTabUI() {
         document.querySelectorAll('#projectionInputTabs [data-bs-title]').forEach((el) => {
             new bootstrap.Tooltip(el);
@@ -502,6 +551,7 @@
         document.getElementById('probationDuration').value = employment.probation_duration_months ?? 0;
         document.getElementById('salaryStartMonth').value = employment.salary_start_month || '';
         document.getElementById('salaryPaidInArrears').checked = Boolean(employment.salary_paid_in_arrears);
+        updateEmploymentContributionSummary();
 
         const legacyCost = {
             budgets: {
@@ -676,12 +726,11 @@
     }
 
     function renderComparison(comparisons) {
-        const panel = document.getElementById('comparisonPanel');
         const tbody = document.getElementById('comparisonRows');
         tbody.innerHTML = '';
 
         if (!comparisons || comparisons.length === 0) {
-            panel.style.display = 'none';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-secondary py-3">No comparison data returned.</td></tr>';
             return;
         }
 
@@ -698,8 +747,6 @@
             `;
             tbody.appendChild(tr);
         });
-
-        panel.style.display = '';
     }
 
     async function postJson(url, payload) {
@@ -842,6 +889,10 @@
 
     document.getElementById('startMonth').addEventListener('change', () => syncMonthlyBudgetRows());
     document.getElementById('endMonth').addEventListener('change', () => syncMonthlyBudgetRows());
+    document.getElementById('probationSalary').addEventListener('input', updateEmploymentContributionSummary);
+    document.getElementById('probationSalary').addEventListener('blur', updateEmploymentContributionSummary);
+    document.getElementById('confirmedSalary').addEventListener('input', updateEmploymentContributionSummary);
+    document.getElementById('confirmedSalary').addEventListener('blur', updateEmploymentContributionSummary);
 
     document.getElementById('runProjectionBtn').addEventListener('click', async () => {
         setStatus('Running projection...');
@@ -966,6 +1017,7 @@
             });
 
             renderComparison(data.comparisons || []);
+            scenarioComparisonModal.show();
             setStatus('Comparison completed.');
         } catch (error) {
             setStatus(error.message, true);
@@ -979,6 +1031,7 @@
     });
 
     savedScenariosModal = new bootstrap.Modal(document.getElementById('savedScenariosModal'));
+    scenarioComparisonModal = new bootstrap.Modal(document.getElementById('scenarioComparisonModal'));
     confirmActionModal = new bootstrap.Modal(document.getElementById('confirmActionModal'));
 
     populateScenarioSelects(initialScenarios);
@@ -988,6 +1041,7 @@
     initMonthPickers();
     normalizeDecimalInputs();
     syncMonthlyBudgetRows();
+    updateEmploymentContributionSummary();
 
     createBnplRow({
         month: toMonthOrNull(document.getElementById('startMonth').value),

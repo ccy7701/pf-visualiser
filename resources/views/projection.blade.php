@@ -153,6 +153,17 @@
             padding-right: 1rem;
             overflow-y: auto;
         }
+        #scenarioComparisonModal .modal-dialog {
+            max-width: 980px;
+        }
+        #scenarioComparisonModal .modal-content {
+            max-height: 82vh;
+        }
+        #scenarioComparisonModal .modal-body {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            overflow-y: auto;
+        }
 
         .results-wrap {
             max-height: 55vh;
@@ -169,6 +180,13 @@
         #projectionRows td:last-child,
         .results-wrap thead th:first-child,
         .results-wrap thead th:last-child {
+            padding-left: 0.85rem;
+            padding-right: 0.85rem;
+        }
+        #comparisonRows td:first-child,
+        #comparisonRows td:last-child,
+        #scenarioComparisonModal thead th:first-child,
+        #scenarioComparisonModal thead th:last-child {
             padding-left: 0.85rem;
             padding-right: 0.85rem;
         }
@@ -282,27 +300,21 @@
                             <label class="form-label form-label-sm">Load Scenario</label>
                             <button id="openScenariosBtn" class="btn btn-outline-dark w-100" type="button">Open Saved Scenarios</button>
                         </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <div class="card panel-card mb-3">
-                <div class="card-header">Comparisons</div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <label for="compareScenarioA" class="form-label form-label-sm">Compare Scenario A</label>
-                            <select id="compareScenarioA" class="form-select compact-input"></select>
-                        </div>
-                        <div class="col-6">
-                            <label for="compareScenarioB" class="form-label form-label-sm">Compare Scenario B</label>
-                            <select id="compareScenarioB" class="form-select compact-input"></select>
+                        <hr class="section-divider my-3">
+                        <div class="mb-0">
+                            <label class="form-label form-label-sm">Scenario Comparison</label>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <select id="compareScenarioA" class="form-select compact-input"></select>
+                                </div>
+                                <div class="col-6">
+                                    <select id="compareScenarioB" class="form-select compact-input"></select>
+                                </div>
+                            </div>
+                            <button id="compareScenariosBtn" class="btn btn-outline-dark w-100" type="button">Compare</button>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-center align-items-center">
-                        <button id="compareScenariosBtn" class="btn btn-outline-dark w-50" type="button">Compare</button>
-                    </div>
+
                 </div>
             </div>
 
@@ -370,12 +382,20 @@
                                             <span class="input-group-text">RM</span>
                                             <input id="probationSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="1800.00">
                                         </div>
+                                        <div class="small text-secondary mt-1">
+                                            SOCSO (Act 4): <span id="probationSocsoAmount">RM 0.00</span><br>
+                                            EIS (Act 800): <span id="probationEisAmount">RM 0.00</span>
+                                        </div>
                                     </div>
                                     <div class="col-6">
                                         <label class="form-label form-label-sm">Confirmed Salary</label>
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text">RM</span>
                                             <input id="confirmedSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="2200.00">
+                                        </div>
+                                        <div class="small text-secondary mt-1">
+                                            SOCSO (Act 4): <span id="confirmedSocsoAmount">RM 0.00</span><br>
+                                            EIS (Act 800): <span id="confirmedEisAmount">RM 0.00</span>
                                         </div>
                                     </div>
                                     <div class="col-6">
@@ -625,26 +645,6 @@
                 </div>
             </div>
 
-            <div class="card panel-card" id="comparisonPanel" style="display:none;">
-                <div class="card-header">Scenario Comparison</div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-sm mb-0">
-                            <thead class="table-light">
-                            <tr>
-                                <th>Scenario</th>
-                                <th class="text-end">Final COH</th>
-                                <th class="text-end">Final ELR</th>
-                                <th class="text-end">Final EPF</th>
-                                <th class="text-end">Lowest COH</th>
-                                <th class="text-end">Highest COH</th>
-                            </tr>
-                            </thead>
-                            <tbody id="comparisonRows"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -678,6 +678,39 @@
     </div>
 </div>
 
+<div class="modal fade" id="scenarioComparisonModal" tabindex="-1" aria-labelledby="scenarioComparisonModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="scenarioComparisonModalLabel">Scenario Comparison</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body mx-0 px-0">
+                <div class="table-responsive mx-0 px-0">
+                    <table class="table table-striped table-sm mb-0 mx-0 px-0 projection-table">
+                        <colgroup>
+                            <col span="6" style="width:16.6667%">
+                        </colgroup>
+                        <thead class="table-light sticky-top">
+                        <tr>
+                            <th>Scenario</th>
+                            <th class="text-end">Final COH</th>
+                            <th class="text-end">Final ELR</th>
+                            <th class="text-end">Final EPF</th>
+                            <th class="text-end">Lowest COH</th>
+                            <th class="text-end">Highest COH</th>
+                        </tr>
+                        </thead>
+                        <tbody id="comparisonRows">
+                        <tr><td colspan="6" class="text-center text-secondary">No comparison data yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -702,6 +735,8 @@
         'created_at' => optional($scenario->created_at)->toDateTimeString(),
         'updated_at' => optional($scenario->updated_at)->toDateTimeString(),
     ])->values();
+    $socsoBrackets = json_decode((string) file_get_contents(base_path('data/contribution-brackets/socso_act4_brackets.json')), true);
+    $eisBrackets = json_decode((string) file_get_contents(base_path('data/contribution-brackets/eis_act800_brackets.json')), true);
 @endphp
 
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -716,6 +751,10 @@
         showScenarioBase: '{{ url('/projection/scenarios') }}',
         deleteScenarioBase: '{{ url('/projection/scenarios') }}',
         initialScenarios: @json($initialScenarios),
+        statutoryBrackets: {
+            socso: @json($socsoBrackets['brackets'] ?? []),
+            eis: @json($eisBrackets['brackets'] ?? []),
+        },
     };
 </script>
 <script src="{{ asset('js/projection-page.js') }}"></script>
