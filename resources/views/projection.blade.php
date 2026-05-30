@@ -274,15 +274,24 @@
                         </div>
                         <div class="col-4">
                             <label class="form-label form-label-sm">Starting COH</label>
-                            <input id="startingCoh" type="number" step="0.01" class="form-control compact-input" value="0.00">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">RM</span>
+                                <input id="startingCoh" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
+                            </div>
                         </div>
                         <div class="col-4">
                             <label class="form-label form-label-sm">Starting ELR</label>
-                            <input id="startingElr" type="number" step="0.01" class="form-control compact-input" value="0.00">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">RM</span>
+                                <input id="startingElr" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
+                            </div>
                         </div>
                         <div class="col-4">
                             <label class="form-label form-label-sm">Starting EPF</label>
-                            <input id="startingEpf" type="number" step="0.01" class="form-control compact-input" value="0.00">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">RM</span>
+                                <input id="startingEpf" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
+                            </div>
                         </div>
                     </div>
                     </div>
@@ -293,11 +302,17 @@
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label form-label-sm">Probation Salary</label>
-                            <input id="probationSalary" type="number" step="0.01" class="form-control compact-input" value="1800.00">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">RM</span>
+                                <input id="probationSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="1800.00">
+                            </div>
                         </div>
                         <div class="col-6">
                             <label class="form-label form-label-sm">Confirmed Salary</label>
-                            <input id="confirmedSalary" type="number" step="0.01" class="form-control compact-input" value="2200.00">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">RM</span>
+                                <input id="confirmedSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="2200.00">
+                            </div>
                         </div>
                         <div class="col-6">
                             <label class="form-label form-label-sm">Probation Months</label>
@@ -322,15 +337,24 @@
                     <div class="row g-2 mb-3">
                         <div class="col-4">
                             <label class="form-label form-label-sm">BCOL</label>
-                            <input id="bcolAmount" type="number" step="0.01" class="form-control compact-input" value="700.00">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">RM</span>
+                                <input id="bcolAmount" type="text" inputmode="decimal" class="form-control compact-input money-input" value="700.00">
+                            </div>
                         </div>
                         <div class="col-4">
                             <label class="form-label form-label-sm">FCOL Lite</label>
-                            <input id="fcolLiteAmount" type="number" step="0.01" class="form-control compact-input" value="900.00">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">RM</span>
+                                <input id="fcolLiteAmount" type="text" inputmode="decimal" class="form-control compact-input money-input" value="900.00">
+                            </div>
                         </div>
                         <div class="col-4">
                             <label class="form-label form-label-sm">FCOL Max</label>
-                            <input id="fcolMaxAmount" type="number" step="0.01" class="form-control compact-input" value="1200.00">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">RM</span>
+                                <input id="fcolMaxAmount" type="text" inputmode="decimal" class="form-control compact-input money-input" value="1200.00">
+                            </div>
                         </div>
                         <div class="col-6">
                             <label class="form-label form-label-sm">FCOL Lite Start</label>
@@ -349,7 +373,10 @@
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label form-label-sm">Monthly Repayment</label>
-                            <input id="ptptnMonthlyRepayment" type="number" step="0.01" class="form-control compact-input" value="120.00">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">RM</span>
+                                <input id="ptptnMonthlyRepayment" type="number" step="0.01" class="form-control compact-input" value="120.00">
+                            </div>
                         </div>
                         <div class="col-6">
                             <label class="form-label form-label-sm">Repayment Start Month</label>
@@ -611,17 +638,39 @@
         }, 3200);
     }
 
+    function formatToTwoDp(value) {
+        const number = Number.parseFloat(value);
+        return Number.isFinite(number) ? number.toFixed(2) : '0.00';
+    }
+
+    function normalizeDecimalInputs(root = document) {
+        root.querySelectorAll('input.money-input, input[type="number"][step="0.01"]').forEach((input) => {
+            if (input.closest('#projectionRows')) return;
+            input.value = formatToTwoDp(input.value);
+
+            input.addEventListener('blur', () => {
+                input.value = formatToTwoDp(input.value);
+            });
+        });
+    }
+
     function createBnplRow(data = {}) {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td><input type="text" class="form-control form-control-sm month-input" data-bnpl="month" value="${data.month ?? ''}"></td>
-            <td><input type="number" step="0.01" class="form-control form-control-sm" data-bnpl="amount" value="${data.amount ?? 0}"></td>
-            <td><input type="text" class="form-control form-control-sm" data-bnpl="note" value="${data.note ?? ''}" placeholder="Optional note"></td>
+            <td>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">RM</span>
+                    <input type="text" inputmode="decimal" class="form-control form-control-sm money-input" data-bnpl="amount" value="${data.amount ?? 0}">
+                </div>
+            </td>
+            <td><input type="text" class="form-control form-control-sm" data-bnpl="note" value="${data.note ?? ''}"></td>
             <td><button type="button" class="btn btn-sm btn-outline-danger">×</button></td>
         `;
         row.querySelector('button').addEventListener('click', () => row.remove());
         document.getElementById('bnplRows').appendChild(row);
         initMonthPickers();
+        normalizeDecimalInputs(row);
     }
 
     function createEventRow(data = {}) {
@@ -637,14 +686,20 @@
                     <option value="elr_override">ELR Override</option>
                 </select>
             </td>
-            <td><input type="number" step="0.01" class="form-control form-control-sm" data-event="amount" value="${data.amount ?? 0}"></td>
-            <td><input type="text" class="form-control form-control-sm" data-event="note" value="${data.note ?? ''}" placeholder="Optional note"></td>
+            <td>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">RM</span>
+                    <input type="text" inputmode="decimal" class="form-control form-control-sm money-input" data-event="amount" value="${data.amount ?? 0}">
+                </div>
+            </td>
+            <td><input type="text" class="form-control form-control-sm" data-event="note" value="${data.note ?? ''}"></td>
             <td><button type="button" class="btn btn-sm btn-outline-danger">×</button></td>
         `;
         row.querySelector('[data-event="type"]').value = data.type ?? 'one_off_expense';
         row.querySelector('button').addEventListener('click', () => row.remove());
         document.getElementById('eventRows').appendChild(row);
         initMonthPickers();
+        normalizeDecimalInputs(row);
     }
 
     function createElrScheduleRow(data = {}) {
@@ -652,12 +707,18 @@
         row.innerHTML = `
             <td><input type="text" class="form-control form-control-sm month-input" data-elr-schedule="start_month" value="${data.start_month ?? ''}"></td>
             <td><input type="text" class="form-control form-control-sm month-input" data-elr-schedule="end_month" value="${data.end_month ?? ''}"></td>
-            <td><input type="number" step="0.01" class="form-control form-control-sm" data-elr-schedule="amount" value="${data.amount ?? 0}"></td>
+            <td>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">RM</span>
+                    <input type="text" inputmode="decimal" class="form-control form-control-sm money-input" data-elr-schedule="amount" value="${data.amount ?? 0}">
+                </div>
+            </td>
             <td><button type="button" class="btn btn-sm btn-outline-danger">×</button></td>
         `;
         row.querySelector('button').addEventListener('click', () => row.remove());
         document.getElementById('elrScheduleRows').appendChild(row);
         initMonthPickers();
+        normalizeDecimalInputs(row);
     }
 
     function collectPayload() {
@@ -1106,6 +1167,7 @@
 
     populateScenarioSelects(initialScenarios);
     initMonthPickers();
+    normalizeDecimalInputs();
 
     createBnplRow({
         month: toMonthOrNull(document.getElementById('startMonth').value),
