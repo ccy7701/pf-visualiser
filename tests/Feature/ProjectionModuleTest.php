@@ -53,6 +53,18 @@ class ProjectionModuleTest extends TestCase
         $showResponse->assertOk();
         $showResponse->assertJsonPath('scenario.name', 'Scenario A');
 
+        $updatedPayload = $payload;
+        $updatedPayload['scenario']['starting_coh'] = 321;
+        $updateResponse = $this->postJson(route('projection.scenarios.save'), array_merge([
+            'scenario_id' => $scenarioAId,
+            'name' => 'Scenario A',
+            'notes' => 'Base case revised',
+        ], $updatedPayload));
+        $updateResponse->assertOk();
+        $updateResponse->assertJsonPath('message', 'Scenario updated successfully.');
+        $this->assertSame($scenarioAId, $updateResponse->json('scenario.id'));
+        $this->assertDatabaseCount('projection_scenarios', 1);
+
         $secondPayload = $payload;
         $secondPayload['scenario']['starting_coh'] = 1000;
 

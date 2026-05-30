@@ -142,6 +142,17 @@
             color: #fff;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
         }
+        #savedScenariosModal .modal-dialog {
+            max-width: 980px;
+        }
+        #savedScenariosModal .modal-content {
+            max-height: 82vh;
+        }
+        #savedScenariosModal .modal-body {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            overflow-y: auto;
+        }
 
         .results-wrap {
             max-height: 55vh;
@@ -268,11 +279,8 @@
 
                     <div class="input-subcard mb-0">
                         <div class="mb-0">
-                            <label for="savedScenarioId" class="form-label form-label-sm">Load Scenario</label>
-                            <div class="input-group">
-                                <select id="savedScenarioId" class="form-select compact-input"></select>
-                                <button id="loadScenarioBtn" class="btn btn-outline-secondary" type="button">Load</button>
-                            </div>
+                            <label class="form-label form-label-sm">Load Scenario</label>
+                            <button id="openScenariosBtn" class="btn btn-outline-dark w-100" type="button">Open Saved Scenarios</button>
                         </div>
                     </div>
 
@@ -642,11 +650,56 @@
 </div>
 <div id="statusMessage" class="small" role="status" aria-live="polite"></div>
 
+<div class="modal fade" id="savedScenariosModal" tabindex="-1" aria-labelledby="savedScenariosModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="savedScenariosModalLabel">Saved Scenarios</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Scenario Name</th>
+                            <th>Notes</th>
+                            <th>Date Created</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="savedScenariosRows">
+                        <tr><td colspan="4" class="text-center text-secondary py-3">No saved scenarios.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmActionModalLabel">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="confirmActionModalBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-dark" id="confirmActionOkBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @php
     $initialScenarios = $scenarios->map(fn ($scenario) => [
         'id' => $scenario->id,
         'name' => $scenario->name,
         'notes' => $scenario->notes,
+        'created_at' => optional($scenario->created_at)->toDateTimeString(),
         'updated_at' => optional($scenario->updated_at)->toDateTimeString(),
     ])->values();
 @endphp
@@ -661,6 +714,7 @@
         saveEndpoint: '{{ route('projection.scenarios.save') }}',
         compareEndpoint: '{{ route('projection.compare') }}',
         showScenarioBase: '{{ url('/projection/scenarios') }}',
+        deleteScenarioBase: '{{ url('/projection/scenarios') }}',
         initialScenarios: @json($initialScenarios),
     };
 </script>

@@ -11,6 +11,7 @@ Route::get('/projection', [ProjectionController::class, 'index'])->name('project
 Route::post('/projection/run', [ProjectionController::class, 'run'])->name('projection.run');
 Route::post('/projection/scenarios', [ProjectionController::class, 'saveScenario'])->name('projection.scenarios.save');
 Route::get('/projection/scenarios/{scenario}', [ProjectionController::class, 'showScenario'])->name('projection.scenarios.show');
+Route::delete('/projection/scenarios/{scenario}', [ProjectionController::class, 'destroyScenario'])->name('projection.scenarios.delete');
 Route::post('/projection/compare', [ProjectionController::class, 'compare'])->name('projection.compare');
 
 Route::get('/counter/snapshot', [DashboardController::class, 'snapshot'])->name('counter.snapshot');

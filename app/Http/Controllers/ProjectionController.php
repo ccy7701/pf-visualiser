@@ -23,7 +23,7 @@ class ProjectionController extends Controller
             'scenarios' => ProjectionScenario::query()
                 ->latest('updated_at')
                 ->limit(30)
-                ->get(['id', 'name', 'notes', 'updated_at']),
+                ->get(['id', 'name', 'notes', 'created_at', 'updated_at']),
         ]);
     }
 
@@ -43,6 +43,7 @@ class ProjectionController extends Controller
     public function saveScenario(Request $request): JsonResponse
     {
         $validated = validator($request->all(), array_merge([
+            'scenario_id' => ['nullable', 'integer', 'exists:projection_scenarios,id'],
             'name' => ['required', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ], $this->projectionRules()))->validate();
@@ -54,20 +55,27 @@ class ProjectionController extends Controller
             throw ValidationException::withMessages(['payload' => $e->getMessage()]);
         }
 
-        $scenario = ProjectionScenario::query()->create([
+        $scenarioId = Arr::get($validated, 'scenario_id');
+        $scenario = $scenarioId
+            ? ProjectionScenario::query()->findOrFail((int) $scenarioId)
+            : new ProjectionScenario();
+
+        $scenario->fill([
             'name' => $validated['name'],
             'notes' => Arr::get($validated, 'notes'),
             'parameters_json' => $normalizedPayload,
         ]);
+        $scenario->save();
 
         $scenario->resultCache()->updateOrCreate([], ['results_json' => $result]);
 
         return response()->json([
-            'message' => 'Scenario saved successfully.',
+            'message' => $scenarioId ? 'Scenario updated successfully.' : 'Scenario saved successfully.',
             'scenario' => [
                 'id' => $scenario->id,
                 'name' => $scenario->name,
                 'notes' => $scenario->notes,
+                'created_at' => $scenario->created_at?->toDateTimeString(),
                 'updated_at' => $scenario->updated_at?->toDateTimeString(),
             ],
             'result' => $result,
@@ -95,9 +103,19 @@ class ProjectionController extends Controller
                 'name' => $scenario->name,
                 'notes' => $scenario->notes,
                 'parameters_json' => $payload,
+                'created_at' => $scenario->created_at?->toDateTimeString(),
                 'updated_at' => $scenario->updated_at?->toDateTimeString(),
             ],
             'result' => $result,
+        ]);
+    }
+
+    public function destroyScenario(ProjectionScenario $scenario): JsonResponse
+    {
+        $scenario->delete();
+
+        return response()->json([
+            'message' => 'Scenario deleted successfully.',
         ]);
     }
 

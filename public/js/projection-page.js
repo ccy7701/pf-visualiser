@@ -4,6 +4,7 @@
     const saveEndpoint = projectionConfig.saveEndpoint || '';
     const compareEndpoint = projectionConfig.compareEndpoint || '';
     const showScenarioBase = projectionConfig.showScenarioBase || '';
+    const deleteScenarioBase = projectionConfig.deleteScenarioBase || '';
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     const initialScenarios = projectionConfig.initialScenarios || [];
@@ -28,6 +29,10 @@
     let projectionChart = null;
     let currentProjectionMonths = [];
     let statusTimer = null;
+    let loadedScenarioContext = { id: null, name: '' };
+    let loadedScenarioSnapshot = '';
+    let savedScenariosModal = null;
+    let confirmActionModal = null;
 
     function budgetLabel(budget) {
         if (budget === 'fcol_lite') return 'FCOL Lite';
@@ -287,6 +292,72 @@
                     btn.classList.toggle('active', btn === tabButton);
                 });
             });
+        });
+    }
+
+    function formatDateTime(value) {
+        if (!value) return '-';
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return value;
+        return d.toLocaleString('en-MY');
+    }
+
+    function showConfirmModal(message, confirmLabel = 'Confirm') {
+        return new Promise((resolve) => {
+            const body = document.getElementById('confirmActionModalBody');
+            const okBtn = document.getElementById('confirmActionOkBtn');
+            body.textContent = message;
+            okBtn.textContent = confirmLabel;
+
+            const clean = () => {
+                okBtn.onclick = null;
+                document.getElementById('confirmActionModal').removeEventListener('hidden.bs.modal', onHidden);
+            };
+
+            const onHidden = () => {
+                clean();
+                resolve(false);
+            };
+
+            okBtn.onclick = () => {
+                clean();
+                confirmActionModal.hide();
+                resolve(true);
+            };
+
+            document.getElementById('confirmActionModal').addEventListener('hidden.bs.modal', onHidden, { once: true });
+            confirmActionModal.show();
+        });
+    }
+
+    function renderSavedScenariosRows() {
+        const tbody = document.getElementById('savedScenariosRows');
+        if (!initialScenarios.length) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary py-3">No saved scenarios.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = initialScenarios.map((s) => `
+            <tr>
+                <td>${s.name}</td>
+                <td>${s.notes || '-'}</td>
+                <td>${formatDateTime(s.created_at)}</td>
+                <td class="text-end">
+                    <button type="button" class="btn btn-sm btn-outline-dark me-1" data-action="load" data-scenario-id="${s.id}" title="Load">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete" data-scenario-id="${s.id}" title="Delete">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function snapshotForLoadedScenarioComparison() {
+        return JSON.stringify({
+            payload: collectPayload(),
+            notes: document.getElementById('saveNotes').value.trim(),
         });
     }
 
@@ -654,7 +725,6 @@
 
     function populateScenarioSelects(scenarios) {
         const selects = [
-            document.getElementById('savedScenarioId'),
             document.getElementById('compareScenarioA'),
             document.getElementById('compareScenarioB'),
         ];
@@ -675,8 +745,59 @@
     }
 
     function addScenarioOption(scenario) {
-        initialScenarios.unshift(scenario);
+        const idx = initialScenarios.findIndex((s) => String(s.id) === String(scenario.id));
+        if (idx >= 0) {
+            initialScenarios[idx] = scenario;
+        } else {
+            initialScenarios.unshift(scenario);
+        }
+        initialScenarios.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')));
         populateScenarioSelects(initialScenarios);
+        renderSavedScenariosRows();
+    }
+
+    function removeScenarioOption(scenarioId) {
+        const idx = initialScenarios.findIndex((s) => String(s.id) === String(scenarioId));
+        if (idx >= 0) {
+            initialScenarios.splice(idx, 1);
+        }
+        populateScenarioSelects(initialScenarios);
+        renderSavedScenariosRows();
+    }
+
+    async function loadScenarioById(scenarioId) {
+        setStatus('Loading scenario...');
+
+        const response = await fetch(`${showScenarioBase}/${scenarioId}`, {
+            headers: { Accept: 'application/json' },
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data?.message || 'Unable to load scenario.');
+        }
+
+        applyPayload(data.scenario.parameters_json || {});
+        renderProjection(data.result || {});
+        document.getElementById('saveName').value = data.scenario.name || '';
+        document.getElementById('saveNotes').value = data.scenario.notes || '';
+        loadedScenarioContext = { id: data.scenario.id ?? null, name: data.scenario.name || '' };
+        loadedScenarioSnapshot = snapshotForLoadedScenarioComparison();
+        setStatus('Scenario loaded.');
+    }
+
+    async function deleteScenarioById(scenarioId) {
+        const response = await fetch(`${deleteScenarioBase}/${scenarioId}`, {
+            method: 'DELETE',
+            headers: {
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data?.message || 'Unable to delete scenario.');
+        }
+        return data;
     }
 
     function initMonthPickers() {
@@ -743,52 +864,83 @@
             return;
         }
 
+        const isEditingLoadedScenario = loadedScenarioContext.id !== null && name === loadedScenarioContext.name;
+        if (isEditingLoadedScenario) {
+            const currentSnapshot = snapshotForLoadedScenarioComparison();
+            if (currentSnapshot !== loadedScenarioSnapshot) {
+                const confirmed = await showConfirmModal(`Save changes to scenario "${loadedScenarioContext.name}"?`, 'Save');
+                if (!confirmed) {
+                    setStatus('Save cancelled.');
+                    return;
+                }
+            }
+        }
+
         setStatus('Saving scenario...');
 
         try {
             const payload = collectPayload();
-            const response = await postJson(saveEndpoint, {
+            const requestBody = {
                 name,
                 notes: document.getElementById('saveNotes').value.trim(),
                 ...payload,
+            };
+            if (isEditingLoadedScenario && loadedScenarioContext.id !== null) {
+                requestBody.scenario_id = loadedScenarioContext.id;
+            }
+            const response = await postJson(saveEndpoint, {
+                ...requestBody,
             });
 
             renderProjection(response.result);
             addScenarioOption(response.scenario);
-            document.getElementById('savedScenarioId').value = String(response.scenario.id);
+            loadedScenarioContext = { id: response.scenario.id, name: response.scenario.name };
+            loadedScenarioSnapshot = snapshotForLoadedScenarioComparison();
             setStatus(response.message || 'Scenario saved.');
         } catch (error) {
             setStatus(error.message, true);
         }
     });
 
-    document.getElementById('loadScenarioBtn').addEventListener('click', async () => {
-        const scenarioId = document.getElementById('savedScenarioId').value;
+    document.getElementById('openScenariosBtn').addEventListener('click', () => {
+        renderSavedScenariosRows();
+        savedScenariosModal.show();
+    });
 
-        if (!scenarioId) {
-            setStatus('Choose a scenario to load.', true);
+    document.getElementById('savedScenariosRows').addEventListener('click', async (event) => {
+        const btn = event.target.closest('button[data-action]');
+        if (!btn) return;
+
+        const action = btn.getAttribute('data-action');
+        const scenarioId = btn.getAttribute('data-scenario-id');
+        const scenario = initialScenarios.find((s) => String(s.id) === String(scenarioId));
+        if (!scenario) return;
+
+        if (action === 'load') {
+            try {
+                await loadScenarioById(scenarioId);
+                savedScenariosModal.hide();
+            } catch (error) {
+                setStatus(error.message, true);
+            }
             return;
         }
 
-        setStatus('Loading scenario...');
+        if (action === 'delete') {
+            const confirmed = await showConfirmModal(`Delete scenario "${scenario.name}"? This cannot be undone.`, 'Delete');
+            if (!confirmed) return;
 
-        try {
-            const response = await fetch(`${showScenarioBase}/${scenarioId}`, {
-                headers: { 'Accept': 'application/json' },
-            });
-
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data?.message || 'Unable to load scenario.');
+            try {
+                await deleteScenarioById(scenarioId);
+                removeScenarioOption(scenarioId);
+                if (String(loadedScenarioContext.id) === String(scenarioId)) {
+                    loadedScenarioContext = { id: null, name: '' };
+                    loadedScenarioSnapshot = '';
+                }
+                setStatus('Scenario deleted.');
+            } catch (error) {
+                setStatus(error.message, true);
             }
-
-            applyPayload(data.scenario.parameters_json || {});
-            renderProjection(data.result || {});
-            document.getElementById('saveName').value = data.scenario.name || '';
-            document.getElementById('saveNotes').value = data.scenario.notes || '';
-            setStatus('Scenario loaded.');
-        } catch (error) {
-            setStatus(error.message, true);
         }
     });
 
@@ -826,7 +978,11 @@
         }
     });
 
+    savedScenariosModal = new bootstrap.Modal(document.getElementById('savedScenariosModal'));
+    confirmActionModal = new bootstrap.Modal(document.getElementById('confirmActionModal'));
+
     populateScenarioSelects(initialScenarios);
+    renderSavedScenariosRows();
     initProjectionInputTabUI();
     createCostAllocationRows();
     initMonthPickers();
