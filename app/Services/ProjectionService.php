@@ -215,7 +215,7 @@ class ProjectionService
                 $budget = $costOfLiving['budgets'][$key] ?? [];
                 $allocations = array_values(array_map(function (array $item): array {
                     return [
-                        'category_id' => (int) ($item['category_id'] ?? 0),
+                        'category_id' => (string) ($item['category_id'] ?? ''),
                         'name' => (string) ($item['name'] ?? ''),
                         'amount' => (float) ($item['amount'] ?? 0),
                     ];

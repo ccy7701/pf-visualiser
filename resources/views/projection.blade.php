@@ -286,11 +286,14 @@
                             <textarea id="saveNotes" class="form-control compact-input" rows="2" placeholder="Optional notes"></textarea>
                         </div>
                         <div class="row">
-                            <div class="col-6">
+                            <div class="col-4">
                                 <button id="runProjectionBtn" class="btn btn-dark w-100">Run</button>
                             </div>
-                            <div class="col-6">
+                            <div class="col-4">
                                 <button id="saveScenarioBtn" class="btn btn-outline-dark w-100">Save</button>
+                            </div>
+                            <div class="col-4">
+                                <button id="clearInputsBtn" class="btn btn-outline-dark w-100" type="button">Clear</button>
                             </div>
                         </div>
                     </div>
@@ -533,7 +536,7 @@
                                         <tr>
                                             <th>Start</th>
                                             <th>End</th>
-                                            <th>Amount</th>
+                                            <th>Daily Amount</th>
                                             <th></th>
                                         </tr>
                                         </thead>

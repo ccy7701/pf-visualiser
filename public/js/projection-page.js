@@ -103,8 +103,34 @@
         budgetKeys.forEach((key) => {
             allocationsByBudget[key] = {};
             const allocations = budgets[key]?.category_allocations || [];
+            const validCategoryIds = new Set(expenseCategories.map((category) => category.id));
+
+            function normalizeCategoryToken(value) {
+                return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+            }
+
+            function resolveCategoryKey(allocation) {
+                const rawId = String(allocation?.category_id ?? '').trim();
+                const normalizedId = normalizeCategoryToken(rawId);
+                if (normalizedId && normalizedId !== '0' && validCategoryIds.has(normalizedId)) {
+                    return normalizedId;
+                }
+
+                const normalizedName = normalizeCategoryToken(allocation?.name ?? '');
+                if (normalizedName && validCategoryIds.has(normalizedName)) {
+                    return normalizedName;
+                }
+
+                const andNormalized = normalizedName.replace(/_and_/g, '_');
+                if (andNormalized && validCategoryIds.has(andNormalized)) {
+                    return andNormalized;
+                }
+
+                return normalizedName;
+            }
+
             allocations.forEach((allocation) => {
-                const categoryKey = String(allocation.category_id || allocation.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                const categoryKey = resolveCategoryKey(allocation);
                 allocationsByBudget[key][categoryKey] = toNumber(allocation.amount, 0);
             });
         });
@@ -332,7 +358,7 @@
 
     function initProjectionInputTabUI() {
         document.querySelectorAll('#projectionInputTabs [data-bs-title]').forEach((el) => {
-            new bootstrap.Tooltip(el);
+            bootstrap.Tooltip.getOrCreateInstance(el);
         });
 
         document.querySelectorAll('#projectionInputTabs [data-bs-toggle="tab"]').forEach((tabButton) => {
@@ -868,6 +894,73 @@
         });
     }
 
+    function resetProjectionOutputs() {
+        document.getElementById('summaryFinalCoh').textContent = 'RM 0.00';
+        document.getElementById('summaryFinalElr').textContent = 'RM 0.00';
+        document.getElementById('summaryFinalEpf').textContent = 'RM 0.00';
+        document.getElementById('summaryLowestCoh').textContent = 'RM 0.00';
+        document.getElementById('summaryFinalCoh').classList.remove('negative-value');
+        document.getElementById('summaryFinalElr').classList.remove('negative-value');
+        document.getElementById('summaryFinalEpf').classList.remove('negative-value');
+        document.getElementById('summaryLowestCoh').classList.remove('negative-value');
+        document.getElementById('projectionRows').innerHTML = '<tr><td colspan="8" class="text-center text-secondary py-4">Run a projection to view results.</td></tr>';
+        currentProjectionMonths = [];
+        if (projectionChart) {
+            projectionChart.destroy();
+            projectionChart = null;
+        }
+    }
+
+    function clearAllInputsAndSelections() {
+        const startMonth = toMonthOrNull(document.getElementById('startMonth').defaultValue) || toMonthOrNull(document.getElementById('startMonth').value);
+        const endMonth = toMonthOrNull(document.getElementById('endMonth').defaultValue) || toMonthOrNull(document.getElementById('endMonth').value);
+
+        document.getElementById('saveName').value = '';
+        document.getElementById('saveNotes').value = '';
+
+        document.getElementById('startMonth').value = startMonth || '';
+        document.getElementById('endMonth').value = endMonth || '';
+        document.getElementById('startingCoh').value = '0.00';
+        document.getElementById('startingElr').value = '0.00';
+        document.getElementById('startingEpf').value = '0.00';
+
+        document.getElementById('probationSalary').value = '1800.00';
+        document.getElementById('confirmedSalary').value = '2200.00';
+        document.getElementById('probationDuration').value = '3';
+        document.getElementById('salaryStartMonth').value = startMonth || '';
+        document.getElementById('salaryPaidInArrears').checked = true;
+
+        createCostAllocationRows();
+        syncMonthlyBudgetRows();
+
+        document.getElementById('ptptnWaiverGranted').checked = false;
+        document.getElementById('ptptnMonthlyRepayment').value = '120.00';
+        document.getElementById('ptptnRepaymentStartMonth').value = '';
+
+        document.getElementById('employeeEpfRatePercent').value = '11.00';
+        document.getElementById('employerEpfRatePercent').value = '13.00';
+
+        document.getElementById('bnplRows').innerHTML = '';
+        createBnplRow({ month: startMonth || '', amount: 0, note: '' });
+
+        document.getElementById('eventRows').innerHTML = '';
+        createEventRow({ month: startMonth || '', type: 'one_off_expense', amount: 0, note: '' });
+
+        document.getElementById('elrScheduleRows').innerHTML = '';
+
+        document.getElementById('compareScenarioA').value = '';
+        document.getElementById('compareScenarioB').value = '';
+        document.getElementById('comparisonRows').innerHTML = '<tr><td colspan="6" class="text-center text-secondary py-3">No comparison data yet.</td></tr>';
+
+        initMonthPickers();
+        normalizeDecimalInputs();
+        updateEmploymentContributionSummary();
+        resetProjectionOutputs();
+
+        loadedScenarioContext = { id: null, name: '' };
+        loadedScenarioSnapshot = '';
+    }
+
     document.getElementById('addBnplBtn').addEventListener('click', () => createBnplRow({
         month: toMonthOrNull(document.getElementById('startMonth').value),
         amount: 0,
@@ -951,6 +1044,11 @@
         } catch (error) {
             setStatus(error.message, true);
         }
+    });
+
+    document.getElementById('clearInputsBtn').addEventListener('click', () => {
+        clearAllInputsAndSelections();
+        setStatus('All inputs and selections cleared.');
     });
 
     document.getElementById('openScenariosBtn').addEventListener('click', () => {
