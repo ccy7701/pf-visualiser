@@ -331,7 +331,7 @@
                         <button class="projection-input-tab" id="tab-ptptn" data-bs-toggle="tab" data-bs-target="#pane-ptptn" type="button" role="tab" aria-controls="pane-ptptn" aria-selected="false" data-bs-title="PTPTN" data-bs-placement="top"><i class="fa-solid fa-graduation-cap"></i></button>
                         <button class="projection-input-tab" id="tab-bnpl" data-bs-toggle="tab" data-bs-target="#pane-bnpl" type="button" role="tab" aria-controls="pane-bnpl" aria-selected="false" data-bs-title="BNPL" data-bs-placement="top"><i class="fa-solid fa-credit-card"></i></button>
                         <button class="projection-input-tab" id="tab-events" data-bs-toggle="tab" data-bs-target="#pane-events" type="button" role="tab" aria-controls="pane-events" aria-selected="false" data-bs-title="Events" data-bs-placement="top"><i class="fa-solid fa-calendar-plus"></i></button>
-                        <button class="projection-input-tab" id="tab-elr" data-bs-toggle="tab" data-bs-target="#pane-elr" type="button" role="tab" aria-controls="pane-elr" aria-selected="false" data-bs-title="ELR Schedules" data-bs-placement="top"><i class="fa-solid fa-piggy-bank"></i></button>
+                        <button class="projection-input-tab" id="tab-elr" data-bs-toggle="tab" data-bs-target="#pane-elr" type="button" role="tab" aria-controls="pane-elr" aria-selected="false" data-bs-title="ELR" data-bs-placement="top"><i class="fa-solid fa-piggy-bank"></i></button>
                         <button class="projection-input-tab" id="tab-epf" data-bs-toggle="tab" data-bs-target="#pane-epf" type="button" role="tab" aria-controls="pane-epf" aria-selected="false" data-bs-title="EPF" data-bs-placement="top"><i class="fa-solid fa-percent"></i></button>
                     </div>
 
@@ -526,10 +526,26 @@
 
                         <div class="tab-pane fade" id="pane-elr" role="tabpanel" aria-labelledby="tab-elr" tabindex="0">
                             <div class="input-subcard mb-0">
-                                <h2 class="section-subtitle d-flex justify-content-between align-items-center">ELR Schedules
+                                <h3 class="section-subtitle">Plan Details</h3>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-12">
+                                        <label class="form-label form-label-sm">Note</label>
+                                        <textarea id="elrNote" class="form-control compact-input" rows="2" placeholder=""></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label form-label-sm">Annual Interest Rate (%)</label>
+                                        <input id="elrAnnualInterestRatePercent" type="number" step="0.01" min="0" max="100" class="form-control compact-input" value="0.00">
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check mt-1">
+                                            <input id="elrCompoundInterestEnabled" class="form-check-input" type="checkbox">
+                                            <label class="form-check-label" for="elrCompoundInterestEnabled">Enable compound interest</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h3 class="section-subtitle d-flex justify-content-between align-items-center">ELR Schedules
                                     <button id="addElrScheduleBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
-                                </h2>
-                                <hr class="section-divider">
+                                </h3>
                                 <div class="table-responsive mb-3">
                                     <table class="table table-sm">
                                         <thead>

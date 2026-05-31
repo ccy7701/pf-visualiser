@@ -211,6 +211,9 @@ class ProjectionController extends Controller
             'elr.schedules.*.start_month' => ['required_with:elr.schedules', 'regex:/^\d{4}-\d{2}$/'],
             'elr.schedules.*.end_month' => ['required_with:elr.schedules', 'regex:/^\d{4}-\d{2}$/'],
             'elr.schedules.*.amount' => ['required_with:elr.schedules', 'numeric', 'min:0'],
+            'elr.note' => ['nullable', 'string', 'max:2000'],
+            'elr.compound_interest_enabled' => ['required', 'boolean'],
+            'elr.annual_interest_rate_percent' => ['required', 'numeric', 'min:0', 'max:100'],
 
             'epf' => ['required', 'array'],
             'epf.employee_rate_percent' => ['required', 'numeric', 'min:0', 'max:100'],

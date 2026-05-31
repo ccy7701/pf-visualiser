@@ -550,6 +550,9 @@
             events,
             elr: {
                 schedules,
+                note: document.getElementById('elrNote').value.trim(),
+                compound_interest_enabled: document.getElementById('elrCompoundInterestEnabled').checked,
+                annual_interest_rate_percent: toNumber(document.getElementById('elrAnnualInterestRatePercent').value, 0),
             },
             epf: {
                 employee_rate_percent: toNumber(document.getElementById('employeeEpfRatePercent').value, 0),
@@ -628,6 +631,9 @@
 
         document.getElementById('elrScheduleRows').innerHTML = '';
         (elr.schedules || []).forEach(createElrScheduleRow);
+        document.getElementById('elrNote').value = elr.note || '';
+        document.getElementById('elrCompoundInterestEnabled').checked = Boolean(elr.compound_interest_enabled);
+        document.getElementById('elrAnnualInterestRatePercent').value = elr.annual_interest_rate_percent ?? 0;
         initMonthPickers();
     }
 
@@ -947,6 +953,9 @@
         createEventRow({ month: startMonth || '', type: 'one_off_expense', amount: 0, note: '' });
 
         document.getElementById('elrScheduleRows').innerHTML = '';
+        document.getElementById('elrNote').value = '';
+        document.getElementById('elrCompoundInterestEnabled').checked = false;
+        document.getElementById('elrAnnualInterestRatePercent').value = '0.00';
 
         document.getElementById('compareScenarioA').value = '';
         document.getElementById('compareScenarioB').value = '';
