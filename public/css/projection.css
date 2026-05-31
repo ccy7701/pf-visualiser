@@ -24,6 +24,10 @@
             gap: 0.5rem;
             z-index: 1100;
         }
+        .module-nav-dock-right {
+            left: auto;
+            right: 14px;
+        }
 
         .module-nav-label {
             background: rgba(255, 255, 255, 0.92);
@@ -52,6 +56,9 @@
             opacity: 1;
             visibility: visible;
             transform: translateX(0);
+        }
+        .module-nav-dock-right .module-nav-label {
+            transform: translateX(6px);
         }
 
         .module-nav-btn {
@@ -271,6 +278,10 @@
             .module-nav-dock {
                 left: 8px;
                 gap: 0.35rem;
+            }
+            .module-nav-dock-right {
+                left: auto;
+                right: 8px;
             }
 
             .module-nav-label {

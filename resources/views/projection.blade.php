@@ -24,6 +24,12 @@
     </a>
     <span class="module-nav-label">Counter</span>
 </div>
+<div class="module-nav-dock module-nav-dock-right" aria-label="Plan versus actual navigation">
+    <span class="module-nav-label">Variance Analysis</span>
+    <a href="{{ route('variance-analysis.index') }}" class="module-nav-btn" aria-label="Go to variance analysis">
+        <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>
+    </a>
+</div>
 
 <div class="container-fluid py-4 px-3 px-lg-5">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
