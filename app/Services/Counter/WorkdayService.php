@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Counter;
 
 use App\Models\Workday;
 use Carbon\Carbon;
