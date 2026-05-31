@@ -61,6 +61,7 @@ class VarianceAnalysisController extends Controller
                 'closing_coh',
                 'closing_elr',
                 'closing_epf',
+                'expense_breakdown_json',
                 'notes',
             ])
             ->map(fn (ProjectionActualMonth $month) => [
@@ -72,6 +73,7 @@ class VarianceAnalysisController extends Controller
                 'closing_coh' => $month->closing_coh !== null ? (float) $month->closing_coh : null,
                 'closing_elr' => $month->closing_elr !== null ? (float) $month->closing_elr : null,
                 'closing_epf' => $month->closing_epf !== null ? (float) $month->closing_epf : null,
+                'expense_breakdown' => is_array($month->expense_breakdown_json) ? $month->expense_breakdown_json : [],
                 'notes' => $month->notes,
             ])
             ->values();
@@ -100,6 +102,10 @@ class VarianceAnalysisController extends Controller
             'actuals.*.closing_coh' => ['nullable', 'numeric'],
             'actuals.*.closing_elr' => ['nullable', 'numeric', 'min:0'],
             'actuals.*.closing_epf' => ['nullable', 'numeric', 'min:0'],
+            'actuals.*.expense_breakdown' => ['nullable', 'array'],
+            'actuals.*.expense_breakdown.*.category_id' => ['required_with:actuals.*.expense_breakdown', 'string', 'max:120'],
+            'actuals.*.expense_breakdown.*.name' => ['required_with:actuals.*.expense_breakdown', 'string', 'max:120'],
+            'actuals.*.expense_breakdown.*.amount' => ['required_with:actuals.*.expense_breakdown', 'numeric', 'min:0'],
             'actuals.*.notes' => ['nullable', 'string', 'max:1000'],
         ])->validate();
 
@@ -117,6 +123,7 @@ class VarianceAnalysisController extends Controller
                     'closing_coh' => $row['closing_coh'] ?? null,
                     'closing_elr' => $row['closing_elr'] ?? null,
                     'closing_epf' => $row['closing_epf'] ?? null,
+                    'expense_breakdown_json' => $row['expense_breakdown'] ?? [],
                     'notes' => $row['notes'] ?? null,
                 ]
             );

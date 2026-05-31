@@ -20,6 +20,7 @@ class ProjectionActualMonth extends Model
         'closing_coh',
         'closing_elr',
         'closing_epf',
+        'expense_breakdown_json',
         'notes',
     ];
 
@@ -33,6 +34,7 @@ class ProjectionActualMonth extends Model
             'closing_coh' => 'decimal:2',
             'closing_elr' => 'decimal:2',
             'closing_epf' => 'decimal:2',
+            'expense_breakdown_json' => 'array',
         ];
     }
 

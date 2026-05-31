@@ -108,6 +108,11 @@
             visibility: visible;
             transform: translateX(0);
         }
+        body.edge-nav-right-active .module-nav-dock .module-nav-label {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
 
         .module-nav-btn {
             width: 56px;
@@ -379,6 +384,11 @@
                 opacity: 1;
                 visibility: visible;
                 pointer-events: auto;
+            }
+            .module-nav-label {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(0);
             }
             body::after {
                 display: none;
