@@ -341,17 +341,31 @@
     function updateEmploymentContributionSummary() {
         const probationSalary = toNumber(document.getElementById('probationSalary')?.value ?? 0, 0);
         const confirmedSalary = toNumber(document.getElementById('confirmedSalary')?.value ?? 0, 0);
+        const employeeEpfRatePercent = toNumber(document.getElementById('employeeEpfRatePercent')?.value ?? 0, 0);
+        const employerEpfRatePercent = toNumber(document.getElementById('employerEpfRatePercent')?.value ?? 0, 0);
 
         const probation = resolveStatutoryDeductions(probationSalary);
         const confirmed = resolveStatutoryDeductions(confirmedSalary);
+        const probationEmployeeEpf = probationSalary * (employeeEpfRatePercent / 100);
+        const probationEmployerEpf = probationSalary * (employerEpfRatePercent / 100);
+        const confirmedEmployeeEpf = confirmedSalary * (employeeEpfRatePercent / 100);
+        const confirmedEmployerEpf = confirmedSalary * (employerEpfRatePercent / 100);
 
+        const probationEmployeeEpfEl = document.getElementById('probationEmployeeEpfAmount');
+        const probationEmployerEpfEl = document.getElementById('probationEmployerEpfAmount');
         const probationSocso = document.getElementById('probationSocsoAmount');
         const probationEis = document.getElementById('probationEisAmount');
+        const confirmedEmployeeEpfEl = document.getElementById('confirmedEmployeeEpfAmount');
+        const confirmedEmployerEpfEl = document.getElementById('confirmedEmployerEpfAmount');
         const confirmedSocso = document.getElementById('confirmedSocsoAmount');
         const confirmedEis = document.getElementById('confirmedEisAmount');
 
+        if (probationEmployeeEpfEl) probationEmployeeEpfEl.textContent = `RM ${money.format(probationEmployeeEpf)}`;
+        if (probationEmployerEpfEl) probationEmployerEpfEl.textContent = `RM ${money.format(probationEmployerEpf)}`;
         if (probationSocso) probationSocso.textContent = `RM ${money.format(probation.socso)}`;
         if (probationEis) probationEis.textContent = `RM ${money.format(probation.eis)}`;
+        if (confirmedEmployeeEpfEl) confirmedEmployeeEpfEl.textContent = `RM ${money.format(confirmedEmployeeEpf)}`;
+        if (confirmedEmployerEpfEl) confirmedEmployerEpfEl.textContent = `RM ${money.format(confirmedEmployerEpf)}`;
         if (confirmedSocso) confirmedSocso.textContent = `RM ${money.format(confirmed.socso)}`;
         if (confirmedEis) confirmedEis.textContent = `RM ${money.format(confirmed.eis)}`;
     }
@@ -995,6 +1009,10 @@
     document.getElementById('probationSalary').addEventListener('blur', updateEmploymentContributionSummary);
     document.getElementById('confirmedSalary').addEventListener('input', updateEmploymentContributionSummary);
     document.getElementById('confirmedSalary').addEventListener('blur', updateEmploymentContributionSummary);
+    document.getElementById('employeeEpfRatePercent').addEventListener('input', updateEmploymentContributionSummary);
+    document.getElementById('employeeEpfRatePercent').addEventListener('blur', updateEmploymentContributionSummary);
+    document.getElementById('employerEpfRatePercent').addEventListener('input', updateEmploymentContributionSummary);
+    document.getElementById('employerEpfRatePercent').addEventListener('blur', updateEmploymentContributionSummary);
 
     document.getElementById('runProjectionBtn').addEventListener('click', async () => {
         setStatus('Running projection...');

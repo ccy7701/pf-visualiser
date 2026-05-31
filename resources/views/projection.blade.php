@@ -94,7 +94,6 @@
                         <button class="projection-input-tab" id="tab-bnpl" data-bs-toggle="tab" data-bs-target="#pane-bnpl" type="button" role="tab" aria-controls="pane-bnpl" aria-selected="false" data-bs-title="BNPL" data-bs-placement="top"><i class="fa-solid fa-credit-card"></i></button>
                         <button class="projection-input-tab" id="tab-events" data-bs-toggle="tab" data-bs-target="#pane-events" type="button" role="tab" aria-controls="pane-events" aria-selected="false" data-bs-title="Events" data-bs-placement="top"><i class="fa-solid fa-calendar-plus"></i></button>
                         <button class="projection-input-tab" id="tab-elr" data-bs-toggle="tab" data-bs-target="#pane-elr" type="button" role="tab" aria-controls="pane-elr" aria-selected="false" data-bs-title="ELR" data-bs-placement="top"><i class="fa-solid fa-piggy-bank"></i></button>
-                        <button class="projection-input-tab" id="tab-epf" data-bs-toggle="tab" data-bs-target="#pane-epf" type="button" role="tab" aria-controls="pane-epf" aria-selected="false" data-bs-title="EPF" data-bs-placement="top"><i class="fa-solid fa-percent"></i></button>
                     </div>
 
                     <div class="tab-content">
@@ -138,27 +137,65 @@
                             <div class="input-subcard mb-0">
                                 <div class="row g-2 mb-3">
                                     <div class="col-6">
-                                        <label class="form-label form-label-sm">Probation Salary</label>
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text">RM</span>
-                                            <input id="probationSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="1800.00">
-                                        </div>
-                                        <div class="small text-secondary mt-1">
-                                            SOCSO (Act 4): <span id="probationSocsoAmount">RM 0.00</span><br>
-                                            EIS (Act 800): <span id="probationEisAmount">RM 0.00</span>
-                                        </div>
+                                        <label class="form-label form-label-sm">Employee EPF (%)</label>
+                                        <input id="employeeEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="11.00">
                                     </div>
                                     <div class="col-6">
-                                        <label class="form-label form-label-sm">Confirmed Salary</label>
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text">RM</span>
-                                            <input id="confirmedSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="2200.00">
-                                        </div>
-                                        <div class="small text-secondary mt-1">
-                                            SOCSO (Act 4): <span id="confirmedSocsoAmount">RM 0.00</span><br>
-                                            EIS (Act 800): <span id="confirmedEisAmount">RM 0.00</span>
-                                        </div>
+                                        <label class="form-label form-label-sm">Employer EPF (%)</label>
+                                        <input id="employerEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="13.00">
                                     </div>
+                                </div>
+
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm align-middle">
+                                        <thead>
+                                        <tr>
+                                            <th>Metric</th>
+                                            <th>Probation</th>
+                                            <th>Confirmed</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr>
+                                            <td>Salary</td>
+                                            <td>
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text">RM</span>
+                                                    <input id="probationSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="1800.00">
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text">RM</span>
+                                                    <input id="confirmedSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="2200.00">
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Employee EPF</td>
+                                            <td class="text-end"><span id="probationEmployeeEpfAmount">RM 0.00</span></td>
+                                            <td class="text-end"><span id="confirmedEmployeeEpfAmount">RM 0.00</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Employer EPF</td>
+                                            <td class="text-end"><span id="probationEmployerEpfAmount">RM 0.00</span></td>
+                                            <td class="text-end"><span id="confirmedEmployerEpfAmount">RM 0.00</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>SOCSO (Act 4)</td>
+                                            <td class="text-end"><span id="probationSocsoAmount">RM 0.00</span></td>
+                                            <td class="text-end"><span id="confirmedSocsoAmount">RM 0.00</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>EIS (Act 800)</td>
+                                            <td class="text-end"><span id="probationEisAmount">RM 0.00</span></td>
+                                            <td class="text-end"><span id="confirmedEisAmount">RM 0.00</span></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="row g-2 mb-3">
                                     <div class="col-6">
                                         <label class="form-label form-label-sm">Probation Months</label>
                                         <input id="probationDuration" type="number" min="0" class="form-control compact-input" value="3">
@@ -318,20 +355,6 @@
                             </div>
                         </div>
 
-                        <div class="tab-pane fade" id="pane-epf" role="tabpanel" aria-labelledby="tab-epf" tabindex="0">
-                            <div class="input-subcard mb-0">
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <label class="form-label form-label-sm">Employee EPF (%)</label>
-                                        <input id="employeeEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="11.00">
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label form-label-sm">Employer EPF (%)</label>
-                                        <input id="employerEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="13.00">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
