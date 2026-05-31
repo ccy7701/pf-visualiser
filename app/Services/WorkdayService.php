@@ -71,16 +71,8 @@ class WorkdayService
         if ($record) {
             $status = strtolower((string) ($record->status ?? ''));
 
-            if ($status === 'absense') {
-                return Workday::STATUS_ABSENCE;
-            }
-
             if (in_array($status, [Workday::STATUS_WORKDAY, Workday::STATUS_ABSENCE, Workday::STATUS_HOLIDAY], true)) {
                 return $status;
-            }
-
-            if (isset($record->is_workday)) {
-                return $record->is_workday ? Workday::STATUS_WORKDAY : Workday::STATUS_HOLIDAY;
             }
         }
 

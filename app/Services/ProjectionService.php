@@ -211,53 +211,24 @@ class ProjectionService
     private function normalizeCostOfLivingBudgets(array $costOfLiving): array
     {
         $budgetKeys = ['bcol', 'fcol_lite', 'fcol_max'];
-        $hasNewStructure = isset($costOfLiving['budgets']) && is_array($costOfLiving['budgets']);
+        $normalized = [];
 
-        if ($hasNewStructure) {
-            $normalized = [];
-
-            foreach ($budgetKeys as $key) {
-                $budget = $costOfLiving['budgets'][$key] ?? [];
-                $allocations = array_values(array_map(function (array $item): array {
-                    return [
-                        'category_id' => (string) ($item['category_id'] ?? ''),
-                        'name' => (string) ($item['name'] ?? ''),
-                        'amount' => (float) ($item['amount'] ?? 0),
-                    ];
-                }, array_filter($budget['category_allocations'] ?? [], fn ($item) => is_array($item))));
-
-                $normalized[$key] = [
-                    'category_allocations' => $allocations,
+        foreach ($budgetKeys as $key) {
+            $budget = $costOfLiving['budgets'][$key] ?? [];
+            $allocations = array_values(array_map(function (array $item): array {
+                return [
+                    'category_id' => (string) ($item['category_id'] ?? ''),
+                    'name' => (string) ($item['name'] ?? ''),
+                    'amount' => (float) ($item['amount'] ?? 0),
                 ];
-            }
+            }, array_filter($budget['category_allocations'] ?? [], fn ($item) => is_array($item))));
 
-            return $normalized;
+            $normalized[$key] = [
+                'category_allocations' => $allocations,
+            ];
         }
 
-        // Backward compatibility with old payload shape.
-        return [
-            'bcol' => [
-                'category_allocations' => [[
-                    'category_id' => 0,
-                    'name' => 'Legacy Total',
-                    'amount' => (float) ($costOfLiving['bcol_amount'] ?? 0),
-                ]],
-            ],
-            'fcol_lite' => [
-                'category_allocations' => [[
-                    'category_id' => 0,
-                    'name' => 'Legacy Total',
-                    'amount' => (float) ($costOfLiving['fcol_lite_amount'] ?? 0),
-                ]],
-            ],
-            'fcol_max' => [
-                'category_allocations' => [[
-                    'category_id' => 0,
-                    'name' => 'Legacy Total',
-                    'amount' => (float) ($costOfLiving['fcol_max_amount'] ?? 0),
-                ]],
-            ],
-        ];
+        return $normalized;
     }
 
     private function eventsForMonth(array $events, string $month): array

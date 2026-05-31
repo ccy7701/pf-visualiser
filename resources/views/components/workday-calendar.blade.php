@@ -40,7 +40,6 @@ new class extends Component
             ['date' => $selectedDate->toDateString()],
             [
                 'status' => $selectedDate->isWeekday() ? Workday::STATUS_WORKDAY : Workday::STATUS_HOLIDAY,
-                'is_workday' => $selectedDate->isWeekday(),
                 'notes' => null,
             ]
         );
@@ -54,7 +53,6 @@ new class extends Component
 
         $workday->update([
             'status' => $next,
-            'is_workday' => $next === Workday::STATUS_WORKDAY,
         ]);
 
         $this->buildCalendar();
@@ -107,10 +105,6 @@ new class extends Component
     {
         $status = strtolower(trim($status));
 
-        if ($status === 'absense') {
-            return Workday::STATUS_ABSENCE;
-        }
-
         if (in_array($status, [Workday::STATUS_WORKDAY, Workday::STATUS_ABSENCE, Workday::STATUS_HOLIDAY], true)) {
             return $status;
         }
@@ -123,12 +117,8 @@ new class extends Component
         if ($workday) {
             $status = $this->normalizeStatus((string) ($workday->status ?? ''));
 
-            if ($status !== Workday::STATUS_HOLIDAY || ! empty($workday->status)) {
+            if (! empty($workday->status)) {
                 return $status;
-            }
-
-            if (isset($workday->is_workday)) {
-                return $workday->is_workday ? Workday::STATUS_WORKDAY : Workday::STATUS_HOLIDAY;
             }
         }
 

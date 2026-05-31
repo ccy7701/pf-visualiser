@@ -17,15 +17,12 @@ class Workday extends Model
         'date',
         'status',
         'notes',
-        // kept for backward compatibility with existing rows/code paths
-        'is_workday',
     ];
 
     protected function casts(): array
     {
         return [
             'date' => 'date',
-            'is_workday' => 'boolean',
         ];
     }
 }

@@ -11,14 +11,11 @@ class WorkdayController extends Controller
     public function update(Request $request, Workday $workday): RedirectResponse
     {
         $validated = $request->validate([
-            'status' => ['required', 'in:workday,absence,holiday,absense'],
+            'status' => ['required', 'in:workday,absence,holiday'],
         ]);
 
-        $status = $validated['status'] === 'absense' ? 'absence' : $validated['status'];
-
         $workday->update([
-            'status' => $status,
-            'is_workday' => $status === 'workday',
+            'status' => $validated['status'],
         ]);
 
         return redirect()->route('dashboard');

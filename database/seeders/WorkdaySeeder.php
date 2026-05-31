@@ -20,7 +20,6 @@ class WorkdaySeeder extends Seeder
                 ['date' => $cursor->toDateString()],
                 [
                     'status' => $cursor->isWeekday() ? Workday::STATUS_WORKDAY : Workday::STATUS_HOLIDAY,
-                    'is_workday' => $cursor->isWeekday(),
                 ]
             );
 
