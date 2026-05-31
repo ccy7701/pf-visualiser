@@ -57,6 +57,32 @@
             align-items: center;
             gap: 0.5rem;
             z-index: 1050;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.18s ease, visibility 0.18s ease;
+        }
+        body.edge-nav-right-active .module-nav-dock,
+        .module-nav-dock:focus-within {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 96px;
+            pointer-events: none;
+            z-index: 1045;
+            opacity: 0;
+            transition: opacity 0.18s ease;
+            background: linear-gradient(to left, rgba(33, 37, 41, 0.18), rgba(33, 37, 41, 0));
+        }
+        body.edge-nav-right-active::after {
+            opacity: 1;
         }
 
         .module-nav-label {
@@ -275,6 +301,9 @@
             background: #1e1e1e;
             box-shadow: 0 8px 30px rgba(0,0,0,0.6);
         }
+        [data-bs-theme="dark"] body::after {
+            background: linear-gradient(to left, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+        }
         [data-bs-theme="dark"] .tab-selector-popup button {
             color: #e0e0e0;
             border-bottom-color: #333;
@@ -322,12 +351,7 @@
             color: #e0e0e0;
         }
 
-        @media (max-width: 576px) {
-            .content-popup {
-                width: 85vw;
-                max-width: none;
-            }
-
+        @media (max-width: 991px) {
             .module-nav-dock {
                 right: 8px;
                 gap: 0.35rem;
@@ -342,5 +366,21 @@
                 width: 50px;
                 height: 50px;
                 font-size: 1.4rem;
+            }
+        }
+        @media (max-width: 576px) {
+            .content-popup {
+                width: 85vw;
+                max-width: none;
+            }
+        }
+        @media (pointer: coarse) {
+            .module-nav-dock {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+            body::after {
+                display: none;
             }
         }
