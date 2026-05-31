@@ -9,6 +9,12 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css" rel="stylesheet">
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('theme') || @json($theme ?? 'light');
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        })();
+    </script>
     <style>
         :root {
             --page-bg: #f8f9fa;
@@ -20,6 +26,10 @@
             background: var(--page-bg);
             min-height: 100vh;
             color: #212529;
+        }
+        [data-bs-theme="dark"] body {
+            --page-bg: #121212;
+            color: #e0e0e0;
         }
 
         .module-nav-dock {
@@ -48,6 +58,11 @@
             transform: translateX(-6px);
             pointer-events: none;
             transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+        }
+        [data-bs-theme="dark"] .module-nav-label {
+            background: rgba(30, 30, 30, 0.96);
+            color: #e0e0e0;
+            border-color: #3c3c3c;
         }
 
         .module-nav-dock:hover .module-nav-label,
@@ -89,6 +104,19 @@
             border-bottom: 1px solid #e9ecef;
             font-weight: 600;
         }
+        [data-bs-theme="dark"] .panel-card {
+            background: #1e1e1e;
+            box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.4);
+        }
+        [data-bs-theme="dark"] .panel-card .card-header,
+        [data-bs-theme="dark"] .input-subcard {
+            background: #1e1e1e;
+            color: #e0e0e0;
+            border-color: #333;
+        }
+        [data-bs-theme="dark"] .section-divider {
+            border-top-color: #333;
+        }
 
         .compact-input {
             font-size: 0.9rem;
@@ -129,6 +157,17 @@
             align-items: center;
             justify-content: center;
             transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+        }
+        [data-bs-theme="dark"] .projection-input-tab {
+            border-color: #ced4da;
+            color: #ced4da;
+            background: #1e1e1e;
+        }
+        [data-bs-theme="dark"] .projection-input-tab:hover,
+        [data-bs-theme="dark"] .projection-input-tab:focus-visible,
+        [data-bs-theme="dark"] .projection-input-tab.active {
+            background: #ced4da;
+            color: #121212;
         }
         .projection-input-tab:hover,
         .projection-input-tab:focus-visible {
@@ -194,6 +233,12 @@
         .negative-value {
             color: #dc3545;
         }
+        [data-bs-theme="dark"] .table-light,
+        [data-bs-theme="dark"] .table-light th {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border-color: #3a3a3a;
+        }
         .projection-table {
             table-layout: fixed;
             width: 100%;
@@ -235,6 +280,10 @@
         #statusMessage.is-error {
             background: rgba(220, 53, 69, 0.95);
         }
+        [data-bs-theme="dark"] #statusMessage {
+            background: rgba(30, 30, 30, 0.95);
+            color: #e0e0e0;
+        }
 
         @media (max-width: 991px) {
             .module-nav-dock {
@@ -258,7 +307,7 @@
 <body>
 <div class="module-nav-dock" aria-label="Counter navigation">
     <a href="{{ route('dashboard') }}" class="module-nav-btn" aria-label="Back to counter">
-        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+        <i class="fa-solid fa-wallet" aria-hidden="true"></i>
     </a>
     <span class="module-nav-label">Counter</span>
 </div>
@@ -290,10 +339,10 @@
                                 <button id="runProjectionBtn" class="btn btn-dark w-100">Run</button>
                             </div>
                             <div class="col-4">
-                                <button id="saveScenarioBtn" class="btn btn-outline-dark w-100">Save</button>
+                                <button id="saveScenarioBtn" class="btn btn-outline-secondary w-100">Save</button>
                             </div>
                             <div class="col-4">
-                                <button id="clearInputsBtn" class="btn btn-outline-dark w-100" type="button">Clear</button>
+                                <button id="clearInputsBtn" class="btn btn-outline-secondary w-100" type="button">Clear</button>
                             </div>
                         </div>
                     </div>
@@ -301,7 +350,7 @@
                     <div class="input-subcard mb-0">
                         <div class="mb-0">
                             <label class="form-label form-label-sm">Load Scenario</label>
-                            <button id="openScenariosBtn" class="btn btn-outline-dark w-100" type="button">Open Saved Scenarios</button>
+                            <button id="openScenariosBtn" class="btn btn-outline-secondary w-100" type="button">Open Saved Scenarios</button>
                         </div>
                         <hr class="section-divider my-3">
                         <div class="mb-0">
@@ -314,7 +363,7 @@
                                     <select id="compareScenarioB" class="form-select compact-input"></select>
                                 </div>
                             </div>
-                            <button id="compareScenariosBtn" class="btn btn-outline-dark w-100" type="button">Compare</button>
+                            <button id="compareScenariosBtn" class="btn btn-outline-secondary w-100" type="button">Compare</button>
                         </div>
                     </div>
 

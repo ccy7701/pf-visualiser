@@ -387,7 +387,7 @@
 <div class="module-nav-dock" aria-label="Projection navigation">
     <span class="module-nav-label">Projection</span>
     <a href="{{ route('projection.index') }}" class="module-nav-btn" aria-label="Go to projection">
-        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
     </a>
 </div>
 

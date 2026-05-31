@@ -418,7 +418,7 @@
                 <td>${s.notes || '-'}</td>
                 <td>${formatDateTime(s.created_at)}</td>
                 <td class="text-end">
-                    <button type="button" class="btn btn-sm btn-outline-dark me-1" data-action="load" data-scenario-id="${s.id}" title="Load">
+                    <button type="button" class="btn btn-sm btn-outline-secondary me-1" data-action="load" data-scenario-id="${s.id}" title="Load">
                         <i class="fa-solid fa-folder-open"></i>
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete" data-scenario-id="${s.id}" title="Delete">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
 use App\Models\ProjectionScenario;
 use App\Services\ProjectionService;
 use Illuminate\Http\JsonResponse;
@@ -20,6 +21,7 @@ class ProjectionController extends Controller
     public function index(): View
     {
         return view('projection', [
+            'theme' => Setting::getValue('theme', 'light'),
             'scenarios' => ProjectionScenario::query()
                 ->latest('updated_at')
                 ->limit(30)
