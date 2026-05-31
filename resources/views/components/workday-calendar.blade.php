@@ -20,14 +20,14 @@ new class extends Component
 
     public function goToPreviousMonth(): void
     {
-        $monthStart = Carbon::createFromFormat('Y-m', $this->month, 'Asia/Kuala_Lumpur')->startOfMonth();
+        $monthStart = Carbon::createFromFormat('!Y-m', $this->month, 'Asia/Kuala_Lumpur')->startOfMonth();
         $this->month = $monthStart->copy()->subMonth()->format('Y-m');
         $this->buildCalendar();
     }
 
     public function goToNextMonth(): void
     {
-        $monthStart = Carbon::createFromFormat('Y-m', $this->month, 'Asia/Kuala_Lumpur')->startOfMonth();
+        $monthStart = Carbon::createFromFormat('!Y-m', $this->month, 'Asia/Kuala_Lumpur')->startOfMonth();
         $this->month = $monthStart->copy()->addMonth()->format('Y-m');
         $this->buildCalendar();
     }
@@ -61,7 +61,7 @@ new class extends Component
 
     private function buildCalendar(): void
     {
-        $monthStart = Carbon::createFromFormat('Y-m', $this->month, 'Asia/Kuala_Lumpur')->startOfMonth();
+        $monthStart = Carbon::createFromFormat('!Y-m', $this->month, 'Asia/Kuala_Lumpur')->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
 
         $workdays = Workday::query()
@@ -145,7 +145,7 @@ new class extends Component
                 wire:click="goToPreviousMonth"
                 wire:loading.attr="disabled"
             >
-                {{ \Carbon\Carbon::createFromFormat('Y-m', $month, 'Asia/Kuala_Lumpur')->startOfMonth()->subMonth()->format('F') }}
+                {{ \Carbon\Carbon::createFromFormat('!Y-m', $month, 'Asia/Kuala_Lumpur')->startOfMonth()->subMonth()->format('F') }}
             </button>
 
             <h2 class="h5 mb-0">{{ $calendarMonthLabel }}</h2>
@@ -156,7 +156,7 @@ new class extends Component
                 wire:click="goToNextMonth"
                 wire:loading.attr="disabled"
             >
-                {{ \Carbon\Carbon::createFromFormat('Y-m', $month, 'Asia/Kuala_Lumpur')->startOfMonth()->addMonth()->format('F') }}
+                {{ \Carbon\Carbon::createFromFormat('!Y-m', $month, 'Asia/Kuala_Lumpur')->startOfMonth()->addMonth()->format('F') }}
             </button>
         </div>
 
