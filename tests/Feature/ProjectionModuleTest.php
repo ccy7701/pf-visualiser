@@ -163,6 +163,9 @@ class ProjectionModuleTest extends TestCase
                         'amount' => 50,
                     ],
                 ],
+                'note' => '',
+                'compound_interest_enabled' => false,
+                'annual_interest_rate_percent' => 0,
             ],
             'epf' => [
                 'employee_rate_percent' => 11.0,

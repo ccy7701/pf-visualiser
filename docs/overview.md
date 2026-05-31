@@ -9,8 +9,8 @@
 This project is a personal-use financial monitoring web application for:
 
 1. Personal liquidity tracking
-2. Real-time financial projection visualisation
-3. Financial systems experimentation
+2. Deterministic scenario-based financial projection
+3. Financial systems experimentation and model validation
 
 ---
 
@@ -22,6 +22,7 @@ The system is intentionally:
 * personal-use oriented
 * deterministic in computation
 * auditable in data changes
+* backend-calculation first (frontend for input/output rendering)
 
 ---
 
@@ -60,9 +61,43 @@ For early testing:
 
 This enables immediate validation of month rollover and accrual transition behavior.
 
+Counter runtime also supports simulation time via settings (`simulation_now`, `use_simulation_now`).
+
 ---
 
-## 5. Development Phases
+## 5. Active Modules
+
+### Module A: Counter (`counter`)
+
+Purpose:
+
+* derive current liquid cash from `starting_amount + net_transactions + accrued_salary`
+
+Key characteristics:
+
+* no minute-persistence job for counter value
+* salary accrual applies only during working windows on `workday` status dates
+* default workday fallback: weekdays are workdays, weekends are holidays
+* workday status model supports `workday`, `absence`, `holiday`
+* snapshot API returns `counter`, `increment_per_second`, and related breakdown fields
+
+### Module B: COH Projection (`coh-projection`)
+
+Purpose:
+
+* produce month-by-month deterministic projections for COH, ELR, and EPF
+
+Key characteristics:
+
+* scenario-local payloads persisted in `projection_scenarios.parameters_json`
+* save/load/delete/compare scenario workflow
+* result caching through `projection_results_cache`
+* ELR schedule support with optional compound-interest progression
+* cost-of-living handled via budget sets and month-specific budget selection
+
+---
+
+## 6. Development Phases (Historical Baseline)
 
 ## PHASE 1 - Project Setup
 
@@ -97,8 +132,8 @@ This enables immediate validation of month rollover and accrual transition behav
 
 * Salary schedule retrieval
 * Workday counting
-* Minute-rate calculation
-* Elapsed-minute calculation
+* Per-second increment calculation
+* Elapsed eligible-seconds calculation
 * Accrued salary derivation
 
 ## PHASE 6 - Main Counter
@@ -122,32 +157,38 @@ This enables immediate validation of month rollover and accrual transition behav
 * Validate workday exclusions
 * Validate transaction effects
 
+## PHASE 9 - Projection Engine
+
+* Scenario payload modeling
+* Month-by-month projection service orchestration
+* Scenario persistence and caching
+* Scenario comparison workflow
+
 ---
 
-## 6. Time and Timezone Guidelines
+## 7. Time and Timezone Guidelines
 
 The system is time-sensitive. Follow these rules:
 
 * Store timestamps in UTC
 * Convert carefully to local timezone for display and logic boundaries
-* Standardise Malaysia timezone handling
+* Standardise Asia/Kuala_Lumpur timezone handling for module logic
 * Validate midnight/month/workday transitions explicitly
 
 ---
 
-## 7. Planned Future Modules (Not Required Now)
+## 8. Planned Future Modules (Not Required Now)
 
 Potential future additions:
 
 * Charts
-* Salary forecasting
+* Advanced salary forecasting variants
 * Scenario simulation
 * Savings goals
 * Recurring expenses
-* BNPL modelling
+* Rich BNPL modelling templates
 * Projected month-end balance
 * Historical Counter playback
 * Export/import
 * Mobile UX enhancements
 * Investment simulation
-

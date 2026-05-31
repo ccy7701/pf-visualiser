@@ -67,7 +67,8 @@ class ProjectionService
             $livingExpenses = $this->expenseCalculator->livingCostForMonth($month, $costOfLiving) + $household;
             $bnplRepayment = $this->bnplCalculator->repaymentForMonth($month, $bnpl);
             $ptptnRepayment = $this->ptptnCalculator->repaymentForMonth($month, $ptptn);
-            $elrContribution = $this->elrCalculator->allocationForMonth($month, $elr, $monthEvents);
+            $elrMonthProjection = $this->elrCalculator->projectMonthBalance($month, $openingElr, $elr, $monthEvents);
+            $elrContribution = (float) ($elrMonthProjection['contribution'] ?? 0);
 
             $closingCoh = $openingCoh
                 + $netIncome
@@ -79,7 +80,7 @@ class ProjectionService
                 - $oneOffExpense
                 - $elrContribution;
 
-            $closingElr = $openingElr + $elrContribution;
+            $closingElr = (float) ($elrMonthProjection['closing_elr'] ?? ($openingElr + $elrContribution));
             $closingEpf = $openingEpf + $employeeEpf + $employerEpf;
 
             $rows[] = [
@@ -101,6 +102,7 @@ class ProjectionService
                 'ptptn' => round($ptptnRepayment, 2),
                 'debt_servicing' => round($bnplRepayment + $ptptnRepayment, 2),
                 'elr_contribution' => round($elrContribution, 2),
+                'elr_interest' => round((float) ($elrMonthProjection['interest'] ?? 0), 2),
                 'employee_epf' => round($employeeEpf, 2),
                 'employer_epf' => round($employerEpf, 2),
                 'socso' => round($socso, 2),
@@ -186,6 +188,9 @@ class ProjectionService
                         'amount' => (float) ($schedule['amount'] ?? 0),
                     ];
                 }, array_filter($elr['schedules'] ?? [], fn ($schedule) => is_array($schedule)))),
+                'note' => (string) ($elr['note'] ?? ''),
+                'compound_interest_enabled' => filter_var($elr['compound_interest_enabled'] ?? false, FILTER_VALIDATE_BOOL),
+                'annual_interest_rate_percent' => (float) ($elr['annual_interest_rate_percent'] ?? 0),
             ],
             'epf' => [
                 'employee_rate_percent' => (float) ($epf['employee_rate_percent'] ?? 0),

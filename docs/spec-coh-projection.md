@@ -8,18 +8,9 @@ Related high-level project specification: `overview.md`
 
 ## 1. Module Purpose
 
-`coh-projection` is a forward-looking projection module that forecasts future balances across a configurable month range.
+`coh-projection` is a deterministic scenario engine that projects month-by-month balances across a configured month range.
 
-The module computes and compares scenario outcomes using configurable assumptions such as:
-
-* salary progression
-* probation duration
-* PTPTN repayment status
-* BNPL obligations
-* household commitments
-* savings allocations
-
-The primary output of this module is a month-by-month projection of:
+The system projects:
 
 * Cash on Hand (COH)
 * Emergency Liquidity Reserve (ELR)
@@ -29,18 +20,16 @@ The primary output of this module is a month-by-month projection of:
 
 ## 2. Core Architectural Principle
 
-The module MUST operate as a deterministic projection engine.
+The projection module MUST operate as a deterministic backend computation engine.
 
-Given identical inputs, the engine must always produce identical outputs.
+Given identical inputs, the engine must produce identical outputs.
 
 The following constraints apply:
 
-* no hidden assumptions in UI layers
-* no hardcoded financial constants in presentation code
-* all calculations executed inside backend services
-* frontend responsible only for input collection and output rendering
-* projection input must be self-contained within a scenario payload
-* projection must not derive assumptions from live transaction history
+* no hidden UI-side assumptions
+* no frontend-side financial computations
+* all projection assumptions must be inside payload
+* projection must not derive assumptions from live counter transactions
 
 ---
 
@@ -62,88 +51,83 @@ The system shall support:
 
 * probation salary
 * confirmed salary
-* probation duration (3 months, 6 months, or custom)
-* salary commencement month
+* probation duration months
+* salary start month
 * salary paid-in-arrears toggle
 
 Employment settings are scenario-local.
-
-The projection module must not depend on `salary_schedules` used by the real-time counter module.
 
 ### 3.3 Cost of Living Configuration
 
 The system shall support:
 
-* BCOL amount
-* FCOL Lite amount
-* FCOL Max amount
-* FCOL Lite start month
-* FCOL Max start month
-* category-based expense entries
+* budget sets: `bcol`, `fcol_lite`, `fcol_max`
+* per-budget `category_allocations[]`
+* month-level budget selection override
 
 Cost inputs are explicit projection inputs only.
 
-No extrapolation from historical `transactions` is allowed.
-
-### 3.4 PTPTN Debt Configuration
+### 3.4 PTPTN Configuration
 
 The system shall support:
 
 * waiver granted flag
-* waiver denied flow
 * monthly repayment amount
-* repayment commencement month
-
-PTPTN waiver is a scenario-level permanent boolean.
-
-### 3.5 BNPL Debt Configuration
-
-The system shall support:
-
-* multiple BNPL schedules
-* fixed monthly repayment amounts
 * repayment start month
-* repayment end month
 
-### 3.6 Household Contributions
+### 3.5 BNPL Configuration
 
 The system shall support:
 
-* recurring family allowance
-* recurring household bill contributions
-* one-off cash injections
-* one-off expenses
+* multiple monthly entries
+* month
+* amount
+* note
+
+### 3.6 Events Configuration
+
+The system shall support monthly events with:
+
+* month
+* type
+* amount
+* note
+
+Supported event `type` values:
+
+* `allowance`
+* `household`
+* `one_off_income`
+* `one_off_expense`
+* `elr_override`
 
 ### 3.7 ELR Configuration
 
 The system shall support:
 
-* daily ELR contribution
-* monthly ELR contribution
-* variable ELR contribution schedules
+* ELR schedules (`start_month`, `end_month`, daily `amount`)
+* ELR note
+* compound interest toggle
+* annual interest rate percent
 
-### 3.8 EPF Projection
+### 3.8 EPF Configuration
 
 The system shall support:
 
-* employee EPF contribution rate
-* employer EPF contribution rate
-* monthly EPF accumulation
+* employee EPF rate percent
+* employer EPF rate percent
 
 ### 3.9 Projection Output
 
-The system shall produce monthly rows containing:
+The system shall return monthly rows containing core balances and breakdown fields, including:
 
-* month
-* gross income
-* net income
-* total expenses
-* debt servicing
-* ELR contribution
-* EPF contribution
-* closing COH
-* closing ELR
-* closing EPF
+* opening/closing COH
+* opening/closing ELR
+* opening/closing EPF
+* gross/net income
+* expenses and debt servicing
+* ELR contribution and ELR interest
+* statutory deductions (`socso`, `eis`)
 
 `closing_coh` may be negative.
 
@@ -153,7 +137,7 @@ The system shall produce monthly rows containing:
 
 ### 4.1 Chronological Processing Rule
 
-The engine must process projection months in chronological order from start month to end month.
+Months are processed in ascending month order from `start_month` to `end_month`.
 
 Each month inherits opening balances from the previous month's closing balances.
 
@@ -170,16 +154,35 @@ Opening COH
 - BNPL Repayments
 - PTPTN Repayments
 - One-Off Expenses
-- ELR Allocation
+- ELR Contribution
 ```
 
 ### 4.3 Monthly ELR Formula
 
+When compound interest is disabled:
+
 ```text
-Closing ELR
-=
-Opening ELR
-+ ELR Allocation
+Closing ELR = Opening ELR + ELR Contribution
+```
+
+When compound interest is enabled:
+
+For each day in month:
+
+```text
+balance = balance + (balance * annual_rate/100/365)
+balance = balance + daily_contribution
+```
+
+Where:
+
+* `daily_contribution = monthly_elr_contribution / days_in_month`
+* monthly ELR contribution is resolved from schedule (or legacy daily/monthly inputs if provided)
+
+Monthly ELR interest is:
+
+```text
+ELR Interest = Closing ELR - Opening ELR - ELR Contribution
 ```
 
 ### 4.4 Monthly EPF Formula
@@ -194,78 +197,39 @@ Opening EPF
 
 ### 4.5 Salary Progression Logic
 
-If month is within probation period:
+If month is within probation period, use probation salary.
 
-```text
-Use probation salary
-```
+Otherwise, use confirmed salary.
 
-Otherwise:
-
-```text
-Use confirmed salary
-```
-
-### 4.6 PTPTN Logic
-
-If waiver granted:
-
-```text
-PTPTN repayment = 0
-```
-
-If waiver denied and repayment month reached:
-
-```text
-PTPTN repayment = configured monthly amount
-```
-
-### 4.7 BNPL Logic
-
-If month is within BNPL repayment window:
-
-```text
-Apply configured BNPL monthly repayment
-```
-
-Otherwise:
-
-```text
-BNPL repayment = 0
-```
-
-### 4.8 Cost of Living Tier Precedence
-
-Cost-of-living tiers use override precedence, not stacking.
-
-```text
-Active Monthly Living Cost = Highest active tier among:
-FCOL Max > FCOL Lite > BCOL
-```
-
-### 4.9 Arrears Salary Rule
+### 4.6 Salary Arrears Rule
 
 If `salary_paid_in_arrears = true`, salary is shifted by exactly one full month.
 
-Example:
-
-```text
-June work salary is paid in July
-```
-
 No partial first-month proration is applied.
 
-### 4.10 Negative COH Rule
+### 4.7 PTPTN Logic
 
-The engine must allow negative closing COH values.
+If waiver granted, PTPTN repayment is 0.
 
-No floor clamp to zero is applied.
+If waiver is not granted and repayment start month is reached, repayment uses configured monthly amount.
+
+### 4.8 BNPL Logic
+
+BNPL repayment for a month is the sum of BNPL entries matching that month.
+
+### 4.9 Cost of Living Budget Selection Rule
+
+Monthly living expense is derived from selected budget for that month.
+
+If no monthly override is provided, default budget key is `bcol`.
+
+### 4.10 ELR Override Event Rule
+
+If an `elr_override` event exists for a month, it overrides that month’s resolved ELR contribution amount.
 
 ### 4.11 EPF Basis Rule
 
-EPF contributions are computed from gross salary only.
-
-Fixed configured employee and employer rates apply.
+EPF contributions are computed from gross salary only using configured percent rates.
 
 ---
 
@@ -273,127 +237,135 @@ Fixed configured employee and employer rates apply.
 
 ### 5.1 projection_scenarios
 
-| Field           | Type           |
-| --------------- | -------------- |
-| id              | bigint         |
-| name            | string         |
-| parameters_json | json           |
-| notes           | nullable text  |
-| created_at      | timestamp      |
-| updated_at      | timestamp      |
+| Field           | Type          |
+| --------------- | ------------- |
+| id              | bigint        |
+| name            | string        |
+| parameters_json | json          |
+| notes           | nullable text |
+| created_at      | timestamp     |
+| updated_at      | timestamp     |
 
-`parameters_json` stores the complete scenario input set:
+`parameters_json` stores normalized scenario input payload.
 
-* scenario range and starting balances
-* employment configuration
-* cost-of-living configuration
-* PTPTN configuration
-* BNPL schedules
-* ELR configuration
-* EPF configuration
-* event entries (allowance/household/one-off items)
+### 5.2 projection_results_cache
 
-### 5.2 projection_results_cache (optional)
+| Field        | Type        |
+| ------------ | ----------- |
+| id           | bigint      |
+| scenario_id  | foreign key |
+| results_json | json        |
+| created_at   | timestamp   |
+| updated_at   | timestamp   |
 
-| Field        | Type          |
-| ------------ | ------------- |
-| id           | bigint        |
-| scenario_id  | foreign key   |
-| results_json | json          |
-| created_at   | timestamp     |
-| updated_at   | timestamp     |
-
-For `events[].type` values inside `parameters_json`, recommended values are:
-
-* allowance
-* household
-* one_off_income
-* one_off_expense
-* elr_override
-
-If no cache is used, projection results are computed on demand from `parameters_json`.
+Cache is written on save/load/compare paths when needed.
 
 ---
 
 ## 6. Backend/Frontend Contract
 
-### 6.1 Projection Request Payload
+### 6.1 Endpoints
+
+* `GET /projection`
+* `POST /projection/run`
+* `POST /projection/scenarios`
+* `GET /projection/scenarios/{scenario}`
+* `DELETE /projection/scenarios/{scenario}`
+* `POST /projection/compare`
+
+### 6.2 Projection Request Payload Shape
 
 ```json
 {
   "scenario": {
     "start_month": "2026-06",
-    "end_month": "2027-05",
-    "starting_coh": 1000.0,
-    "starting_elr": 300.0,
-    "starting_epf": 0.0
+    "end_month": "2026-08",
+    "starting_coh": 0,
+    "starting_elr": 0,
+    "starting_epf": 0
   },
   "employment": {
-    "probation_salary": 1800.0,
-    "confirmed_salary": 2200.0,
+    "probation_salary": 1800,
+    "confirmed_salary": 2200,
     "probation_duration_months": 3,
     "salary_start_month": "2026-06",
     "salary_paid_in_arrears": true
   },
   "cost_of_living": {
-    "bcol_amount": 700.0,
-    "fcol_lite_amount": 900.0,
-    "fcol_max_amount": 1200.0,
-    "fcol_lite_start_month": "2026-09",
-    "fcol_max_start_month": "2027-01"
+    "budgets": {
+      "bcol": { "category_allocations": [] },
+      "fcol_lite": { "category_allocations": [] },
+      "fcol_max": { "category_allocations": [] }
+    },
+    "monthly_budget_selection": [
+      { "month": "2026-07", "budget": "fcol_lite" }
+    ]
   },
   "ptptn": {
     "waiver_granted": false,
-    "monthly_repayment": 120.0,
-    "repayment_start_month": "2026-10"
+    "monthly_repayment": 120,
+    "repayment_start_month": "2026-08"
   },
   "bnpl": [
-    {
-      "name": "Phone",
-      "monthly_amount": 150.0,
-      "start_month": "2026-06",
-      "end_month": "2027-01"
-    }
+    { "month": "2026-06", "amount": 150, "note": "Phone" }
   ],
   "events": [
-    {
-      "month": "2026-08",
-      "type": "one_off_expense",
-      "amount": 500.0,
-      "note": "Laptop repair"
-    }
+    { "month": "2026-08", "type": "one_off_expense", "amount": 500, "note": "Laptop repair" }
   ],
   "elr": {
-    "monthly_contribution": 50.0
+    "schedules": [
+      { "start_month": "2026-06", "end_month": "2026-08", "amount": 50 }
+    ],
+    "note": "Optional note",
+    "compound_interest_enabled": false,
+    "annual_interest_rate_percent": 0
   },
   "epf": {
-    "employee_rate": 0.11,
-    "employer_rate": 0.13
+    "employee_rate_percent": 11,
+    "employer_rate_percent": 13
   }
 }
 ```
 
-### 6.2 Projection Response Payload
+### 6.3 Projection Response Shape (Core)
 
 ```json
 {
+  "meta": {
+    "start_month": "2026-06",
+    "end_month": "2026-08",
+    "months_count": 3,
+    "salary_paid_in_arrears": true,
+    "ptptn_waiver_granted": false
+  },
+  "summary": {
+    "final_coh": 0,
+    "final_elr": 0,
+    "final_epf": 0,
+    "lowest_coh": 0,
+    "highest_coh": 0
+  },
   "months": [
     {
       "month": "2026-06",
-      "opening_coh": 1000.00,
-      "closing_coh": 126.78,
-      "opening_elr": 300.00,
-      "closing_elr": 362.93,
-      "opening_epf": 0.00,
-      "closing_epf": 122.50,
-      "gross_income": 0.00,
-      "net_income": 0.00,
-      "expenses": 700.00,
-      "bnpl": 150.00,
-      "ptptn": 0.00,
-      "elr_contribution": 62.93,
-      "employee_epf": 0.00,
-      "employer_epf": 0.00
+      "opening_coh": 0,
+      "closing_coh": 0,
+      "opening_elr": 0,
+      "closing_elr": 0,
+      "opening_epf": 0,
+      "closing_epf": 0,
+      "gross_income": 0,
+      "net_income": 0,
+      "expenses": 0,
+      "bnpl": 0,
+      "ptptn": 0,
+      "debt_servicing": 0,
+      "elr_contribution": 0,
+      "elr_interest": 0,
+      "employee_epf": 0,
+      "employer_epf": 0,
+      "socso": 0,
+      "eis": 0
     }
   ]
 }
@@ -401,14 +373,10 @@ If no cache is used, projection results are computed on demand from `parameters_
 
 Frontend responsibilities:
 
-* submit projection inputs
-* request recomputation
-* render tables and charts
-* support export UX
-
-The frontend MUST NOT perform financial computations.
-
-When persisting scenarios, the same payload structure is saved into `projection_scenarios.parameters_json`.
+* collect projection inputs
+* call projection endpoints
+* render tables/charts
+* perform no financial computations
 
 ---
 
@@ -416,63 +384,46 @@ When persisting scenarios, the same payload structure is saved into `projection_
 
 ### ProjectionService
 
-Responsibilities:
-
+* normalize payload
 * orchestrate month-by-month computation
-* coordinate all calculators
-* return finalized projection output
+* return result via result builder
 
 ### SalaryCalculator
 
-Responsibilities:
-
-* probation versus confirmed salary logic
-* gross/net salary derivation
-* salary start and arrears handling
+* salary start handling
+* probation/confirmed salary selection
+* arrears handling
 
 ### ExpenseCalculator
 
-Responsibilities:
-
-* BCOL and FCOL application by month
-* category expense aggregation
-* household and one-off expense handling
+* resolve monthly budget key
+* aggregate category allocations
 
 ### BNPLCalculator
 
-Responsibilities:
-
-* monthly BNPL repayment resolution
-* multi-schedule overlap handling
+* month-based BNPL sum
 
 ### PTPTNCalculator
 
-Responsibilities:
-
-* waiver logic
-* repayment activation by month
+* waiver and repayment start logic
 
 ### ELRCalculator
 
-Responsibilities:
-
-* ELR allocation resolution (daily/monthly/variable)
-* ELR balance updates
+* schedule-based ELR contribution resolution
+* event override handling
+* optional compound interest progression
 
 ### EPFCalculator
 
-Responsibilities:
+* employee/employer EPF computation
 
-* employee/employer contribution calculation
-* EPF accumulation updates
+### StatutoryDeductionResolver
+
+* SOCSO/EIS deduction lookup from gross income
 
 ### ProjectionResultBuilder
 
-Responsibilities:
-
-* shape frontend-ready month rows
-* include derived subtotals and balances
-* support export-friendly structures
+* build `meta`, `summary`, and `months` response shape
 
 ---
 
@@ -480,11 +431,12 @@ Responsibilities:
 
 The following decisions are finalized:
 
-* employment configuration is fully scenario-local
-* full scenario parameters are stored as JSON per saved scenario
-* projection uses explicit projection config only (no historical extrapolation)
+* projection is scenario-local and deterministic
+* scenario inputs are persisted in `parameters_json`
+* projection uses explicit scenario payload only
 * closing COH may be negative
-* salary arrears means exact full-month lag with no partial first-month handling
-* EPF is calculated from gross salary using fixed employee/employer rates
-* cost-of-living tiers use highest-active override precedence (FCOL Max > FCOL Lite > BCOL)
+* salary arrears means exact one-month lag
+* EPF is based on gross salary only
+* budget selection is month-specific via `monthly_budget_selection`
 * PTPTN waiver is permanent per scenario
+* ELR supports optional compound-interest progression with daily compounding
