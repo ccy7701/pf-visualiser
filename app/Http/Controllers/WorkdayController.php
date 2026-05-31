@@ -18,6 +18,6 @@ class WorkdayController extends Controller
             'status' => $validated['status'],
         ]);
 
-        return redirect()->route('dashboard');
+        return redirect()->route('counter');
     }
 }

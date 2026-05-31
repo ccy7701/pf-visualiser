@@ -306,7 +306,7 @@
 </head>
 <body>
 <div class="module-nav-dock" aria-label="Counter navigation">
-    <a href="{{ route('dashboard') }}" class="module-nav-btn" aria-label="Back to counter">
+    <a href="{{ route('counter') }}" class="module-nav-btn" aria-label="Back to counter">
         <i class="fa-solid fa-wallet" aria-hidden="true"></i>
     </a>
     <span class="module-nav-label">Counter</span>
