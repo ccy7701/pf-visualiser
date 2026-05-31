@@ -9,256 +9,18 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css" rel="stylesheet">
-    <style>
-        :root {
-            --page-bg: #f8f9fa;
-            --card-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.08);
-            --accent: #212529;
-        }
-
-        body {
-            background: var(--page-bg);
-            min-height: 100vh;
-            color: #212529;
-        }
-
-        .module-nav-dock {
-            position: fixed;
-            top: 50vh;
-            left: 14px;
-            transform: translateY(-50%);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            z-index: 1100;
-        }
-
-        .module-nav-label {
-            background: rgba(255, 255, 255, 0.92);
-            color: #212529;
-            border: 1px solid #dee2e6;
-            border-radius: 999px;
-            padding: 0.25rem 0.65rem;
-            font-size: 0.78rem;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateX(-6px);
-            pointer-events: none;
-            transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
-        }
-
-        .module-nav-dock:hover .module-nav-label,
-        .module-nav-dock:focus-within .module-nav-label {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(0);
-        }
-
-        .module-nav-btn {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: #212529;
-            color: #fff;
-            border: none;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-            font-size: 1.6rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .module-nav-btn:hover {
-            transform: scale(1.08);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-            color: #fff;
-        }
-
-        .panel-card {
-            border: 0;
-            box-shadow: var(--card-shadow);
-        }
-
-        .panel-card .card-header {
-            background: #fff;
-            border-bottom: 1px solid #e9ecef;
-            font-weight: 600;
-        }
-
-        .compact-input {
-            font-size: 0.9rem;
-        }
-        .section-subtitle {
-            font-size: 1rem;
-            margin-bottom: 0.25rem;
-        }
-        .section-divider {
-            margin: 0 0 0.75rem;
-            border: 0;
-            border-top: 1px solid #dee2e6;
-        }
-        .input-subcard {
-            border: 1px solid #dee2e6;
-            border-radius: 0.65rem;
-            padding: 0.75rem;
-            background: #fff;
-            margin-bottom: 0.75rem;
-        }
-        .projection-input-tabs {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            border-bottom: 1px solid #e9ecef;
-            padding-bottom: 0.75rem;
-            margin-bottom: 0.75rem;
-            flex-wrap: wrap;
-        }
-        .projection-input-tab {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 1px solid #212529;
-            background: #fff;
-            color: #212529;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
-        }
-        .projection-input-tab:hover,
-        .projection-input-tab:focus-visible {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
-            color: #fff;
-            background: #212529;
-        }
-        .projection-input-tab.active {
-            background: #212529;
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-        }
-        #savedScenariosModal .modal-dialog {
-            max-width: 980px;
-        }
-        #savedScenariosModal .modal-content {
-            max-height: 82vh;
-        }
-        #savedScenariosModal .modal-body {
-            padding-left: 1rem;
-            padding-right: 1rem;
-            overflow-y: auto;
-        }
-        #scenarioComparisonModal .modal-dialog {
-            max-width: 980px;
-        }
-        #scenarioComparisonModal .modal-content {
-            max-height: 82vh;
-        }
-        #scenarioComparisonModal .modal-body {
-            padding-left: 1rem;
-            padding-right: 1rem;
-            overflow-y: auto;
-        }
-
-        .results-wrap {
-            max-height: 55vh;
-            overflow: auto;
-        }
-
-        .table-sm th,
-        .table-sm td {
-            white-space: nowrap;
-            vertical-align: middle;
-        }
-
-        #projectionRows td:first-child,
-        #projectionRows td:last-child,
-        .results-wrap thead th:first-child,
-        .results-wrap thead th:last-child {
-            padding-left: 0.85rem;
-            padding-right: 0.85rem;
-        }
-        #comparisonRows td:first-child,
-        #comparisonRows td:last-child,
-        #scenarioComparisonModal thead th:first-child,
-        #scenarioComparisonModal thead th:last-child {
-            padding-left: 0.85rem;
-            padding-right: 0.85rem;
-        }
-
-        .negative-value {
-            color: #dc3545;
-        }
-        .projection-table {
-            table-layout: fixed;
-            width: 100%;
-        }
-        .projection-table th,
-        .projection-table td {
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .chart-wrap {
-            position: relative;
-            height: 420px;
-            width: 100%;
-        }
-
-        #statusMessage {
-            position: fixed;
-            right: 1rem;
-            bottom: 1rem;
-            z-index: 1100;
-            max-width: 360px;
-            width: calc(100% - 2rem);
-            padding: 0.65rem 0.85rem;
-            border-radius: 0.5rem;
-            color: #fff;
-            background: rgba(33, 37, 41, 0.95);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            transform: translateY(10px);
-            pointer-events: none;
-            transition: opacity 0.18s ease, transform 0.18s ease;
-        }
-
-        #statusMessage.is-visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        #statusMessage.is-error {
-            background: rgba(220, 53, 69, 0.95);
-        }
-
-        @media (max-width: 991px) {
-            .module-nav-dock {
-                left: 8px;
-                gap: 0.35rem;
-            }
-
-            .module-nav-label {
-                font-size: 0.72rem;
-                padding: 0.2rem 0.5rem;
-            }
-
-            .module-nav-btn {
-                width: 50px;
-                height: 50px;
-                font-size: 1.4rem;
-            }
-        }
-    </style>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('theme') || @json($theme ?? 'light');
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        })();
+    </script>
+    <link href="{{ asset('css/projection.css') }}" rel="stylesheet">
 </head>
 <body>
 <div class="module-nav-dock" aria-label="Counter navigation">
-    <a href="{{ route('dashboard') }}" class="module-nav-btn" aria-label="Back to counter">
-        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+    <a href="{{ route('counter') }}" class="module-nav-btn" aria-label="Back to counter">
+        <i class="fa-solid fa-wallet" aria-hidden="true"></i>
     </a>
     <span class="module-nav-label">Counter</span>
 </div>
@@ -290,10 +52,10 @@
                                 <button id="runProjectionBtn" class="btn btn-dark w-100">Run</button>
                             </div>
                             <div class="col-4">
-                                <button id="saveScenarioBtn" class="btn btn-outline-dark w-100">Save</button>
+                                <button id="saveScenarioBtn" class="btn btn-outline-secondary w-100">Save</button>
                             </div>
                             <div class="col-4">
-                                <button id="clearInputsBtn" class="btn btn-outline-dark w-100" type="button">Clear</button>
+                                <button id="clearInputsBtn" class="btn btn-outline-secondary w-100" type="button">Clear</button>
                             </div>
                         </div>
                     </div>
@@ -301,7 +63,7 @@
                     <div class="input-subcard mb-0">
                         <div class="mb-0">
                             <label class="form-label form-label-sm">Load Scenario</label>
-                            <button id="openScenariosBtn" class="btn btn-outline-dark w-100" type="button">Open Saved Scenarios</button>
+                            <button id="openScenariosBtn" class="btn btn-outline-secondary w-100" type="button">Open Saved Scenarios</button>
                         </div>
                         <hr class="section-divider my-3">
                         <div class="mb-0">
@@ -314,7 +76,7 @@
                                     <select id="compareScenarioB" class="form-select compact-input"></select>
                                 </div>
                             </div>
-                            <button id="compareScenariosBtn" class="btn btn-outline-dark w-100" type="button">Compare</button>
+                            <button id="compareScenariosBtn" class="btn btn-outline-secondary w-100" type="button">Compare</button>
                         </div>
                     </div>
 
@@ -675,7 +437,7 @@
                         <tr>
                             <th>Scenario Name</th>
                             <th>Notes</th>
-                            <th>Date Created</th>
+                            <th>Last Updated</th>
                             <th class="text-end">Actions</th>
                         </tr>
                         </thead>

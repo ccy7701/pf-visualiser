@@ -9,7 +9,7 @@ use App\Services\CounterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 
-class DashboardController extends Controller
+class CounterController extends Controller
 {
     public function __construct(private readonly CounterService $counterService)
     {
@@ -20,7 +20,7 @@ class DashboardController extends Controller
         $snapshot = $this->counterService->snapshot();
         $theme = Setting::getValue('theme', 'light');
 
-        return view('dashboard', [
+        return view('counter', [
             'snapshot' => $snapshot,
             'theme' => $theme,
             'categories' => Category::query()->orderBy('type')->orderBy('name')->get(),

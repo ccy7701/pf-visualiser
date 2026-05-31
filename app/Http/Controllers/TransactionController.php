@@ -26,14 +26,14 @@ class TransactionController extends Controller
 
         if ($category->type && $category->type !== $validated['type']) {
             return redirect()
-                ->route('dashboard')
+                ->route('counter')
                 ->withErrors(['category_id' => 'Category type does not match transaction type.'])
                 ->withInput();
         }
 
         Transaction::query()->create($validated);
 
-        return redirect()->route('dashboard')->with('status', 'Transaction recorded successfully.');
+        return redirect()->route('counter')->with('status', 'Transaction recorded successfully.');
     }
 
     public function update(Request $request, Transaction $transaction): RedirectResponse
@@ -52,20 +52,20 @@ class TransactionController extends Controller
 
         if ($category->type && $category->type !== $validated['type']) {
             return redirect()
-                ->route('dashboard')
+                ->route('counter')
                 ->withErrors(['category_id' => 'Category type does not match transaction type.'])
                 ->withInput();
         }
 
         $transaction->update($validated);
 
-        return redirect()->route('dashboard')->with('status', 'Transaction updated successfully.');
+        return redirect()->route('counter')->with('status', 'Transaction updated successfully.');
     }
 
     public function destroy(Transaction $transaction): RedirectResponse
     {
         $transaction->delete();
 
-        return redirect()->route('dashboard')->with('status', 'Transaction deleted successfully.');
+        return redirect()->route('counter')->with('status', 'Transaction deleted successfully.');
     }
 }

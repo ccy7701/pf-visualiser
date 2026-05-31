@@ -1,0 +1,346 @@
+        /* ── prevent page scroll ── */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            background: #f8f9fa;
+        }
+
+        /* ── floating flash toast ── */
+        .flash-toast {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            min-width: 280px;
+            max-width: 90vw;
+            box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.12);
+            border: 0;
+        }
+
+        /* ── full‑screen counter ── */
+        .counter-fullscreen {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        .counter-value {
+            font-size: clamp(3rem, 10vw, 7rem);
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            line-height: 1.1;
+        }
+
+        .counter-label {
+            font-size: 1rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.10em;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ── module navigation button ── */
+        .module-nav-dock {
+            position: fixed;
+            top: 50vh;
+            right: 14px;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1050;
+        }
+
+        .module-nav-label {
+            background: rgba(255, 255, 255, 0.92);
+            color: #212529;
+            border: 1px solid #dee2e6;
+            border-radius: 999px;
+            padding: 0.25rem 0.65rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(6px);
+            pointer-events: none;
+            transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+        }
+
+        .module-nav-dock:hover .module-nav-label,
+        .module-nav-dock:focus-within .module-nav-label {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .module-nav-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #212529;
+            color: #fff;
+            border: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .module-nav-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+            color: #fff;
+        }
+
+        /* ── FAB button ── */
+        .fab-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #212529;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1050;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .fab-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+        }
+        .fab-btn:active {
+            transform: scale(0.96);
+        }
+        .fab-btn.open {
+            background: #dc3545;
+            transform: rotate(45deg);
+        }
+
+        /* ── backdrop ── */
+        .popup-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.35);
+            z-index: 1040;
+            display: none;
+        }
+        .popup-backdrop.show {
+            display: block;
+        }
+
+        /* ── tab selector popup (step 1) ── */
+        .tab-selector-popup {
+            position: fixed;
+            bottom: 96px;
+            right: 24px;
+            z-index: 1060;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 180px;
+        }
+        .tab-selector-popup.show {
+            display: flex;
+        }
+        .tab-selector-popup button {
+            border: none;
+            background: none;
+            padding: 14px 20px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            border-bottom: 1px solid #e9ecef;
+            color: #212529;
+            transition: background 0.15s;
+        }
+        .tab-selector-popup button:last-child {
+            border-bottom: none;
+        }
+        .tab-selector-popup button:hover {
+            background: #f1f3f5;
+        }
+        .tab-selector-popup button:active {
+            background: #e9ecef;
+        }
+
+        /* ── content popup (step 2) ── */
+        .content-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1060;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+            display: none;
+            width: 60vw;
+            max-width: 600px;
+            max-height: 70vh;
+            overflow: hidden;
+            flex-direction: column;
+        }
+        .content-popup.show {
+            display: flex;
+        }
+
+        .content-popup-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e9ecef;
+            flex-shrink: 0;
+        }
+        .content-popup-header .title {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .content-popup-header .btn-back,
+        .content-popup-header .btn-close-popup {
+            border: none;
+            background: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #6c757d;
+            padding: 0 4px;
+            line-height: 1;
+        }
+        .content-popup-header .btn-back:hover,
+        .content-popup-header .btn-close-popup:hover {
+            color: #212529;
+        }
+
+        .content-popup-body {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 16px;
+            flex: 1;
+        }
+
+        /* ── summary cards ── */
+        .data-card {
+            border: 0;
+            box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.12);
+        }
+
+        /* ── dark mode overrides ── */
+        [data-bs-theme="dark"] body {
+            background: #121212 !important;
+        }
+        [data-bs-theme="dark"] .counter-value {
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .counter-label,
+        [data-bs-theme="dark"] #incrementStatus {
+            color: #aaa !important;
+        }
+        [data-bs-theme="dark"] .fab-btn {
+            background: #343a40;
+        }
+        [data-bs-theme="dark"] .fab-btn.open {
+            background: #c82333;
+        }
+        [data-bs-theme="dark"] .module-nav-label {
+            background: rgba(30, 30, 30, 0.96);
+            color: #e0e0e0;
+            border-color: #3c3c3c;
+        }
+        [data-bs-theme="dark"] .tab-selector-popup,
+        [data-bs-theme="dark"] .content-popup {
+            background: #1e1e1e;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+        }
+        [data-bs-theme="dark"] .tab-selector-popup button {
+            color: #e0e0e0;
+            border-bottom-color: #333;
+        }
+        [data-bs-theme="dark"] .tab-selector-popup button:hover {
+            background: #333;
+        }
+        [data-bs-theme="dark"] .content-popup-header {
+            border-bottom-color: #333;
+        }
+        [data-bs-theme="dark"] .content-popup-header .btn-back,
+        [data-bs-theme="dark"] .content-popup-header .btn-close-popup {
+            color: #aaa;
+        }
+        [data-bs-theme="dark"] .content-popup-header .btn-back:hover,
+        [data-bs-theme="dark"] .content-popup-header .btn-close-popup:hover {
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .data-card {
+            background: #1e1e1e;
+            box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.4);
+        }
+        [data-bs-theme="dark"] .data-card .card-body {
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select {
+            background: #2a2a2a;
+            border-color: #444;
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .form-control:focus,
+        [data-bs-theme="dark"] .form-select:focus {
+            background: #2a2a2a;
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .table {
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+            color: #e0e0e0;
+        }
+        [data-bs-theme="dark"] .modal-content {
+            background: #1e1e1e;
+            color: #e0e0e0;
+        }
+
+        @media (max-width: 576px) {
+            .content-popup {
+                width: 85vw;
+                max-width: none;
+            }
+
+            .module-nav-dock {
+                right: 8px;
+                gap: 0.35rem;
+            }
+
+            .module-nav-label {
+                font-size: 0.72rem;
+                padding: 0.2rem 0.5rem;
+            }
+
+            .module-nav-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.4rem;
+            }
+        }

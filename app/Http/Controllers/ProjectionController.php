@@ -2,6 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Responses\Projection\CompareScenariosResponse;
+use App\Http\Responses\Projection\DeleteScenarioResponse;
+use App\Http\Responses\Projection\SaveScenarioResponse;
+use App\Http\Responses\Projection\ScenarioResponse;
+use App\Http\Responses\Projection\ShowScenarioResponse;
+use App\Models\Setting;
 use App\Models\ProjectionScenario;
 use App\Services\ProjectionService;
 use Illuminate\Http\JsonResponse;
@@ -20,6 +26,7 @@ class ProjectionController extends Controller
     public function index(): View
     {
         return view('projection', [
+            'theme' => Setting::getValue('theme', 'light'),
             'scenarios' => ProjectionScenario::query()
                 ->latest('updated_at')
                 ->limit(30)
@@ -69,17 +76,9 @@ class ProjectionController extends Controller
 
         $scenario->resultCache()->updateOrCreate([], ['results_json' => $result]);
 
-        return response()->json([
-            'message' => $scenarioId ? 'Scenario updated successfully.' : 'Scenario saved successfully.',
-            'scenario' => [
-                'id' => $scenario->id,
-                'name' => $scenario->name,
-                'notes' => $scenario->notes,
-                'created_at' => $scenario->created_at?->toDateTimeString(),
-                'updated_at' => $scenario->updated_at?->toDateTimeString(),
-            ],
-            'result' => $result,
-        ]);
+        $message = $scenarioId ? 'Scenario updated successfully.' : 'Scenario saved successfully.';
+
+        return response()->json((new SaveScenarioResponse($message, $scenario, $result))->toArray());
     }
 
     public function showScenario(ProjectionScenario $scenario): JsonResponse
@@ -97,26 +96,14 @@ class ProjectionController extends Controller
             $scenario->resultCache()->updateOrCreate([], ['results_json' => $result]);
         }
 
-        return response()->json([
-            'scenario' => [
-                'id' => $scenario->id,
-                'name' => $scenario->name,
-                'notes' => $scenario->notes,
-                'parameters_json' => $payload,
-                'created_at' => $scenario->created_at?->toDateTimeString(),
-                'updated_at' => $scenario->updated_at?->toDateTimeString(),
-            ],
-            'result' => $result,
-        ]);
+        return response()->json((new ShowScenarioResponse($scenario, $payload, $result))->toArray());
     }
 
     public function destroyScenario(ProjectionScenario $scenario): JsonResponse
     {
         $scenario->delete();
 
-        return response()->json([
-            'message' => 'Scenario deleted successfully.',
-        ]);
+        return response()->json((new DeleteScenarioResponse())->toArray());
     }
 
     public function compare(Request $request): JsonResponse
@@ -147,17 +134,12 @@ class ProjectionController extends Controller
             }
 
             $comparisons[] = [
-                'scenario' => [
-                    'id' => $scenario->id,
-                    'name' => $scenario->name,
-                    'notes' => $scenario->notes,
-                    'updated_at' => $scenario->updated_at?->toDateTimeString(),
-                ],
+                'scenario' => ScenarioResponse::comparison($scenario),
                 'result' => $result,
             ];
         }
 
-        return response()->json(['comparisons' => $comparisons]);
+        return response()->json((new CompareScenariosResponse($comparisons))->toArray());
     }
 
     private function projectionRules(): array

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Counter;
 
 use App\Models\SalarySchedule;
 use Carbon\Carbon;
