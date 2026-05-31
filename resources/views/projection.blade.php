@@ -437,7 +437,7 @@
                         <tr>
                             <th>Scenario Name</th>
                             <th>Notes</th>
-                            <th>Date Created</th>
+                            <th>Last Updated</th>
                             <th class="text-end">Actions</th>
                         </tr>
                         </thead>

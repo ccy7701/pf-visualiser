@@ -416,7 +416,7 @@
             <tr>
                 <td>${s.name}</td>
                 <td>${s.notes || '-'}</td>
-                <td>${formatDateTime(s.created_at)}</td>
+                <td>${formatDateTime(s.updated_at)}</td>
                 <td class="text-end">
                     <button type="button" class="btn btn-sm btn-outline-secondary me-1" data-action="load" data-scenario-id="${s.id}" title="Load">
                         <i class="fa-solid fa-folder-open"></i>
