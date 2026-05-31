@@ -338,8 +338,6 @@
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="pane-scenario" role="tabpanel" aria-labelledby="tab-scenario" tabindex="0">
                             <div class="input-subcard mb-0">
-                                <h2 class="section-subtitle">Starting Parameters</h2>
-                                <hr class="section-divider">
                                 <div class="row g-2">
                                     <div class="col-6">
                                         <label class="form-label form-label-sm">Start Month</label>
@@ -376,8 +374,6 @@
 
                         <div class="tab-pane fade" id="pane-employment" role="tabpanel" aria-labelledby="tab-employment" tabindex="0">
                             <div class="input-subcard mb-0">
-                                <h2 class="section-subtitle">Employment</h2>
-                                <hr class="section-divider">
                                 <div class="row g-2 mb-3">
                                     <div class="col-6">
                                         <label class="form-label form-label-sm">Probation Salary</label>
@@ -421,7 +417,7 @@
 
                         <div class="tab-pane fade" id="pane-col" role="tabpanel" aria-labelledby="tab-col" tabindex="0">
                             <div class="input-subcard mb-0">
-                                <h2 class="section-subtitle">Cost of Living</h2>
+                                <h2 class="section-subtitle">Budget Amounts</h2>
                                 <hr class="section-divider">
                                 <div class="table-responsive mb-3">
                                     <table class="table table-sm">
@@ -455,9 +451,7 @@
 
                         <div class="tab-pane fade" id="pane-ptptn" role="tabpanel" aria-labelledby="tab-ptptn" tabindex="0">
                             <div class="input-subcard mb-0">
-                                <h2 class="section-subtitle">PTPTN</h2>
-                                <hr class="section-divider">
-                                <div class="row g-2 mb-3">
+                                <div class="row g-2 mb-0">
                                     <div class="col-6">
                                         <label class="form-label form-label-sm">Monthly Repayment</label>
                                         <div class="input-group input-group-sm">
@@ -481,7 +475,7 @@
 
                         <div class="tab-pane fade" id="pane-bnpl" role="tabpanel" aria-labelledby="tab-bnpl" tabindex="0">
                             <div class="input-subcard mb-0">
-                                <h2 class="section-subtitle d-flex justify-content-between align-items-center">BNPL
+                                <h2 class="section-subtitle d-flex justify-content-between align-items-center">BNPL Schedules
                                     <button id="addBnplBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
                                 </h2>
                                 <hr class="section-divider">
@@ -503,11 +497,11 @@
 
                         <div class="tab-pane fade" id="pane-events" role="tabpanel" aria-labelledby="tab-events" tabindex="0">
                             <div class="input-subcard mb-0">
-                                <h2 class="section-subtitle d-flex justify-content-between align-items-center">Events
+                                <h2 class="section-subtitle d-flex justify-content-between align-items-center">Events List
                                     <button id="addEventBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
                                 </h2>
                                 <hr class="section-divider">
-                                <div class="table-responsive mb-3">
+                                <div class="table-responsive mb-0">
                                     <table class="table table-sm">
                                         <thead>
                                         <tr>
@@ -564,8 +558,6 @@
 
                         <div class="tab-pane fade" id="pane-epf" role="tabpanel" aria-labelledby="tab-epf" tabindex="0">
                             <div class="input-subcard mb-0">
-                                <h2 class="section-subtitle">EPF</h2>
-                                <hr class="section-divider">
                                 <div class="row g-2">
                                     <div class="col-6">
                                         <label class="form-label form-label-sm">Employee EPF (%)</label>
