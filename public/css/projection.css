@@ -23,6 +23,50 @@
             align-items: center;
             gap: 0.5rem;
             z-index: 1100;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.18s ease, visibility 0.18s ease;
+        }
+        .module-nav-dock-right {
+            left: auto;
+            right: 14px;
+        }
+        body::before,
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            width: 96px;
+            pointer-events: none;
+            z-index: 1090;
+            opacity: 0;
+            transition: opacity 0.18s ease;
+        }
+        body::before {
+            left: 0;
+            background: linear-gradient(to right, rgba(33, 37, 41, 0.18), rgba(33, 37, 41, 0));
+        }
+        body::after {
+            right: 0;
+            background: linear-gradient(to left, rgba(33, 37, 41, 0.18), rgba(33, 37, 41, 0));
+        }
+        body:not(.has-right-edge-nav)::after {
+            display: none;
+        }
+        body.edge-nav-left-active::before {
+            opacity: 1;
+        }
+        body.has-right-edge-nav.edge-nav-right-active::after {
+            opacity: 1;
+        }
+        body.edge-nav-left-active .module-nav-dock:not(.module-nav-dock-right),
+        body.edge-nav-right-active .module-nav-dock.module-nav-dock-right,
+        .module-nav-dock:focus-within {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
         }
 
         .module-nav-label {
@@ -52,6 +96,15 @@
             opacity: 1;
             visibility: visible;
             transform: translateX(0);
+        }
+        body.edge-nav-left-active .module-nav-dock:not(.module-nav-dock-right) .module-nav-label,
+        body.edge-nav-right-active .module-nav-dock.module-nav-dock-right .module-nav-label {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+        .module-nav-dock-right .module-nav-label {
+            transform: translateX(6px);
         }
 
         .module-nav-btn {
@@ -190,6 +243,10 @@
             max-height: 55vh;
             overflow: auto;
         }
+        .va-results-wrap {
+            max-height: none;
+            overflow: visible;
+        }
 
         .table-sm th,
         .table-sm td {
@@ -199,6 +256,8 @@
 
         #projectionRows td:first-child,
         #projectionRows td:last-child,
+        #planActualRows td:first-child,
+        #planActualRows td:last-child,
         .results-wrap thead th:first-child,
         .results-wrap thead th:last-child {
             padding-left: 0.85rem;
@@ -229,6 +288,32 @@
         .projection-table td {
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        #planActualRows td.va-month-cell,
+        #planActualRows td.va-metric-cell,
+        #planActualRows td.va-variance-cell {
+            text-align: left;
+            vertical-align: middle;
+        }
+        #planActualRows td.va-variance-cell.va-positive {
+            color: #198754;
+            font-weight: 600;
+        }
+        #planActualRows td.va-variance-cell.va-negative {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        #planActualRows .va-metric-cell .va-value {
+            display: block;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+        #planActualRows .va-metric-cell .va-projected {
+            display: block;
+            font-size: 0.78rem;
+            color: #6c757d;
+            line-height: 1.2;
+            margin-top: 0.1rem;
         }
         .chart-wrap {
             position: relative;
@@ -266,11 +351,24 @@
             background: rgba(30, 30, 30, 0.95);
             color: #e0e0e0;
         }
+        [data-bs-theme="dark"] #planActualRows .va-metric-cell .va-projected {
+            color: #adb5bd;
+        }
+        [data-bs-theme="dark"] body::before {
+            background: linear-gradient(to right, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+        }
+        [data-bs-theme="dark"] body::after {
+            background: linear-gradient(to left, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+        }
 
         @media (max-width: 991px) {
             .module-nav-dock {
                 left: 8px;
                 gap: 0.35rem;
+            }
+            .module-nav-dock-right {
+                left: auto;
+                right: 8px;
             }
 
             .module-nav-label {
@@ -282,5 +380,21 @@
                 width: 50px;
                 height: 50px;
                 font-size: 1.4rem;
+            }
+        }
+        @media (pointer: coarse) {
+            .module-nav-dock {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+            .module-nav-label {
+                opacity: 1;
+                visibility: visible;
+                transform: translateX(0);
+            }
+            body::before,
+            body::after {
+                display: none;
             }
         }

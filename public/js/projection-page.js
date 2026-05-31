@@ -372,7 +372,12 @@
 
     function initProjectionInputTabUI() {
         document.querySelectorAll('#projectionInputTabs [data-bs-title]').forEach((el) => {
-            bootstrap.Tooltip.getOrCreateInstance(el);
+            if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                const existing = bootstrap.Tooltip.getInstance(el);
+                if (!existing) {
+                    new bootstrap.Tooltip(el);
+                }
+            }
         });
 
         document.querySelectorAll('#projectionInputTabs [data-bs-toggle="tab"]').forEach((tabButton) => {

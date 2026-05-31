@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ProjectionScenario extends Model
@@ -26,5 +27,10 @@ class ProjectionScenario extends Model
     public function resultCache(): HasOne
     {
         return $this->hasOne(ProjectionResultCache::class, 'scenario_id');
+    }
+
+    public function actualMonths(): HasMany
+    {
+        return $this->hasMany(ProjectionActualMonth::class, 'scenario_id');
     }
 }

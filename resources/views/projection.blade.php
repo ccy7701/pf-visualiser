@@ -24,6 +24,12 @@
     </a>
     <span class="module-nav-label">Counter</span>
 </div>
+<div class="module-nav-dock module-nav-dock-right" aria-label="Plan versus actual navigation">
+    <span class="module-nav-label">Variance Analysis</span>
+    <a href="{{ route('variance-analysis.index') }}" class="module-nav-btn" aria-label="Go to variance analysis">
+        <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>
+    </a>
+</div>
 
 <div class="container-fluid py-4 px-3 px-lg-5">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -539,6 +545,7 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ asset('js/edge-nav.js') }}"></script>
 <script>
     window.projectionConfig = {
         runEndpoint: '{{ route('projection.run') }}',
