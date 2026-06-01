@@ -109,7 +109,7 @@ Key characteristics:
 * per-category expense breakdown support for actual expenses
 * month-level variance display for COH, ELR, and EPF
 
-### Module D: Fuel Log (`fuel-log`) - Planned Next
+### Module D: Transportation Log (`transportation-log`) - Planned Next
 
 Purpose:
 
@@ -200,7 +200,7 @@ Key characteristics:
 * COH/ELR/EPF variance reporting
 * Expense breakdown support for actuals
 
-## PHASE 11 - Fuel Log Module
+## PHASE 11 - Transportation Log Module
 
 * Vehicle profile modeling
 * Fuel log entry and efficiency estimation

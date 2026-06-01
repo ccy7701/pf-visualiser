@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Fuel Log</title>
+    <title>Transportation Log</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
@@ -15,7 +15,7 @@
         })();
     </script>
     <link href="{{ asset('css/projection.css') }}" rel="stylesheet">
-    <link href="{{ asset('css/fuel-log.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/transportation-log.css') }}" rel="stylesheet">
 </head>
 <body>
 <div class="module-nav-dock module-nav-dock-right" aria-label="Counter navigation">
@@ -28,7 +28,7 @@
 <div class="container-fluid py-4 px-3 px-lg-5">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
-            <h1 class="h3 mb-1">Fuel Log</h1>
+            <h1 class="h3 mb-1">Transportation Log</h1>
             <p class="text-secondary mb-2">Track refuelling, estimate drive cost, and compare spending</p>
         </div>
     </div>
@@ -40,7 +40,7 @@
                 <div class="card-body">
                     <div class="projection-input-tabs nav" id="fuelInputTabs" role="tablist">
                         <button class="projection-input-tab active" id="tab-vehicle" data-bs-toggle="tab" data-bs-target="#pane-vehicle" type="button" role="tab" aria-controls="pane-vehicle" aria-selected="true" data-bs-title="Vehicle Profile" data-bs-placement="top"><i class="fa-solid fa-car"></i></button>
-                        <button class="projection-input-tab" id="tab-fuel-entry" data-bs-toggle="tab" data-bs-target="#pane-fuel-entry" type="button" role="tab" aria-controls="pane-fuel-entry" aria-selected="false" data-bs-title="Fuel Log" data-bs-placement="top"><i class="fa-solid fa-gas-pump"></i></button>
+                        <button class="projection-input-tab" id="tab-fuel-entry" data-bs-toggle="tab" data-bs-target="#pane-fuel-entry" type="button" role="tab" aria-controls="pane-fuel-entry" aria-selected="false" data-bs-title="Refuel Log" data-bs-placement="top"><i class="fa-solid fa-gas-pump"></i></button>
                         <button class="projection-input-tab" id="tab-drive-entry" data-bs-toggle="tab" data-bs-target="#pane-drive-entry" type="button" role="tab" aria-controls="pane-drive-entry" aria-selected="false" data-bs-title="Drive Log" data-bs-placement="top"><i class="fa-solid fa-road"></i></button>
                     </div>
 
@@ -205,7 +205,7 @@
 
         <div class="col-xl-8">
             <div class="card panel-card mb-3">
-                <div class="card-header">Monthly Dashboard</div>
+                <div class="card-header">Monthly Summary</div>
                 <div class="card-body">
                     <div class="input-subcard">
                         <div class="row g-2 align-items-end">
@@ -235,7 +235,7 @@
             </div>
 
             <div class="card panel-card mb-3">
-                <div class="card-header">Fuel Logs</div>
+                <div class="card-header">Refuel Logs</div>
                 <div class="card-body p-0">
                     <div class="results-wrap">
                         <div class="table-responsive">
@@ -255,7 +255,7 @@
                                 </thead>
                                 <tbody id="fuelLogRows">
                                 <tr>
-                                    <td colspan="9" class="text-center text-secondary py-4">No fuel logs yet.</td>
+                                    <td colspan="9" class="text-center text-secondary py-4">No refuel logs yet.</td>
                                 </tr>
                                 </tbody>
                             </table>
@@ -300,6 +300,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="{{ asset('js/edge-nav.js') }}"></script>
-<script src="{{ asset('js/fuel-log-page.js') }}"></script>
+<script src="{{ asset('js/transportation-log-page.js') }}"></script>
 </body>
 </html>

@@ -37,11 +37,11 @@
     <div id="incrementStatus" class="mt-2" style="font-size: 0.9rem; min-height: 1.2rem;"></div>
 </div>
 
-<div class="module-nav-dock module-nav-dock-left" aria-label="Fuel log navigation">
-    <a href="{{ route('fuel-log.index') }}" class="module-nav-btn" aria-label="Go to fuel log">
-        <i class="fa-solid fa-gas-pump" aria-hidden="true"></i>
+<div class="module-nav-dock module-nav-dock-left" aria-label="Transportation log navigation">
+    <a href="{{ route('transportation-log.index') }}" class="module-nav-btn" aria-label="Go to transportation log">
+        <i class="fa-solid fa-road" aria-hidden="true"></i>
     </a>
-    <span class="module-nav-label">Fuel Log</span>
+    <span class="module-nav-label">Transportation Log</span>
 </div>
 
 <div class="module-nav-dock module-nav-dock-right" aria-label="Projection navigation">

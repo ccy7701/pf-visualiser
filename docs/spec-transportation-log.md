@@ -1,4 +1,4 @@
-# Fuel Log Module (`fuel-log`)
+# Transportation Log Module (`transportation-log`)
 
 ## Functional Specification
 
@@ -8,7 +8,7 @@ Related high-level project specification: `overview.md`
 
 ## 1. Module Purpose
 
-`fuel-log` is a transport-cost tracking module for:
+`transportation-log` is a transport-cost tracking module for:
 
 * refuelling records
 * commute-cost estimation
@@ -21,7 +21,7 @@ This module supports the personal finance model where transportation can materia
 
 ## 2. Core Architectural Principle
 
-The Fuel Log module MUST operate with deterministic computations from explicit user inputs.
+The Transportation Log module MUST operate with deterministic computations from explicit user inputs.
 
 The following constraints apply:
 
@@ -288,17 +288,17 @@ If implemented for weekly tracking:
 
 ### 6.1 Endpoints (Initial Contract Target)
 
-* `GET /fuel-log`
-* `GET /fuel-log/vehicles`
-* `POST /fuel-log/vehicles`
-* `PUT /fuel-log/vehicles/{vehicle}`
-* `GET /fuel-log/fuel-logs`
-* `POST /fuel-log/fuel-logs`
-* `PUT /fuel-log/fuel-logs/{fuelLog}`
-* `GET /fuel-log/commute-logs`
-* `POST /fuel-log/commute-logs`
-* `PUT /fuel-log/commute-logs/{commuteLog}`
-* `GET /fuel-log/dashboard`
+* `GET /transportation-log`
+* `GET /transportation-log/vehicles`
+* `POST /transportation-log/vehicles`
+* `PUT /transportation-log/vehicles/{vehicle}`
+* `GET /transportation-log/transportation-logs`
+* `POST /transportation-log/transportation-logs`
+* `PUT /transportation-log/transportation-logs/{fuelLog}`
+* `GET /transportation-log/commute-logs`
+* `POST /transportation-log/commute-logs`
+* `PUT /transportation-log/commute-logs/{commuteLog}`
+* `GET /transportation-log/dashboard`
 
 ### 6.2 Validation Baseline
 

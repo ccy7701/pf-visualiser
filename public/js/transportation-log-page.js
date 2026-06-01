@@ -1,5 +1,6 @@
 (function () {
-    const STORAGE_KEY = 'fuel_log_state_v1';
+    const STORAGE_KEY = 'transportation_log_state_v1';
+    const LEGACY_STORAGE_KEY = 'fuel_log_state_v1';
     const PRICE_BUDI95 = 1.99;
     const PRICE_RON95 = 2.05;
 
@@ -11,7 +12,7 @@
 
     function loadState() {
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
+            const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
             if (!raw) {
                 return { vehicles: [], fuelLogs: [], commuteLogs: [], monthlyTransportBudget: 250 };
             }
@@ -310,7 +311,7 @@
         tbody.innerHTML = '';
 
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-secondary py-4">No fuel logs yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-secondary py-4">No refuel logs yet.</td></tr>';
             return;
         }
 
@@ -534,7 +535,7 @@
 
             saveState();
             renderAll();
-            setStatus('Fuel log added.');
+            setStatus('Refuel log added.');
         });
     }
 

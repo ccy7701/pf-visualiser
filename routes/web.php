@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\CounterController;
-use App\Http\Controllers\FuelLogController;
 use App\Http\Controllers\ProjectionController;
+use App\Http\Controllers\TransportationLogController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\VarianceAnalysisController;
 use App\Http\Controllers\WorkdayController;
@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/counter');
 Route::get('/counter', [CounterController::class, 'index'])->name('counter');
-Route::get('/fuel-log', [FuelLogController::class, 'index'])->name('fuel-log.index');
+Route::get('/transportation-log', [TransportationLogController::class, 'index'])->name('transportation-log.index');
+Route::redirect('/fuel-log', '/transportation-log');
 Route::get('/projection', [ProjectionController::class, 'index'])->name('projection.index');
 Route::post('/projection/run', [ProjectionController::class, 'run'])->name('projection.run');
 Route::post('/projection/scenarios', [ProjectionController::class, 'saveScenario'])->name('projection.scenarios.save');

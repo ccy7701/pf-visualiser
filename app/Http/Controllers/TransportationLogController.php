@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Setting;
 use Illuminate\View\View;
 
-class FuelLogController extends Controller
+class TransportationLogController extends Controller
 {
     public function index(): View
     {
-        return view('fuel-log', [
+        return view('transportation-log', [
             'theme' => Setting::getValue('theme', 'light'),
         ]);
     }
