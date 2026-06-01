@@ -30,14 +30,20 @@
 
 {{-- Main counter (always visible) ──── --}}
 <div class="counter-fullscreen">
-    {{-- <div class="counter-label">Current Counter</div> --}}
     <div id="counterValue" class="counter-value">RM {{ number_format($snapshot['counter'], 2) }}</div>
 
     {{-- Incrementing status indicator --}}
     <div id="incrementStatus" class="mt-2" style="font-size: 0.9rem; min-height: 1.2rem;"></div>
 </div>
 
-<div class="module-nav-dock" aria-label="Projection navigation">
+<div class="module-nav-dock module-nav-dock-left" aria-label="Transportation log navigation">
+    <a href="{{ route('transportation-log.index') }}" class="module-nav-btn" aria-label="Go to transportation log">
+        <i class="fa-solid fa-road" aria-hidden="true"></i>
+    </a>
+    <span class="module-nav-label">Transportation Log</span>
+</div>
+
+<div class="module-nav-dock module-nav-dock-right" aria-label="Projection navigation">
     <span class="module-nav-label">Projection</span>
     <a href="{{ route('projection.index') }}" class="module-nav-btn" aria-label="Go to projection">
         <i class="fa-solid fa-chart-line" aria-hidden="true"></i>

@@ -62,24 +62,43 @@
             pointer-events: none;
             transition: opacity 0.18s ease, visibility 0.18s ease;
         }
-        body.edge-nav-right-active .module-nav-dock,
+        .module-nav-dock-left {
+            right: auto;
+            left: 14px;
+        }
+        .module-nav-dock-right {
+            right: 14px;
+            left: auto;
+        }
+        body.edge-nav-left-active .module-nav-dock-left,
+        body.edge-nav-right-active .module-nav-dock-right,
         .module-nav-dock:focus-within {
             opacity: 1;
             visibility: visible;
             pointer-events: auto;
         }
+        body::before,
         body::after {
             content: '';
             position: fixed;
             top: 0;
-            right: 0;
             bottom: 0;
             width: 96px;
             pointer-events: none;
             z-index: 1045;
             opacity: 0;
             transition: opacity 0.18s ease;
+        }
+        body::before {
+            left: 0;
+            background: linear-gradient(to right, rgba(33, 37, 41, 0.18), rgba(33, 37, 41, 0));
+        }
+        body::after {
+            right: 0;
             background: linear-gradient(to left, rgba(33, 37, 41, 0.18), rgba(33, 37, 41, 0));
+        }
+        body.edge-nav-left-active::before {
+            opacity: 1;
         }
         body.edge-nav-right-active::after {
             opacity: 1;
@@ -108,10 +127,17 @@
             visibility: visible;
             transform: translateX(0);
         }
-        body.edge-nav-right-active .module-nav-dock .module-nav-label {
+        body.edge-nav-right-active .module-nav-dock-right .module-nav-label,
+        body.edge-nav-left-active .module-nav-dock-left .module-nav-label {
             opacity: 1;
             visibility: visible;
             transform: translateX(0);
+        }
+        .module-nav-dock-left .module-nav-label {
+            transform: translateX(-6px);
+        }
+        .module-nav-dock-right .module-nav-label {
+            transform: translateX(6px);
         }
 
         .module-nav-btn {
@@ -308,6 +334,9 @@
         }
         [data-bs-theme="dark"] body::after {
             background: linear-gradient(to left, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+        }
+        [data-bs-theme="dark"] body::before {
+            background: linear-gradient(to right, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
         }
         [data-bs-theme="dark"] .tab-selector-popup button {
             color: #e0e0e0;

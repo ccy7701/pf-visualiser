@@ -1,0 +1,156 @@
+        .dashboard-card {
+            border: 1px solid #dee2e6;
+            border-radius: 0.65rem;
+            padding: 0.75rem;
+            background: #fff;
+            height: 100%;
+        }
+        [data-bs-theme="dark"] .dashboard-card {
+            background: #1e1e1e;
+            border-color: #333;
+        }
+        .dashboard-card .k-label {
+            font-size: 0.78rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 0.3rem;
+        }
+        [data-bs-theme="dark"] .dashboard-card .k-label {
+            color: #adb5bd;
+        }
+        .dashboard-card .k-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .log-cell-main {
+            font-weight: 600;
+            line-height: 1.2;
+        }
+        .log-cell-sub {
+            margin-top: 0.15rem;
+            font-size: 0.82rem;
+            font-style: italic;
+            color: #6c757d;
+            line-height: 1.2;
+        }
+        [data-bs-theme="dark"] .log-cell-sub {
+            color: #adb5bd;
+        }
+        #fuelLogRows td:first-child,
+        #fuelLogRows td:last-child,
+        #commuteLogRows td:first-child,
+        #commuteLogRows td:last-child,
+        #fuelLogRows tr td[colspan],
+        #commuteLogRows tr td[colspan] {
+            padding-left: 0.85rem;
+            padding-right: 0.85rem;
+        }
+        .log-cell-cost {
+            text-align: right;
+        }
+        .comparison-banner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #dee2e6;
+            border-radius: 0.65rem;
+            padding: 0.7rem 0.9rem;
+            background: #fff;
+        }
+        [data-bs-theme="dark"] .comparison-banner {
+            background: #1e1e1e;
+            border-color: #333;
+        }
+        .comparison-label {
+            font-size: 0.86rem;
+            color: #6c757d;
+        }
+        [data-bs-theme="dark"] .comparison-label {
+            color: #adb5bd;
+        }
+        .comparison-value {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+        .comparison-vs {
+            text-align: center;
+            font-weight: 600;
+            color: #6c757d;
+            padding: 0.35rem 0;
+        }
+        #statusMessage {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            background: rgba(33, 37, 41, 0.92);
+            color: #fff;
+            padding: 0.55rem 0.8rem;
+            border-radius: 0.55rem;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+            opacity: 0;
+            transform: translateY(8px);
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 1200;
+        }
+        #statusMessage.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #statusMessage.is-error {
+            background: rgba(176, 42, 55, 0.95);
+        }
+
+        .vehicle-list-card {
+            border: 1px solid #dee2e6;
+            border-radius: 0.65rem;
+            padding: 0.7rem 0.8rem;
+            background: #fff;
+        }
+        [data-bs-theme="dark"] .vehicle-list-card {
+            background: #1e1e1e;
+            border-color: #333;
+        }
+        .vehicle-list-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .vehicle-list-name {
+            font-weight: 600;
+        }
+        .vehicle-list-description {
+            margin-top: 0.2rem;
+            font-style: italic;
+            color: #6c757d;
+            font-size: 0.88rem;
+        }
+        [data-bs-theme="dark"] .vehicle-list-description {
+            color: #adb5bd;
+        }
+        .vehicle-list-right {
+            text-align: right;
+            white-space: nowrap;
+        }
+        .vehicle-list-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 0.55rem;
+            align-items: stretch;
+            margin-bottom: 0.6rem;
+        }
+        .vehicle-list-actions {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+        }
+        .vehicle-list-actions .btn {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }

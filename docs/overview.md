@@ -65,7 +65,7 @@ Counter runtime also supports simulation time via settings (`simulation_now`, `u
 
 ---
 
-## 5. Active Modules
+## 5. Modules
 
 ### Module A: Counter (`counter`)
 
@@ -108,6 +108,24 @@ Key characteristics:
 * actual month values persisted in `projection_actual_months`
 * per-category expense breakdown support for actual expenses
 * month-level variance display for COH, ELR, and EPF
+
+### Module D: Transportation Log (`transportation-log`)
+
+Purpose:
+
+* track refuelling and commute-driven fuel costs
+* estimate transport cost and efficiency
+* compare actual fuel spending vs estimated commute fuel cost
+
+Key characteristics:
+
+* submodules: vehicle profile, fuel logs, commute logs
+* deterministic calculations from explicit odometer/fuel/commute inputs
+* backend-connected snapshot + CRUD endpoints for vehicle/refuel/drive logs
+* monthly dashboard for fuel spend, commute estimate, weighted average mileage, and commute distance
+* row-click edit workflow for refuel and drive logs (populate input tab + edit/delete actions)
+* 24-hour datetime input/display consistency for refuel and drive records
+* transport-cost tracking aligned with BCOL/FCOL planning assumptions
 
 ---
 
@@ -178,6 +196,21 @@ Key characteristics:
 * Scenario persistence and caching
 * Scenario comparison workflow
 
+## PHASE 10 - Variance Analysis
+
+* Scenario-linked plan-vs-actual workflow
+* Actual month value persistence
+* COH/ELR/EPF variance reporting
+* Expense breakdown support for actuals
+
+## PHASE 11 - Transportation Log Module
+
+* Vehicle profile modeling
+* Fuel log entry and efficiency estimation
+* Commute log entry and cost estimation
+* Monthly fuel dashboard and weighted mileage summary
+* Row-driven edit/delete workflow for refuel and drive logs
+
 ---
 
 ## 7. Time and Timezone Guidelines
@@ -191,7 +224,7 @@ The system is time-sensitive. Follow these rules:
 
 ---
 
-## 8. Planned Future Modules (Not Required Now)
+## 8. Planned Future Modules (Beyond Current Plan)
 
 Potential future additions:
 
