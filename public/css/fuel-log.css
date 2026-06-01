@@ -1,0 +1,91 @@
+        .dashboard-card {
+            border: 1px solid #dee2e6;
+            border-radius: 0.65rem;
+            padding: 0.75rem;
+            background: #fff;
+            height: 100%;
+        }
+        [data-bs-theme="dark"] .dashboard-card {
+            background: #1e1e1e;
+            border-color: #333;
+        }
+        .dashboard-card .k-label {
+            font-size: 0.78rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 0.3rem;
+        }
+        [data-bs-theme="dark"] .dashboard-card .k-label {
+            color: #adb5bd;
+        }
+        .dashboard-card .k-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .status-pill {
+            display: inline-block;
+            border-radius: 999px;
+            padding: 0.15rem 0.5rem;
+            font-size: 0.75rem;
+            border: 1px solid #adb5bd;
+            color: #495057;
+            background: #f8f9fa;
+        }
+        [data-bs-theme="dark"] .status-pill {
+            color: #ced4da;
+            background: #2a2a2a;
+            border-color: #495057;
+        }
+        .comparison-banner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #dee2e6;
+            border-radius: 0.65rem;
+            padding: 0.7rem 0.9rem;
+            background: #fff;
+        }
+        [data-bs-theme="dark"] .comparison-banner {
+            background: #1e1e1e;
+            border-color: #333;
+        }
+        .comparison-label {
+            font-size: 0.86rem;
+            color: #6c757d;
+        }
+        [data-bs-theme="dark"] .comparison-label {
+            color: #adb5bd;
+        }
+        .comparison-value {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+        .comparison-vs {
+            text-align: center;
+            font-weight: 600;
+            color: #6c757d;
+            padding: 0.35rem 0;
+        }
+        #statusMessage {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            background: rgba(33, 37, 41, 0.92);
+            color: #fff;
+            padding: 0.55rem 0.8rem;
+            border-radius: 0.55rem;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+            opacity: 0;
+            transform: translateY(8px);
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 1200;
+        }
+        #statusMessage.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #statusMessage.is-error {
+            background: rgba(176, 42, 55, 0.95);
+        }

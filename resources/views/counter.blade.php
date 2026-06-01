@@ -37,7 +37,14 @@
     <div id="incrementStatus" class="mt-2" style="font-size: 0.9rem; min-height: 1.2rem;"></div>
 </div>
 
-<div class="module-nav-dock" aria-label="Projection navigation">
+<div class="module-nav-dock module-nav-dock-left" aria-label="Fuel log navigation">
+    <a href="{{ route('fuel-log.index') }}" class="module-nav-btn" aria-label="Go to fuel log">
+        <i class="fa-solid fa-gas-pump" aria-hidden="true"></i>
+    </a>
+    <span class="module-nav-label">Fuel Log</span>
+</div>
+
+<div class="module-nav-dock module-nav-dock-right" aria-label="Projection navigation">
     <span class="module-nav-label">Projection</span>
     <a href="{{ route('projection.index') }}" class="module-nav-btn" aria-label="Go to projection">
         <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
