@@ -16,7 +16,11 @@ Route::post('/transportation-log/vehicles', [TransportationLogController::class,
 Route::put('/transportation-log/vehicles/{vehicle}', [TransportationLogController::class, 'updateVehicle'])->name('transportation-log.vehicles.update');
 Route::delete('/transportation-log/vehicles/{vehicle}', [TransportationLogController::class, 'destroyVehicle'])->name('transportation-log.vehicles.destroy');
 Route::post('/transportation-log/fuel-logs', [TransportationLogController::class, 'storeFuelLog'])->name('transportation-log.fuel-logs.store');
+Route::put('/transportation-log/fuel-logs/{fuelLog}', [TransportationLogController::class, 'updateFuelLog'])->name('transportation-log.fuel-logs.update');
+Route::delete('/transportation-log/fuel-logs/{fuelLog}', [TransportationLogController::class, 'destroyFuelLog'])->name('transportation-log.fuel-logs.destroy');
 Route::post('/transportation-log/commute-logs', [TransportationLogController::class, 'storeCommuteLog'])->name('transportation-log.commute-logs.store');
+Route::put('/transportation-log/commute-logs/{commuteLog}', [TransportationLogController::class, 'updateCommuteLog'])->name('transportation-log.commute-logs.update');
+Route::delete('/transportation-log/commute-logs/{commuteLog}', [TransportationLogController::class, 'destroyCommuteLog'])->name('transportation-log.commute-logs.destroy');
 Route::redirect('/fuel-log', '/transportation-log');
 Route::get('/projection', [ProjectionController::class, 'index'])->name('projection.index');
 Route::post('/projection/run', [ProjectionController::class, 'run'])->name('projection.run');

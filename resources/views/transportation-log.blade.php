@@ -138,7 +138,17 @@
                                     <label for="fuelNote" class="form-label form-label-sm">Notes</label>
                                     <input id="fuelNote" type="text" class="form-control compact-input" placeholder="Optional">
                                 </div>
-                                <button id="addFuelLogBtn" type="button" class="btn btn-dark w-100">Add</button>
+                                <div class="row g-2">
+                                    <div class="col-12" id="fuelAddButtonWrap">
+                                        <button id="addFuelLogBtn" type="button" class="btn btn-dark w-100">Add</button>
+                                    </div>
+                                    <div class="col-6 d-none" id="fuelEditButtonWrap">
+                                        <button id="editFuelLogBtn" type="button" class="btn btn-dark w-100">Edit</button>
+                                    </div>
+                                    <div class="col-6 d-none" id="fuelDeleteButtonWrap">
+                                        <button id="deleteFuelLogBtn" type="button" class="btn btn-outline-danger w-100">Delete</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -191,7 +201,17 @@
                                     <label for="commuteNote" class="form-label form-label-sm">Notes</label>
                                     <input id="commuteNote" type="text" class="form-control compact-input" placeholder="Optional">
                                 </div>
-                                <button id="addCommuteLogBtn" type="button" class="btn btn-dark w-100">Add</button>
+                                <div class="row g-2">
+                                    <div class="col-12" id="driveAddButtonWrap">
+                                        <button id="addCommuteLogBtn" type="button" class="btn btn-dark w-100">Add</button>
+                                    </div>
+                                    <div class="col-6 d-none" id="driveEditButtonWrap">
+                                        <button id="editCommuteLogBtn" type="button" class="btn btn-dark w-100">Edit</button>
+                                    </div>
+                                    <div class="col-6 d-none" id="driveDeleteButtonWrap">
+                                        <button id="deleteCommuteLogBtn" type="button" class="btn btn-outline-danger w-100">Delete</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -272,7 +292,9 @@
         snapshotEndpoint: '{{ route('transportation-log.snapshot') }}',
         vehiclesEndpoint: '{{ route('transportation-log.vehicles.store') }}',
         fuelLogsEndpoint: '{{ route('transportation-log.fuel-logs.store') }}',
+        fuelLogsBaseUrl: '{{ url('/transportation-log/fuel-logs') }}',
         commuteLogsEndpoint: '{{ route('transportation-log.commute-logs.store') }}',
+        commuteLogsBaseUrl: '{{ url('/transportation-log/commute-logs') }}',
         vehiclesBaseUrl: '{{ url('/transportation-log/vehicles') }}',
     };
 </script>

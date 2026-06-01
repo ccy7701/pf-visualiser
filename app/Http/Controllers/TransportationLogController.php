@@ -79,6 +79,32 @@ class TransportationLogController extends Controller
         return response()->json($this->snapshotData());
     }
 
+    public function updateFuelLog(Request $request, TransportationFuelLog $fuelLog): JsonResponse
+    {
+        $validated = $request->validate([
+            'vehicle_id' => ['required', 'exists:transportation_vehicles,id'],
+            'odometer_km' => ['required', 'numeric', 'min:0'],
+            'fuel_litres' => ['required', 'numeric', 'min:0.001'],
+            'fuel_price_mode' => ['required', Rule::in(['budi95', 'ron95'])],
+            'price_per_litre' => ['required', 'numeric', 'min:0'],
+            'total_amount' => ['required', 'numeric', 'min:0'],
+            'fuelled_at' => ['required', 'date_format:Y-m-d\TH:i:s'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $fuelLog->update($validated);
+
+        return response()->json($this->snapshotData());
+    }
+
+    public function destroyFuelLog(TransportationFuelLog $fuelLog): JsonResponse
+    {
+        $fuelLog->delete();
+
+        return response()->json($this->snapshotData());
+    }
+
     public function storeCommuteLog(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -94,6 +120,32 @@ class TransportationLogController extends Controller
         ]);
 
         TransportationCommuteLog::query()->create($validated);
+
+        return response()->json($this->snapshotData());
+    }
+
+    public function updateCommuteLog(Request $request, TransportationCommuteLog $commuteLog): JsonResponse
+    {
+        $validated = $request->validate([
+            'vehicle_id' => ['required', 'exists:transportation_vehicles,id'],
+            'commute_type' => ['required', Rule::in(['work_commute', 'personal_drive'])],
+            'origin' => ['required', 'string', 'max:255'],
+            'destination' => ['required', 'string', 'max:255'],
+            'distance_km' => ['required', 'numeric', 'min:0.01'],
+            'consumption_value' => ['required', 'numeric', 'min:0.0001'],
+            'consumption_unit' => ['required', Rule::in(['L_PER_100KM', 'KM_PER_L'])],
+            'driven_at' => ['required', 'date_format:Y-m-d\TH:i:s'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $commuteLog->update($validated);
+
+        return response()->json($this->snapshotData());
+    }
+
+    public function destroyCommuteLog(TransportationCommuteLog $commuteLog): JsonResponse
+    {
+        $commuteLog->delete();
 
         return response()->json($this->snapshotData());
     }

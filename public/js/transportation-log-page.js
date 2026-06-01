@@ -8,6 +8,8 @@
 
     let statusTimer = null;
     let editingVehicleId = null;
+    let editingFuelLogId = null;
+    let editingCommuteLogId = null;
 
     const state = {
         vehicles: [],
@@ -58,6 +60,14 @@
         state.vehicles = Array.isArray(snapshot?.vehicles) ? snapshot.vehicles.map(normalizeVehicle) : [];
         state.fuelLogs = Array.isArray(snapshot?.fuelLogs) ? snapshot.fuelLogs.map(normalizeFuelLog) : [];
         state.commuteLogs = Array.isArray(snapshot?.commuteLogs) ? snapshot.commuteLogs.map(normalizeCommuteLog) : [];
+
+        if (editingFuelLogId && !state.fuelLogs.some((log) => log.id === editingFuelLogId)) {
+            editingFuelLogId = null;
+        }
+        if (editingCommuteLogId && !state.commuteLogs.some((log) => log.id === editingCommuteLogId)) {
+            editingCommuteLogId = null;
+        }
+
         renderAll();
     }
 
@@ -121,6 +131,27 @@
         const hours = String(d.getHours()).padStart(2, '0');
         const minutes = String(d.getMinutes()).padStart(2, '0');
         return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
+
+    function splitIsoDateTime(isoDateTime) {
+        const d = new Date(isoDateTime);
+        if (Number.isNaN(d.getTime())) {
+            return {
+                date: defaultDateValue(),
+                time: defaultTimeValue(),
+            };
+        }
+
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+
+        return {
+            date: `${year}-${month}-${day}`,
+            time: `${hours}:${minutes}`,
+        };
     }
 
     function resolveFuelPriceByType(type, currentPrice) {
@@ -363,6 +394,11 @@
 
         rows.forEach((row) => {
             const tr = document.createElement('tr');
+            tr.setAttribute('data-fuel-log-id', row.id);
+            tr.style.cursor = 'pointer';
+            if (editingFuelLogId && row.id === editingFuelLogId) {
+                tr.classList.add('table-active');
+            }
             tr.innerHTML = `
                 <td>${formatDateTime(row.fuelled_at)}</td>
                 <td>${vehicleName(row.vehicle_id)}</td>
@@ -388,6 +424,11 @@
 
         rows.forEach((row) => {
             const tr = document.createElement('tr');
+            tr.setAttribute('data-commute-log-id', row.id);
+            tr.style.cursor = 'pointer';
+            if (editingCommuteLogId && row.id === editingCommuteLogId) {
+                tr.classList.add('table-active');
+            }
             tr.innerHTML = `
                 <td>${formatDateTime(row.driven_at)}</td>
                 <td>${vehicleName(row.vehicle_id)}</td>
@@ -442,6 +483,130 @@
         renderFuelRows();
         renderDriveRows();
         renderDashboard();
+        renderFuelFormMode();
+        renderDriveFormMode();
+    }
+
+    function activateInputTab(tabButtonId) {
+        const tabButton = document.getElementById(tabButtonId);
+        if (!tabButton) return;
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+            bootstrap.Tab.getOrCreateInstance(tabButton).show();
+            return;
+        }
+
+        tabButton.click();
+    }
+
+    function setFuelFormValues(log) {
+        const dateTime = splitIsoDateTime(log?.fuelled_at || '');
+
+        const vehicle = document.getElementById('fuelVehicleId');
+        const odometer = document.getElementById('fuelOdometerKm');
+        const litres = document.getElementById('fuelLitres');
+        const mode = document.getElementById('fuelPriceMode');
+        const price = document.getElementById('fuelPricePerLitre');
+        const date = document.getElementById('fuelledAtDate');
+        const time = document.getElementById('fuelledAtTime');
+        const location = document.getElementById('fuelLocation');
+        const notes = document.getElementById('fuelNote');
+
+        if (vehicle) vehicle.value = log?.vehicle_id || (state.vehicles[0]?.id || '');
+        if (odometer) odometer.value = String(toNumber(log?.odometer_km, 0));
+        if (litres) litres.value = String(toNumber(log?.fuel_litres, 0));
+        if (mode) mode.value = log?.fuel_price_mode || 'budi95';
+        if (price) price.value = String(toNumber(log?.price_per_litre, PRICE_BUDI95));
+        if (date) date.value = dateTime.date;
+        if (time) time.value = dateTime.time;
+        if (location) location.value = log?.location || '';
+        if (notes) notes.value = log?.notes || '';
+
+        if (date?._flatpickr) {
+            date._flatpickr.setDate(dateTime.date, true, 'Y-m-d');
+        }
+        if (time?._flatpickr) {
+            time._flatpickr.setDate(dateTime.time, true, 'H:i');
+        }
+
+        recomputeFuelTotal();
+    }
+
+    function clearFuelForm() {
+        editingFuelLogId = null;
+        setFuelFormValues(null);
+    }
+
+    function renderFuelFormMode() {
+        const addWrap = document.getElementById('fuelAddButtonWrap');
+        const editWrap = document.getElementById('fuelEditButtonWrap');
+        const deleteWrap = document.getElementById('fuelDeleteButtonWrap');
+        if (!addWrap || !editWrap || !deleteWrap) return;
+
+        if (editingFuelLogId) {
+            addWrap.classList.add('d-none');
+            editWrap.classList.remove('d-none');
+            deleteWrap.classList.remove('d-none');
+            return;
+        }
+
+        addWrap.classList.remove('d-none');
+        editWrap.classList.add('d-none');
+        deleteWrap.classList.add('d-none');
+    }
+
+    function setDriveFormValues(log) {
+        const dateTime = splitIsoDateTime(log?.driven_at || '');
+
+        const vehicle = document.getElementById('commuteVehicleId');
+        const type = document.getElementById('commuteType');
+        const origin = document.getElementById('commuteOrigin');
+        const destination = document.getElementById('commuteDestination');
+        const distance = document.getElementById('commuteDistanceKm');
+        const consumption = document.getElementById('commuteConsumptionValue');
+        const date = document.getElementById('commuteDate');
+        const time = document.getElementById('commuteTime');
+        const note = document.getElementById('commuteNote');
+
+        if (vehicle) vehicle.value = log?.vehicle_id || (state.vehicles[0]?.id || '');
+        if (type) type.value = log?.commute_type || 'work_commute';
+        if (origin) origin.value = log?.origin || 'Home';
+        if (destination) destination.value = log?.destination || 'Work';
+        if (distance) distance.value = String(toNumber(log?.distance_km, 0));
+        if (consumption) consumption.value = String(toNumber(log?.consumption_value, 0));
+        if (date) date.value = dateTime.date;
+        if (time) time.value = dateTime.time;
+        if (note) note.value = log?.notes || '';
+
+        if (date?._flatpickr) {
+            date._flatpickr.setDate(dateTime.date, true, 'Y-m-d');
+        }
+        if (time?._flatpickr) {
+            time._flatpickr.setDate(dateTime.time, true, 'H:i');
+        }
+    }
+
+    function clearDriveForm() {
+        editingCommuteLogId = null;
+        setDriveFormValues(null);
+    }
+
+    function renderDriveFormMode() {
+        const addWrap = document.getElementById('driveAddButtonWrap');
+        const editWrap = document.getElementById('driveEditButtonWrap');
+        const deleteWrap = document.getElementById('driveDeleteButtonWrap');
+        if (!addWrap || !editWrap || !deleteWrap) return;
+
+        if (editingCommuteLogId) {
+            addWrap.classList.add('d-none');
+            editWrap.classList.remove('d-none');
+            deleteWrap.classList.remove('d-none');
+            return;
+        }
+
+        addWrap.classList.remove('d-none');
+        editWrap.classList.add('d-none');
+        deleteWrap.classList.add('d-none');
     }
 
     function defaultDateValue() {
@@ -580,6 +745,88 @@
         });
     }
 
+    function wireFuelRowSelection() {
+        const tbody = document.getElementById('fuelLogRows');
+        if (!tbody) return;
+
+        tbody.addEventListener('click', (event) => {
+            const row = event.target.closest('tr[data-fuel-log-id]');
+            if (!row) return;
+
+            const fuelLogId = row.getAttribute('data-fuel-log-id');
+            const log = state.fuelLogs.find((item) => item.id === fuelLogId);
+            if (!log) return;
+
+            activateInputTab('tab-fuel-entry');
+            editingFuelLogId = fuelLogId;
+            setFuelFormValues(log);
+            renderAll();
+            setStatus('Editing refuel log.');
+        });
+    }
+
+    function wireFuelEditActions() {
+        const editBtn = document.getElementById('editFuelLogBtn');
+        const deleteBtn = document.getElementById('deleteFuelLogBtn');
+        if (!editBtn || !deleteBtn) return;
+
+        editBtn.addEventListener('click', async () => {
+            if (!editingFuelLogId) return;
+
+            const vehicleId = String(document.getElementById('fuelVehicleId')?.value || '');
+            const date = String(document.getElementById('fuelledAtDate')?.value || '');
+            const time = String(document.getElementById('fuelledAtTime')?.value || '');
+            const odometer = toNumber(document.getElementById('fuelOdometerKm')?.value, -1);
+            const litres = toNumber(document.getElementById('fuelLitres')?.value, 0);
+            const fuelType = String(document.getElementById('fuelPriceMode')?.value || 'budi95');
+            const price = resolveFuelPriceByType(fuelType, toNumber(document.getElementById('fuelPricePerLitre')?.value, 0));
+            const total = Number((litres * price).toFixed(2));
+
+            if (!vehicleId || !date || !time || odometer < 0 || litres <= 0 || price < 0) {
+                setStatus('Please provide valid refuel inputs.', true);
+                return;
+            }
+
+            const payload = {
+                vehicle_id: Number(vehicleId),
+                odometer_km: odometer,
+                fuel_litres: litres,
+                fuel_price_mode: fuelType,
+                price_per_litre: price,
+                total_amount: total,
+                fuelled_at: `${date}T${time}:00`,
+                location: String(document.getElementById('fuelLocation')?.value || '').trim(),
+                notes: String(document.getElementById('fuelNote')?.value || '').trim(),
+            };
+
+            try {
+                const endpoint = `${config.fuelLogsBaseUrl}/${encodeURIComponent(editingFuelLogId)}`;
+                const snapshot = await apiRequest('PUT', endpoint, payload);
+                applySnapshot(snapshot);
+                clearFuelForm();
+                renderAll();
+                setStatus('Refuel log updated.');
+            } catch (error) {
+                setStatus(error.message || 'Failed to update refuel log.', true);
+            }
+        });
+
+        deleteBtn.addEventListener('click', async () => {
+            if (!editingFuelLogId) return;
+
+            try {
+                const endpoint = `${config.fuelLogsBaseUrl}/${encodeURIComponent(editingFuelLogId)}`;
+                const snapshot = await apiRequest('DELETE', endpoint);
+                applySnapshot(snapshot);
+                clearFuelForm();
+                renderAll();
+                setStatus('Refuel log deleted.');
+            } catch (error) {
+                setStatus(error.message || 'Failed to delete refuel log.', true);
+            }
+        });
+    }
+
     function wireDriveSave() {
         const btn = document.getElementById('addCommuteLogBtn');
         if (!btn) return;
@@ -622,6 +869,85 @@
                 setStatus('Drive log added.');
             } catch (error) {
                 setStatus(error.message || 'Failed to add drive log.', true);
+            }
+        });
+    }
+
+    function wireDriveRowSelection() {
+        const tbody = document.getElementById('commuteLogRows');
+        if (!tbody) return;
+
+        tbody.addEventListener('click', (event) => {
+            const row = event.target.closest('tr[data-commute-log-id]');
+            if (!row) return;
+
+            const commuteLogId = row.getAttribute('data-commute-log-id');
+            const log = state.commuteLogs.find((item) => item.id === commuteLogId);
+            if (!log) return;
+
+            activateInputTab('tab-drive-entry');
+            editingCommuteLogId = commuteLogId;
+            setDriveFormValues(log);
+            renderAll();
+            setStatus('Editing drive log.');
+        });
+    }
+
+    function wireDriveEditActions() {
+        const editBtn = document.getElementById('editCommuteLogBtn');
+        const deleteBtn = document.getElementById('deleteCommuteLogBtn');
+        if (!editBtn || !deleteBtn) return;
+
+        editBtn.addEventListener('click', async () => {
+            if (!editingCommuteLogId) return;
+
+            const vehicleId = String(document.getElementById('commuteVehicleId')?.value || '');
+            const driveDate = String(document.getElementById('commuteDate')?.value || '');
+            const driveTime = String(document.getElementById('commuteTime')?.value || '');
+            const distance = toNumber(document.getElementById('commuteDistanceKm')?.value, 0);
+            const mileage = toNumber(document.getElementById('commuteConsumptionValue')?.value, 0);
+
+            if (!vehicleId || !driveDate || !driveTime || distance <= 0 || mileage <= 0) {
+                setStatus('Please provide valid drive inputs.', true);
+                return;
+            }
+
+            const payload = {
+                vehicle_id: Number(vehicleId),
+                commute_type: String(document.getElementById('commuteType')?.value || 'personal_drive'),
+                origin: String(document.getElementById('commuteOrigin')?.value || '').trim() || 'Origin',
+                destination: String(document.getElementById('commuteDestination')?.value || '').trim() || 'Destination',
+                distance_km: distance,
+                consumption_value: mileage,
+                consumption_unit: 'L_PER_100KM',
+                driven_at: `${driveDate}T${driveTime}:00`,
+                notes: String(document.getElementById('commuteNote')?.value || '').trim(),
+            };
+
+            try {
+                const endpoint = `${config.commuteLogsBaseUrl}/${encodeURIComponent(editingCommuteLogId)}`;
+                const snapshot = await apiRequest('PUT', endpoint, payload);
+                applySnapshot(snapshot);
+                clearDriveForm();
+                renderAll();
+                setStatus('Drive log updated.');
+            } catch (error) {
+                setStatus(error.message || 'Failed to update drive log.', true);
+            }
+        });
+
+        deleteBtn.addEventListener('click', async () => {
+            if (!editingCommuteLogId) return;
+
+            try {
+                const endpoint = `${config.commuteLogsBaseUrl}/${encodeURIComponent(editingCommuteLogId)}`;
+                const snapshot = await apiRequest('DELETE', endpoint);
+                applySnapshot(snapshot);
+                clearDriveForm();
+                renderAll();
+                setStatus('Drive log deleted.');
+            } catch (error) {
+                setStatus(error.message || 'Failed to delete drive log.', true);
             }
         });
     }
@@ -751,7 +1077,11 @@
         wireVehicleSave();
         wireVehicleCardActions();
         wireFuelSave();
+        wireFuelRowSelection();
+        wireFuelEditActions();
         wireDriveSave();
+        wireDriveRowSelection();
+        wireDriveEditActions();
         wireFuelPriceModeHelpers();
         wireFuelTotalAutoCalculation();
         initDefaults();
