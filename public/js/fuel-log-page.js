@@ -5,6 +5,7 @@
 
     const money = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     let statusTimer = null;
+    let editingVehicleId = null;
 
     const state = loadState();
 
@@ -64,13 +65,12 @@
     function formatDateTime(dateLike) {
         const d = new Date(dateLike);
         if (Number.isNaN(d.getTime())) return '-';
-        return d.toLocaleString('en-MY', {
-            year: 'numeric',
-            month: 'short',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
     }
 
     function resolveFuelPriceByType(type, currentPrice) {
@@ -232,6 +232,77 @@
         });
     }
 
+    function renderVehicleListRows() {
+        const container = document.getElementById('vehicleListCards');
+        if (!container) return;
+
+        container.innerHTML = '';
+        if (!state.vehicles.length) {
+            container.innerHTML = '<div class="text-center text-secondary py-3">No vehicles added yet.</div>';
+            return;
+        }
+
+        state.vehicles.forEach((vehicle) => {
+            const item = document.createElement('div');
+            item.className = 'vehicle-list-item';
+
+            const description = String(vehicle.description || '').trim();
+            const unitLabel = vehicle.consumption_unit_default === 'KM_PER_L' ? 'km/L' : 'L/100km';
+
+            item.innerHTML = `
+                <div class="vehicle-list-card">
+                    <div class="vehicle-list-row">
+                        <div>
+                            <div class="vehicle-list-name">${vehicle.name || '-'}</div>
+                            <div class="vehicle-list-description">${description || '&nbsp;'}</div>
+                        </div>
+                        <div class="vehicle-list-right">
+                            <div><strong>Capacity: ${money.format(toNumber(vehicle.tank_capacity_l, 0))} L</strong></div>
+                            <div class="vehicle-list-description">Unit: ${unitLabel}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="vehicle-list-actions">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-vehicle-action="edit" data-vehicle-id="${vehicle.id}" aria-label="Edit vehicle" title="Edit" data-bs-title="Edit" data-bs-placement="top">
+                        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-vehicle-action="delete" data-vehicle-id="${vehicle.id}" aria-label="Delete vehicle" title="Delete" data-bs-title="Delete" data-bs-placement="top">
+                        <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            container.querySelectorAll('[data-vehicle-action]').forEach((btn) => {
+                const existing = bootstrap.Tooltip.getInstance(btn);
+                if (!existing) {
+                    new bootstrap.Tooltip(btn, {
+                        trigger: 'hover focus',
+                    });
+                }
+            });
+        }
+    }
+
+    function setVehicleFormMode(isEdit) {
+        const saveBtn = document.getElementById('saveVehicleBtn');
+        if (!saveBtn) return;
+        saveBtn.textContent = isEdit ? 'Update' : 'Save';
+    }
+
+    function fillVehicleForm(vehicle) {
+        const name = document.getElementById('vehicleName');
+        const description = document.getElementById('vehicleDescription');
+        const tank = document.getElementById('tankCapacityL');
+        const unit = document.getElementById('consumptionUnitDefault');
+        if (name) name.value = vehicle?.name || '';
+        if (description) description.value = vehicle?.description || '';
+        if (tank) tank.value = String(toNumber(vehicle?.tank_capacity_l, 0));
+        if (unit) unit.value = vehicle?.consumption_unit_default || 'L_PER_100KM';
+    }
+
     function renderFuelRows() {
         const tbody = document.getElementById('fuelLogRows');
         if (!tbody) return;
@@ -323,6 +394,7 @@
     }
 
     function renderAll() {
+        renderVehicleListRows();
         renderVehicleSelects();
         renderFuelRows();
         renderDriveRows();
@@ -346,17 +418,76 @@
                 setStatus('Vehicle name is required.', true);
                 return;
             }
-            const vehicle = {
-                id: uid(),
+            const vehiclePayload = {
                 name,
                 description: String(document.getElementById('vehicleDescription')?.value || '').trim(),
                 tank_capacity_l: toNumber(document.getElementById('tankCapacityL')?.value, 0),
                 consumption_unit_default: String(document.getElementById('consumptionUnitDefault')?.value || 'L_PER_100KM'),
             };
-            state.vehicles.push(vehicle);
+
+            if (editingVehicleId) {
+                const existingIndex = state.vehicles.findIndex((vehicle) => vehicle.id === editingVehicleId);
+                if (existingIndex >= 0) {
+                    state.vehicles[existingIndex] = {
+                        ...state.vehicles[existingIndex],
+                        ...vehiclePayload,
+                    };
+                }
+                editingVehicleId = null;
+                setVehicleFormMode(false);
+                fillVehicleForm(null);
+                saveState();
+                renderAll();
+                setStatus('Vehicle updated.');
+                return;
+            }
+
+            state.vehicles.push({
+                id: uid(),
+                ...vehiclePayload,
+            });
             saveState();
             renderAll();
+            fillVehicleForm(null);
             setStatus('Vehicle saved.');
+        });
+    }
+
+    function wireVehicleCardActions() {
+        const container = document.getElementById('vehicleListCards');
+        if (!container) return;
+
+        container.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-vehicle-action]');
+            if (!button) return;
+
+            const action = button.getAttribute('data-vehicle-action');
+            const vehicleId = button.getAttribute('data-vehicle-id');
+            if (!vehicleId) return;
+
+            if (action === 'edit') {
+                const vehicle = state.vehicles.find((item) => item.id === vehicleId);
+                if (!vehicle) return;
+                editingVehicleId = vehicleId;
+                fillVehicleForm(vehicle);
+                setVehicleFormMode(true);
+                setStatus('Editing vehicle.');
+                return;
+            }
+
+            if (action === 'delete') {
+                state.vehicles = state.vehicles.filter((item) => item.id !== vehicleId);
+                state.fuelLogs = state.fuelLogs.filter((item) => item.vehicle_id !== vehicleId);
+                state.commuteLogs = state.commuteLogs.filter((item) => item.vehicle_id !== vehicleId);
+                if (editingVehicleId === vehicleId) {
+                    editingVehicleId = null;
+                    setVehicleFormMode(false);
+                    fillVehicleForm(null);
+                }
+                saveState();
+                renderAll();
+                setStatus('Vehicle deleted.');
+            }
         });
     }
 
@@ -376,7 +507,7 @@
             const litres = toNumber(document.getElementById('fuelLitres')?.value, 0);
             const fuelType = String(document.getElementById('fuelPriceMode')?.value || 'budi95');
             const price = resolveFuelPriceByType(fuelType, toNumber(document.getElementById('fuelPricePerLitre')?.value, 0));
-            let total = toNumber(document.getElementById('fuelTotalAmount')?.value, 0);
+            const total = Number((litres * price).toFixed(2));
 
             if (!date || !time) {
                 setStatus('Fuel date and time are required.', true);
@@ -385,10 +516,6 @@
             if (odometer < 0 || litres <= 0 || price < 0) {
                 setStatus('Please provide valid odometer/litres/price values.', true);
                 return;
-            }
-
-            if (total <= 0) {
-                total = litres * price;
             }
 
             state.fuelLogs.push({
@@ -482,7 +609,34 @@
             if (fuelMode.value === 'ron95' && toNumber(fuelPrice.value, 0) <= 0) {
                 fuelPrice.value = String(PRICE_RON95);
             }
+            recomputeFuelTotal();
         });
+    }
+
+    function recomputeFuelTotal() {
+        const litresInput = document.getElementById('fuelLitres');
+        const priceInput = document.getElementById('fuelPricePerLitre');
+        const totalInput = document.getElementById('fuelTotalAmount');
+        if (!litresInput || !priceInput || !totalInput) return;
+
+        const litres = toNumber(litresInput.value, 0);
+        const price = toNumber(priceInput.value, 0);
+        const total = Number((litres * price).toFixed(2));
+        totalInput.value = String(total);
+    }
+
+    function wireFuelTotalAutoCalculation() {
+        const litresInput = document.getElementById('fuelLitres');
+        const priceInput = document.getElementById('fuelPricePerLitre');
+        if (litresInput) {
+            litresInput.addEventListener('input', recomputeFuelTotal);
+            litresInput.addEventListener('change', recomputeFuelTotal);
+        }
+        if (priceInput) {
+            priceInput.addEventListener('input', recomputeFuelTotal);
+            priceInput.addEventListener('change', recomputeFuelTotal);
+        }
+        recomputeFuelTotal();
     }
 
     function initDefaults() {
@@ -501,6 +655,7 @@
         if (fuelMode && fuelPrice && fuelMode.value === 'budi95' && toNumber(fuelPrice.value, 0) <= 0) {
             fuelPrice.value = String(PRICE_BUDI95);
         }
+        recomputeFuelTotal();
     }
 
     function initFuelInputTabUI() {
@@ -524,12 +679,33 @@
         });
     }
 
+    function initDatePickers() {
+        if (typeof flatpickr === 'undefined') return;
+
+        document.querySelectorAll('.date-picker').forEach((input) => {
+            if (input._flatpickr) {
+                input._flatpickr.destroy();
+            }
+
+            flatpickr(input, {
+                altInput: true,
+                altFormat: 'd/m/Y',
+                dateFormat: 'Y-m-d',
+                allowInput: false,
+                defaultDate: input.value || null,
+            });
+        });
+    }
+
     wireVehicleSave();
+    wireVehicleCardActions();
     wireFuelSave();
     wireDriveSave();
     wireBudgetSave();
     wireFuelPriceModeHelpers();
+    wireFuelTotalAutoCalculation();
     initDefaults();
+    initDatePickers();
     initFuelInputTabUI();
     renderAll();
 })();

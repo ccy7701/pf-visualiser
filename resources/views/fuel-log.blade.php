@@ -7,6 +7,7 @@
     <title>Fuel Log</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
     <script>
         (function () {
             const savedTheme = localStorage.getItem('theme') || @json($theme ?? 'light');
@@ -67,7 +68,14 @@
                                         </select>
                                     </div>
                                 </div>
-                                <button id="saveVehicleBtn" type="button" class="btn btn-dark w-100">Save Vehicle</button>
+                                <button id="saveVehicleBtn" type="button" class="btn btn-dark w-100">Save</button>
+                            </div>
+                            <div class="input-subcard mt-3 mb-0">
+                                <h2 class="section-subtitle">Vehicles Added</h2>
+                                <hr class="section-divider">
+                                <div id="vehicleListCards">
+                                    <div class="text-center text-secondary py-3">No vehicles added yet.</div>
+                                </div>
                             </div>
                         </div>
 
@@ -108,7 +116,7 @@
                                         <label for="fuelTotalAmount" class="form-label form-label-sm">Total</label>
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text">RM</span>
-                                            <input id="fuelTotalAmount" type="number" min="0" step="0.01" class="form-control compact-input" value="0">
+                                            <input id="fuelTotalAmount" type="number" min="0" step="0.01" class="form-control compact-input" value="0" readonly>
                                         </div>
                                     </div>
                                 </div>
@@ -119,7 +127,7 @@
                                 <div class="row g-2 mb-2">
                                     <div class="col-6">
                                         <label for="fuelledAtDate" class="form-label form-label-sm">Date</label>
-                                        <input id="fuelledAtDate" type="date" class="form-control compact-input">
+                                        <input id="fuelledAtDate" type="text" class="form-control compact-input date-picker" placeholder="DD/MM/YYYY">
                                     </div>
                                     <div class="col-6">
                                         <label for="fuelledAtTime" class="form-label form-label-sm">Time</label>
@@ -176,7 +184,7 @@
                                 <div class="row g-2 mb-2">
                                     <div class="col-6">
                                         <label for="commuteDate" class="form-label form-label-sm">Date</label>
-                                        <input id="commuteDate" type="date" class="form-control compact-input">
+                                        <input id="commuteDate" type="text" class="form-control compact-input date-picker" placeholder="DD/MM/YYYY">
                                     </div>
                                     <div class="col-6">
                                         <label for="commuteTime" class="form-label form-label-sm">Time</label>
@@ -290,6 +298,7 @@
 <div id="statusMessage" class="small" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="{{ asset('js/edge-nav.js') }}"></script>
 <script src="{{ asset('js/fuel-log-page.js') }}"></script>
 </body>
