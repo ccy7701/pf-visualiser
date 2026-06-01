@@ -95,6 +95,20 @@ Key characteristics:
 * ELR schedule support with optional compound-interest progression
 * cost-of-living handled via budget sets and month-specific budget selection
 
+### Module C: Variance Analysis (`variance-analysis`)
+
+Purpose:
+
+* compare projected month-end values against actuals for saved scenarios
+
+Key characteristics:
+
+* scenario-linked monthly plan-vs-actual workflow
+* projected baseline sourced from cached projection results (regenerated when missing)
+* actual month values persisted in `projection_actual_months`
+* per-category expense breakdown support for actual expenses
+* month-level variance display for COH, ELR, and EPF
+
 ---
 
 ## 6. Development Phases (Historical Baseline)

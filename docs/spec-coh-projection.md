@@ -41,6 +41,7 @@ The system shall support:
 
 * projection start month
 * projection end month
+* start-calculation-next-month toggle
 * starting COH
 * starting ELR
 * starting EPF
@@ -131,13 +132,27 @@ The system shall return monthly rows containing core balances and breakdown fiel
 
 `closing_coh` may be negative.
 
+The system shall also return metadata fields including:
+
+* `start_month`
+* `end_month`
+* `calculation_start_month`
+* `start_calculation_next_month`
+* `months_count`
+
 ---
 
 ## 4. Projection Computation Logic
 
 ### 4.1 Chronological Processing Rule
 
-Months are processed in ascending month order from `start_month` to `end_month`.
+Months are processed in ascending month order from calculation start month to `end_month`.
+
+Calculation start month resolution:
+
+* if `start_calculation_next_month = false`, calculation starts at `start_month`
+* if `start_calculation_next_month = true`, calculation starts at `start_month + 1 month`
+* if resolved calculation start month is after `end_month`, month sequence is empty
 
 Each month inherits opening balances from the previous month's closing balances.
 
