@@ -23,19 +23,31 @@
             font-size: 1.1rem;
             font-weight: 700;
         }
-        .status-pill {
-            display: inline-block;
-            border-radius: 999px;
-            padding: 0.15rem 0.5rem;
-            font-size: 0.75rem;
-            border: 1px solid #adb5bd;
-            color: #495057;
-            background: #f8f9fa;
+        .log-cell-main {
+            font-weight: 600;
+            line-height: 1.2;
         }
-        [data-bs-theme="dark"] .status-pill {
-            color: #ced4da;
-            background: #2a2a2a;
-            border-color: #495057;
+        .log-cell-sub {
+            margin-top: 0.15rem;
+            font-size: 0.82rem;
+            font-style: italic;
+            color: #6c757d;
+            line-height: 1.2;
+        }
+        [data-bs-theme="dark"] .log-cell-sub {
+            color: #adb5bd;
+        }
+        #fuelLogRows td:first-child,
+        #fuelLogRows td:last-child,
+        #commuteLogRows td:first-child,
+        #commuteLogRows td:last-child,
+        #fuelLogRows tr td[colspan],
+        #commuteLogRows tr td[colspan] {
+            padding-left: 0.85rem;
+            padding-right: 0.85rem;
+        }
+        .log-cell-cost {
+            text-align: right;
         }
         .comparison-banner {
             display: flex;

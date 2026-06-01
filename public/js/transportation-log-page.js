@@ -138,7 +138,6 @@
                     estimated_l_per_100km: lPer100,
                     estimated_km_per_l: kmPerL,
                     cost_per_km: costPerKm,
-                    reliability_status: current.is_full_tank ? 'more_reliable_full_tank_based' : 'estimated',
                 });
             }
         });
@@ -311,7 +310,7 @@
         tbody.innerHTML = '';
 
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-secondary py-4">No refuel logs yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary py-4">No refuel logs yet.</td></tr>';
             return;
         }
 
@@ -322,11 +321,6 @@
                 <td>${vehicleName(row.vehicle_id)}</td>
                 <td class="text-end">${money.format(toNumber(row.fuel_litres, 0))}</td>
                 <td class="text-end">${money.format(toNumber(row.total_amount, 0))}</td>
-                <td class="text-end">${row.distance_km === null ? '-' : money.format(row.distance_km)}</td>
-                <td class="text-end">${row.estimated_l_per_100km === null ? '-' : money.format(row.estimated_l_per_100km)}</td>
-                <td class="text-end">${row.estimated_km_per_l === null ? '-' : money.format(row.estimated_km_per_l)}</td>
-                <td class="text-end">${row.cost_per_km === null ? '-' : money.format(row.cost_per_km)}</td>
-                <td><span class="status-pill">${row.reliability_status === 'estimated' ? 'Estimated' : 'Full-tank based'}</span></td>
             `;
             tbody.appendChild(tr);
         });
@@ -341,7 +335,7 @@
 
         tbody.innerHTML = '';
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-secondary py-4">No drive logs yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-secondary py-4">No drive logs yet.</td></tr>';
             return;
         }
 
@@ -350,11 +344,16 @@
             tr.innerHTML = `
                 <td>${formatDateTime(row.driven_at)}</td>
                 <td>${vehicleName(row.vehicle_id)}</td>
-                <td>${row.origin} → ${row.destination}</td>
+                <td>
+                    <div class="log-cell-main">${row.origin} - ${row.destination}</div>
+                    <div class="log-cell-sub">${row.commute_type === 'work_commute' ? 'Work Commute' : 'Personal Drive'}</div>
+                </td>
                 <td class="text-end">${money.format(toNumber(row.distance_km, 0))}</td>
                 <td class="text-end">${row.estimated_fuel_litres === null ? '-' : money.format(row.estimated_fuel_litres)}</td>
-                <td class="text-end">${row.estimated_fuel_cost === null ? '-' : money.format(row.estimated_fuel_cost)}</td>
-                <td class="text-end">${row.estimated_cost_per_km === null ? '-' : money.format(row.estimated_cost_per_km)}</td>
+                <td class="log-cell-cost">
+                    <div class="log-cell-main">${row.estimated_fuel_cost === null ? '-' : `RM ${money.format(row.estimated_fuel_cost)}`}</div>
+                    <div class="log-cell-sub">${row.estimated_cost_per_km === null ? '-' : `(RM ${money.format(row.estimated_cost_per_km)}/km)`}</div>
+                </td>
             `;
             tbody.appendChild(tr);
         });
@@ -363,12 +362,7 @@
     function renderDashboard() {
         const summary = thisMonthSummary();
         const wrap = document.getElementById('fuelDashboardCards');
-        const actualFuelSpendingValue = document.getElementById('actualFuelSpendingValue');
-        const estimatedCommuteCostValue = document.getElementById('estimatedCommuteCostValue');
-        if (!wrap || !actualFuelSpendingValue || !estimatedCommuteCostValue) return;
-
-        actualFuelSpendingValue.textContent = `RM ${money.format(summary.actualFuelSpending)}`;
-        estimatedCommuteCostValue.textContent = `RM ${money.format(summary.estimatedCommuteCost)}`;
+        if (!wrap) return;
 
         const items = [
             { label: "This Month's Fuel Spending", value: `RM ${money.format(summary.actualFuelSpending)}` },
@@ -527,7 +521,6 @@
                 fuel_price_mode: fuelType,
                 price_per_litre: price,
                 total_amount: total,
-                is_full_tank: Boolean(document.getElementById('fuelIsFullTank')?.checked),
                 fuelled_at: `${date}T${time}:00`,
                 location: String(document.getElementById('fuelLocation')?.value || '').trim(),
                 notes: String(document.getElementById('fuelNote')?.value || '').trim(),

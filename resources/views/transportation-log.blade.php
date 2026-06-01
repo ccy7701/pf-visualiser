@@ -120,10 +120,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="mb-2 form-check">
-                                    <input id="fuelIsFullTank" class="form-check-input" type="checkbox" checked>
-                                    <label class="form-check-label" for="fuelIsFullTank">Full tank</label>
-                                </div>
                                 <div class="row g-2 mb-2">
                                     <div class="col-6">
                                         <label for="fuelledAtDate" class="form-label form-label-sm">Date</label>
@@ -220,21 +216,6 @@
             </div>
 
             <div class="card panel-card mb-3">
-                <div class="card-header">Actual vs Estimated (This Month)</div>
-                <div class="card-body">
-                    <div class="comparison-banner">
-                        <div class="comparison-label">Actual Fuel Spending</div>
-                        <div class="comparison-value" id="actualFuelSpendingValue">RM 0.00</div>
-                    </div>
-                    <div class="comparison-vs">vs</div>
-                    <div class="comparison-banner">
-                        <div class="comparison-label">Estimated Drive Fuel Cost</div>
-                        <div class="comparison-value" id="estimatedCommuteCostValue">RM 0.00</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card panel-card mb-3">
                 <div class="card-header">Refuel Logs</div>
                 <div class="card-body p-0">
                     <div class="results-wrap">
@@ -242,20 +223,15 @@
                             <table class="table table-striped table-sm mb-0 projection-table">
                                 <thead class="table-light sticky-top">
                                 <tr>
-                                    <th>When</th>
+                                    <th>Date &amp; Time</th>
                                     <th>Vehicle</th>
                                     <th class="text-end">Litres</th>
                                     <th class="text-end">Total (RM)</th>
-                                    <th class="text-end">Distance (km)</th>
-                                    <th class="text-end">L/100km</th>
-                                    <th class="text-end">km/L</th>
-                                    <th class="text-end">Cost/km (RM)</th>
-                                    <th>Status</th>
                                 </tr>
                                 </thead>
                                 <tbody id="fuelLogRows">
                                 <tr>
-                                    <td colspan="9" class="text-center text-secondary py-4">No refuel logs yet.</td>
+                                    <td colspan="4" class="text-center text-secondary py-4">No refuel logs yet.</td>
                                 </tr>
                                 </tbody>
                             </table>
@@ -272,18 +248,17 @@
                             <table class="table table-striped table-sm mb-0 projection-table">
                                 <thead class="table-light sticky-top">
                                 <tr>
-                                    <th>When</th>
+                                    <th>Date &amp; Time</th>
                                     <th>Vehicle</th>
                                     <th>Route</th>
                                     <th class="text-end">Distance (km)</th>
                                     <th class="text-end">Fuel Used (L)</th>
-                                    <th class="text-end">Cost (RM)</th>
-                                    <th class="text-end">Cost/km (RM)</th>
+                                    <th class="text-end">Cost</th>
                                 </tr>
                                 </thead>
                                 <tbody id="commuteLogRows">
                                 <tr>
-                                    <td colspan="7" class="text-center text-secondary py-4">No drive logs yet.</td>
+                                    <td colspan="6" class="text-center text-secondary py-4">No drive logs yet.</td>
                                 </tr>
                                 </tbody>
                             </table>

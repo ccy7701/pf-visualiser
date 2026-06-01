@@ -30,7 +30,6 @@
 
 {{-- Main counter (always visible) ──── --}}
 <div class="counter-fullscreen">
-    {{-- <div class="counter-label">Current Counter</div> --}}
     <div id="counterValue" class="counter-value">RM {{ number_format($snapshot['counter'], 2) }}</div>
 
     {{-- Incrementing status indicator --}}
