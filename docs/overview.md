@@ -109,7 +109,7 @@ Key characteristics:
 * per-category expense breakdown support for actual expenses
 * month-level variance display for COH, ELR, and EPF
 
-### Module D: Transportation Log (`transportation-log`) - Planned Next
+### Module D: Transportation Log (`transportation-log`)
 
 Purpose:
 
@@ -121,7 +121,10 @@ Key characteristics:
 
 * submodules: vehicle profile, fuel logs, commute logs
 * deterministic calculations from explicit odometer/fuel/commute inputs
-* monthly dashboard for fuel spend, commute estimate, and budget remaining
+* backend-connected snapshot + CRUD endpoints for vehicle/refuel/drive logs
+* monthly dashboard for fuel spend, commute estimate, weighted average mileage, and commute distance
+* row-click edit workflow for refuel and drive logs (populate input tab + edit/delete actions)
+* 24-hour datetime input/display consistency for refuel and drive records
 * transport-cost tracking aligned with BCOL/FCOL planning assumptions
 
 ---
@@ -205,7 +208,8 @@ Key characteristics:
 * Vehicle profile modeling
 * Fuel log entry and efficiency estimation
 * Commute log entry and cost estimation
-* Monthly fuel dashboard and budget comparison
+* Monthly fuel dashboard and weighted mileage summary
+* Row-driven edit/delete workflow for refuel and drive logs
 
 ---
 

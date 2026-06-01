@@ -48,18 +48,13 @@ The system shall support:
 
 * vehicle name
 * description
-* odometer unit (initially `km`)
-* fuel unit (initially `L`)
 * preferred consumption unit (`L/100km` or `km/L`)
 * tank capacity (L)
-* fuel type
-* default fuel price mode
 
 Initial fuel price modes:
 
 * `budi95`
-* `ron95_non_subsidised`
-* `manual`
+* `ron95`
 
 Initial pricing rules:
 
@@ -73,13 +68,20 @@ The system shall support fuel log entry with:
 * vehicle
 * odometer reading (km)
 * fuel amount (L)
+* fuel price mode
 * price per litre
 * total amount
-* full tank flag
 * date fuelled
 * time fuelled
 * location
 * notes
+
+The system shall support row-based edit workflow:
+
+* clicking a refuel row populates the refuel input subsection
+* the refuel input subsection becomes the active input tab
+* action mode switches from `Add` to `Edit` and `Delete` in a two-column layout
+* update and delete persist through backend endpoints
 
 The system shall compute and expose:
 
@@ -87,7 +89,6 @@ The system shall compute and expose:
 * estimated `L/100km`
 * estimated `km/L`
 * cost per km
-* reliability status (`estimated` or `more_reliable_full_tank_based`)
 
 ### 3.4 Commute Logs
 
@@ -100,16 +101,20 @@ The system shall support commute-focused entry with:
 * distance (km)
 * consumption input value
 * consumption input unit (`L/100km` or `km/L`)
-* fuel price mode
 * date
-* direction
 * notes
+
+The system shall support row-based edit workflow:
+
+* clicking a drive row populates the drive input subsection
+* the drive input subsection becomes the active input tab
+* action mode switches from `Add` to `Edit` and `Delete` in a two-column layout
+* update and delete persist through backend endpoints
 
 Initial commute type values:
 
-* `home_to_work`
-* `work_to_home`
-* `custom`
+* `work_commute`
+* `personal_drive`
 
 The system shall compute and expose:
 
@@ -124,7 +129,7 @@ The dashboard shall include:
 * this month fuel spending (actual)
 * this month estimated commute cost
 * total fuel litres logged (month)
-* average `L/100km` (from eligible logs)
+* average `L/100km` (weighted from monthly drive logs by distance)
 * estimated commute distance (month)
 * fuel budget remaining
 * projected month-end fuel cost
@@ -155,8 +160,6 @@ estimated_l_per_100km = (fuel_litres / distance_since_last_km) * 100
 estimated_km_per_litre = distance_since_last_km / fuel_litres
 cost_per_km = total_amount / distance_since_last_km
 ```
-
-If `full_tank = false`, efficiency outputs must be tagged as estimated.
 
 ### 4.2 Commute Log Derived Metrics
 
@@ -195,6 +198,16 @@ Monthly estimated commute fuel cost:
 estimated_commute_cost_month = sum(commute_logs.estimated_fuel_cost for month)
 ```
 
+Monthly weighted average mileage from drive logs:
+
+```text
+weighted_avg_l_per_100km_month
+=
+sum(commute_logs.consumption_value_l_per_100km * commute_logs.distance_km for month)
+/
+sum(commute_logs.distance_km for month)
+```
+
 Fuel budget remaining:
 
 ```text
@@ -213,33 +226,29 @@ projected_month_end_fuel_cost
 
 ## 5. Data Model Requirements
 
-### 5.1 fuel_vehicle_profiles
+### 5.1 transportation_vehicles
 
 | Field                    | Type          |
 | ------------------------ | ------------- |
 | id                       | bigint        |
 | name                     | string        |
 | description              | nullable text |
-| odometer_unit            | string(16)    |
-| fuel_unit                | string(16)    |
 | consumption_unit_default | string(16)    |
-| tank_capacity_l          | nullable decimal(8,2) |
-| fuel_type                | string(32)    |
-| default_fuel_price_mode  | string(32)    |
+| tank_capacity_l          | decimal(8,2) |
 | created_at               | timestamp     |
 | updated_at               | timestamp     |
 
-### 5.2 fuel_logs
+### 5.2 transportation_fuel_logs
 
 | Field                    | Type          |
 | ------------------------ | ------------- |
 | id                       | bigint        |
 | vehicle_id               | foreign key   |
-| odometer_km              | decimal(12,2) |
+| odometer_km              | decimal(10,2) |
 | fuel_litres              | decimal(10,3) |
-| price_per_litre          | decimal(8,3)  |
-| total_amount             | decimal(12,2) |
-| is_full_tank             | boolean       |
+| fuel_price_mode          | string(32)    |
+| price_per_litre          | decimal(10,3) |
+| total_amount             | decimal(10,2) |
 | fuelled_at               | datetime      |
 | location                 | nullable string |
 | notes                    | nullable text |
@@ -248,7 +257,7 @@ projected_month_end_fuel_cost
 
 Derived fields may be materialized later for query performance but are not required for correctness.
 
-### 5.3 commute_logs
+### 5.3 transportation_commute_logs
 
 | Field                    | Type          |
 | ------------------------ | ------------- |
@@ -260,27 +269,10 @@ Derived fields may be materialized later for query performance but are not requi
 | distance_km              | decimal(10,2) |
 | consumption_value        | decimal(10,4) |
 | consumption_unit         | string(16)    |
-| fuel_price_mode          | string(32)    |
-| price_per_litre          | decimal(8,3)  |
-| commute_date             | date          |
-| direction                | nullable string(32) |
+| driven_at                | datetime      |
 | notes                    | nullable text |
 | created_at               | timestamp     |
 | updated_at               | timestamp     |
-
-### 5.4 fuel_price_references (Optional First-Class Table)
-
-If implemented for weekly tracking:
-
-| Field         | Type          |
-| ------------- | ------------- |
-| id            | bigint        |
-| fuel_mode     | string(32)    |
-| effective_on  | date          |
-| price_per_litre | decimal(8,3) |
-| source_note   | nullable string |
-| created_at    | timestamp     |
-| updated_at    | timestamp     |
 
 ---
 
@@ -289,16 +281,16 @@ If implemented for weekly tracking:
 ### 6.1 Endpoints (Initial Contract Target)
 
 * `GET /transportation-log`
-* `GET /transportation-log/vehicles`
+* `GET /transportation-log/snapshot`
 * `POST /transportation-log/vehicles`
 * `PUT /transportation-log/vehicles/{vehicle}`
-* `GET /transportation-log/transportation-logs`
-* `POST /transportation-log/transportation-logs`
-* `PUT /transportation-log/transportation-logs/{fuelLog}`
-* `GET /transportation-log/commute-logs`
+* `DELETE /transportation-log/vehicles/{vehicle}`
+* `POST /transportation-log/fuel-logs`
+* `PUT /transportation-log/fuel-logs/{fuelLog}`
+* `DELETE /transportation-log/fuel-logs/{fuelLog}`
 * `POST /transportation-log/commute-logs`
 * `PUT /transportation-log/commute-logs/{commuteLog}`
-* `GET /transportation-log/dashboard`
+* `DELETE /transportation-log/commute-logs/{commuteLog}`
 
 ### 6.2 Validation Baseline
 
@@ -314,8 +306,13 @@ If implemented for weekly tracking:
 API responses should include:
 
 * persisted source fields
-* computed metrics used by UI cards/tables
-* explicit flags for estimate reliability
+* source arrays for vehicles, refuel logs, and drive logs via snapshot
+* frontend-derived metrics used by UI cards/tables
+
+### 6.4 Input/Display Time Format
+
+* datetime display in logs uses 24-hour format
+* time inputs for refuel and drive use 24-hour format
 
 ---
 
