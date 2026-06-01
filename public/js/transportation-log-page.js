@@ -1,35 +1,19 @@
 (function () {
-    const STORAGE_KEY = 'transportation_log_state_v1';
-    const LEGACY_STORAGE_KEY = 'fuel_log_state_v1';
     const PRICE_BUDI95 = 1.99;
     const PRICE_RON95 = 2.05;
 
+    const config = window.transportationLogConfig || {};
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     const money = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
     let statusTimer = null;
     let editingVehicleId = null;
 
-    const state = loadState();
-
-    function loadState() {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
-            if (!raw) {
-                return { vehicles: [], fuelLogs: [], commuteLogs: [] };
-            }
-            const parsed = JSON.parse(raw);
-            return {
-                vehicles: Array.isArray(parsed.vehicles) ? parsed.vehicles : [],
-                fuelLogs: Array.isArray(parsed.fuelLogs) ? parsed.fuelLogs : [],
-                commuteLogs: Array.isArray(parsed.commuteLogs) ? parsed.commuteLogs : [],
-            };
-        } catch (_e) {
-            return { vehicles: [], fuelLogs: [], commuteLogs: [] };
-        }
-    }
-
-    function saveState() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
+    const state = {
+        vehicles: [],
+        fuelLogs: [],
+        commuteLogs: [],
+    };
 
     function setStatus(message, isError) {
         const el = document.getElementById('statusMessage');
@@ -47,8 +31,74 @@
         return Number.isFinite(parsed) ? parsed : fallback;
     }
 
-    function uid() {
-        return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    function normalizeVehicle(vehicle) {
+        return {
+            ...vehicle,
+            id: String(vehicle.id),
+        };
+    }
+
+    function normalizeFuelLog(log) {
+        return {
+            ...log,
+            id: String(log.id),
+            vehicle_id: String(log.vehicle_id),
+        };
+    }
+
+    function normalizeCommuteLog(log) {
+        return {
+            ...log,
+            id: String(log.id),
+            vehicle_id: String(log.vehicle_id),
+        };
+    }
+
+    function applySnapshot(snapshot) {
+        state.vehicles = Array.isArray(snapshot?.vehicles) ? snapshot.vehicles.map(normalizeVehicle) : [];
+        state.fuelLogs = Array.isArray(snapshot?.fuelLogs) ? snapshot.fuelLogs.map(normalizeFuelLog) : [];
+        state.commuteLogs = Array.isArray(snapshot?.commuteLogs) ? snapshot.commuteLogs.map(normalizeCommuteLog) : [];
+        renderAll();
+    }
+
+    async function apiRequest(method, url, payload) {
+        const options = {
+            method,
+            headers: {
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+        };
+
+        if (payload !== undefined) {
+            options.headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(payload);
+        }
+
+        const response = await fetch(url, options);
+        const contentType = response.headers.get('content-type') || '';
+        const data = contentType.includes('application/json') ? await response.json() : null;
+
+        if (!response.ok) {
+            if (data?.message) {
+                if (data.errors && typeof data.errors === 'object') {
+                    const firstError = Object.values(data.errors).flat()[0];
+                    if (firstError) {
+                        throw new Error(String(firstError));
+                    }
+                }
+                throw new Error(String(data.message));
+            }
+            throw new Error('Request failed.');
+        }
+
+        return data;
+    }
+
+    async function refreshSnapshot() {
+        if (!config.snapshotEndpoint) return;
+        const data = await apiRequest('GET', config.snapshotEndpoint);
+        applySnapshot(data);
     }
 
     function monthKeyFromDate(dateLike) {
@@ -58,7 +108,7 @@
     }
 
     function vehicleName(vehicleId) {
-        const vehicle = state.vehicles.find((v) => v.id === vehicleId);
+        const vehicle = state.vehicles.find((v) => v.id === String(vehicleId));
         return vehicle ? vehicle.name : 'Unknown';
     }
 
@@ -85,7 +135,7 @@
         }
 
         const candidateLogs = state.fuelLogs
-            .filter((row) => row.vehicle_id === vehicleId)
+            .filter((row) => row.vehicle_id === String(vehicleId))
             .sort((a, b) => new Date(a.fuelled_at).getTime() - new Date(b.fuelled_at).getTime());
 
         if (!candidateLogs.length) {
@@ -105,7 +155,6 @@
 
     function driveRowDateTime(row) {
         if (row.driven_at) return row.driven_at;
-        if (row.commute_date) return `${row.commute_date}T00:00:00`;
         return '';
     }
 
@@ -185,10 +234,15 @@
         const actualFuelSpending = fuelRowsMonth.reduce((carry, row) => carry + toNumber(row.total_amount, 0), 0);
         const totalFuelLitres = fuelRowsMonth.reduce((carry, row) => carry + toNumber(row.fuel_litres, 0), 0);
         const avgLPer100 = (() => {
-            const eligible = fuelRowsMonth.filter((row) => row.estimated_l_per_100km !== null);
+            const eligible = driveRowsMonth.filter((row) => toNumber(row.distance_km, 0) > 0 && toNumber(row.mileageLPer100Km, 0) > 0);
             if (!eligible.length) return null;
-            const sum = eligible.reduce((carry, row) => carry + toNumber(row.estimated_l_per_100km, 0), 0);
-            return sum / eligible.length;
+            const totalDistance = eligible.reduce((carry, row) => carry + toNumber(row.distance_km, 0), 0);
+            if (totalDistance <= 0) return null;
+            const weightedMileageSum = eligible.reduce(
+                (carry, row) => carry + (toNumber(row.mileageLPer100Km, 0) * toNumber(row.distance_km, 0)),
+                0,
+            );
+            return weightedMileageSum / totalDistance;
         })();
         const estimatedCommuteCost = driveRowsMonth.reduce((carry, row) => carry + toNumber(row.estimated_fuel_cost, 0), 0);
         const estimatedCommuteDistance = driveRowsMonth.reduce((carry, row) => carry + toNumber(row.distance_km, 0), 0);
@@ -363,9 +417,9 @@
         const items = [
             { label: "This Month's Fuel Spending", value: `RM ${money.format(summary.actualFuelSpending)}` },
             { label: "This Month's Estimated Drive Cost", value: `RM ${money.format(summary.estimatedCommuteCost)}` },
-            { label: 'Total Fuel Litres Logged', value: money.format(summary.totalFuelLitres) },
-            { label: 'Average L/100km', value: summary.avgLPer100 === null ? '-' : money.format(summary.avgLPer100) },
-            { label: 'Estimated Commute Distance (km)', value: money.format(summary.estimatedCommuteDistance) },
+            { label: 'Total Fuel Litres Logged', value: `${money.format(summary.totalFuelLitres)} L` },
+            { label: 'Average Mileage', value: `${summary.avgLPer100 === null ? '-' : money.format(summary.avgLPer100)} L/100KM` },
+            { label: 'Commute Distance', value: `${money.format(summary.estimatedCommuteDistance)} KM` },
         ];
 
         wrap.innerHTML = '';
@@ -401,12 +455,13 @@
     function wireVehicleSave() {
         const btn = document.getElementById('saveVehicleBtn');
         if (!btn) return;
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             const name = String(document.getElementById('vehicleName')?.value || '').trim();
             if (!name) {
                 setStatus('Vehicle name is required.', true);
                 return;
             }
+
             const vehiclePayload = {
                 name,
                 description: String(document.getElementById('vehicleDescription')?.value || '').trim(),
@@ -414,31 +469,25 @@
                 consumption_unit_default: String(document.getElementById('consumptionUnitDefault')?.value || 'L_PER_100KM'),
             };
 
-            if (editingVehicleId) {
-                const existingIndex = state.vehicles.findIndex((vehicle) => vehicle.id === editingVehicleId);
-                if (existingIndex >= 0) {
-                    state.vehicles[existingIndex] = {
-                        ...state.vehicles[existingIndex],
-                        ...vehiclePayload,
-                    };
+            try {
+                if (editingVehicleId) {
+                    const endpoint = `${config.vehiclesBaseUrl}/${encodeURIComponent(editingVehicleId)}`;
+                    const snapshot = await apiRequest('PUT', endpoint, vehiclePayload);
+                    applySnapshot(snapshot);
+                    editingVehicleId = null;
+                    setVehicleFormMode(false);
+                    fillVehicleForm(null);
+                    setStatus('Vehicle updated.');
+                    return;
                 }
-                editingVehicleId = null;
-                setVehicleFormMode(false);
-                fillVehicleForm(null);
-                saveState();
-                renderAll();
-                setStatus('Vehicle updated.');
-                return;
-            }
 
-            state.vehicles.push({
-                id: uid(),
-                ...vehiclePayload,
-            });
-            saveState();
-            renderAll();
-            fillVehicleForm(null);
-            setStatus('Vehicle saved.');
+                const snapshot = await apiRequest('POST', config.vehiclesEndpoint, vehiclePayload);
+                applySnapshot(snapshot);
+                fillVehicleForm(null);
+                setStatus('Vehicle saved.');
+            } catch (error) {
+                setStatus(error.message || 'Failed to save vehicle.', true);
+            }
         });
     }
 
@@ -446,7 +495,7 @@
         const container = document.getElementById('vehicleListCards');
         if (!container) return;
 
-        container.addEventListener('click', (event) => {
+        container.addEventListener('click', async (event) => {
             const button = event.target.closest('button[data-vehicle-action]');
             if (!button) return;
 
@@ -465,17 +514,19 @@
             }
 
             if (action === 'delete') {
-                state.vehicles = state.vehicles.filter((item) => item.id !== vehicleId);
-                state.fuelLogs = state.fuelLogs.filter((item) => item.vehicle_id !== vehicleId);
-                state.commuteLogs = state.commuteLogs.filter((item) => item.vehicle_id !== vehicleId);
-                if (editingVehicleId === vehicleId) {
-                    editingVehicleId = null;
-                    setVehicleFormMode(false);
-                    fillVehicleForm(null);
+                try {
+                    const endpoint = `${config.vehiclesBaseUrl}/${encodeURIComponent(vehicleId)}`;
+                    const snapshot = await apiRequest('DELETE', endpoint);
+                    applySnapshot(snapshot);
+                    if (editingVehicleId === vehicleId) {
+                        editingVehicleId = null;
+                        setVehicleFormMode(false);
+                        fillVehicleForm(null);
+                    }
+                    setStatus('Vehicle deleted.');
+                } catch (error) {
+                    setStatus(error.message || 'Failed to delete vehicle.', true);
                 }
-                saveState();
-                renderAll();
-                setStatus('Vehicle deleted.');
             }
         });
     }
@@ -483,7 +534,7 @@
     function wireFuelSave() {
         const btn = document.getElementById('addFuelLogBtn');
         if (!btn) return;
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             const vehicleId = String(document.getElementById('fuelVehicleId')?.value || '');
             if (!vehicleId) {
                 setStatus('Add and select a vehicle first.', true);
@@ -507,9 +558,8 @@
                 return;
             }
 
-            state.fuelLogs.push({
-                id: uid(),
-                vehicle_id: vehicleId,
+            const payload = {
+                vehicle_id: Number(vehicleId),
                 odometer_km: odometer,
                 fuel_litres: litres,
                 fuel_price_mode: fuelType,
@@ -518,18 +568,22 @@
                 fuelled_at: `${date}T${time}:00`,
                 location: String(document.getElementById('fuelLocation')?.value || '').trim(),
                 notes: String(document.getElementById('fuelNote')?.value || '').trim(),
-            });
+            };
 
-            saveState();
-            renderAll();
-            setStatus('Refuel log added.');
+            try {
+                const snapshot = await apiRequest('POST', config.fuelLogsEndpoint, payload);
+                applySnapshot(snapshot);
+                setStatus('Refuel log added.');
+            } catch (error) {
+                setStatus(error.message || 'Failed to add refuel log.', true);
+            }
         });
     }
 
     function wireDriveSave() {
         const btn = document.getElementById('addCommuteLogBtn');
         if (!btn) return;
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             const vehicleId = String(document.getElementById('commuteVehicleId')?.value || '');
             if (!vehicleId) {
                 setStatus('Add and select a vehicle first.', true);
@@ -550,9 +604,8 @@
                 return;
             }
 
-            state.commuteLogs.push({
-                id: uid(),
-                vehicle_id: vehicleId,
+            const payload = {
+                vehicle_id: Number(vehicleId),
                 commute_type: String(document.getElementById('commuteType')?.value || 'personal_drive'),
                 origin: String(document.getElementById('commuteOrigin')?.value || '').trim() || 'Origin',
                 destination: String(document.getElementById('commuteDestination')?.value || '').trim() || 'Destination',
@@ -561,11 +614,15 @@
                 consumption_unit: 'L_PER_100KM',
                 driven_at: `${driveDate}T${driveTime}:00`,
                 notes: String(document.getElementById('commuteNote')?.value || '').trim(),
-            });
+            };
 
-            saveState();
-            renderAll();
-            setStatus('Drive log added.');
+            try {
+                const snapshot = await apiRequest('POST', config.commuteLogsEndpoint, payload);
+                applySnapshot(snapshot);
+                setStatus('Drive log added.');
+            } catch (error) {
+                setStatus(error.message || 'Failed to add drive log.', true);
+            }
         });
     }
 
@@ -625,6 +682,9 @@
         if (driveDate && !driveDate.value) driveDate.value = defaultDateValue();
         if (driveTime && !driveTime.value) driveTime.value = defaultTimeValue();
 
+        if (fuelTime) fuelTime.setAttribute('placeholder', 'HH:MM');
+        if (driveTime) driveTime.setAttribute('placeholder', 'HH:MM');
+
         if (fuelMode && fuelPrice && fuelMode.value === 'budi95' && toNumber(fuelPrice.value, 0) <= 0) {
             fuelPrice.value = String(PRICE_BUDI95);
         }
@@ -668,16 +728,43 @@
                 defaultDate: input.value || null,
             });
         });
+
+        ['fuelledAtTime', 'commuteTime'].forEach((id) => {
+            const input = document.getElementById(id);
+            if (!input) return;
+            if (input._flatpickr) {
+                input._flatpickr.destroy();
+            }
+
+            flatpickr(input, {
+                enableTime: true,
+                noCalendar: true,
+                time_24hr: true,
+                dateFormat: 'H:i',
+                allowInput: false,
+                defaultDate: input.value || null,
+            });
+        });
     }
 
-    wireVehicleSave();
-    wireVehicleCardActions();
-    wireFuelSave();
-    wireDriveSave();
-    wireFuelPriceModeHelpers();
-    wireFuelTotalAutoCalculation();
-    initDefaults();
-    initDatePickers();
-    initFuelInputTabUI();
-    renderAll();
+    async function init() {
+        wireVehicleSave();
+        wireVehicleCardActions();
+        wireFuelSave();
+        wireDriveSave();
+        wireFuelPriceModeHelpers();
+        wireFuelTotalAutoCalculation();
+        initDefaults();
+        initDatePickers();
+        initFuelInputTabUI();
+
+        try {
+            await refreshSnapshot();
+        } catch (error) {
+            renderAll();
+            setStatus(error.message || 'Unable to load transportation data.', true);
+        }
+    }
+
+    init();
 })();

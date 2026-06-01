@@ -267,6 +267,15 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="{{ asset('js/edge-nav.js') }}"></script>
+<script>
+    window.transportationLogConfig = {
+        snapshotEndpoint: '{{ route('transportation-log.snapshot') }}',
+        vehiclesEndpoint: '{{ route('transportation-log.vehicles.store') }}',
+        fuelLogsEndpoint: '{{ route('transportation-log.fuel-logs.store') }}',
+        commuteLogsEndpoint: '{{ route('transportation-log.commute-logs.store') }}',
+        vehiclesBaseUrl: '{{ url('/transportation-log/vehicles') }}',
+    };
+</script>
 <script src="{{ asset('js/transportation-log-page.js') }}"></script>
 </body>
 </html>
