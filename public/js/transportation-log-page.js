@@ -14,17 +14,16 @@
         try {
             const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
             if (!raw) {
-                return { vehicles: [], fuelLogs: [], commuteLogs: [], monthlyTransportBudget: 250 };
+                return { vehicles: [], fuelLogs: [], commuteLogs: [] };
             }
             const parsed = JSON.parse(raw);
             return {
                 vehicles: Array.isArray(parsed.vehicles) ? parsed.vehicles : [],
                 fuelLogs: Array.isArray(parsed.fuelLogs) ? parsed.fuelLogs : [],
                 commuteLogs: Array.isArray(parsed.commuteLogs) ? parsed.commuteLogs : [],
-                monthlyTransportBudget: Number(parsed.monthlyTransportBudget) || 250,
             };
         } catch (_e) {
-            return { vehicles: [], fuelLogs: [], commuteLogs: [], monthlyTransportBudget: 250 };
+            return { vehicles: [], fuelLogs: [], commuteLogs: [] };
         }
     }
 
@@ -163,6 +162,7 @@
         return {
             ...row,
             driven_at: drivenAt,
+            mileageLPer100Km,
             estimated_fuel_litres: estimatedFuelLitres,
             estimated_fuel_cost: estimatedCost,
             estimated_cost_per_km: estimatedCostPerKm,
@@ -178,9 +178,6 @@
         const month = thisMonthKey();
         const fuelRows = deriveFuelRows();
         const driveRows = state.commuteLogs.map(deriveDriveRow);
-        const now = new Date();
-        const elapsedDays = now.getDate();
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
         const fuelRowsMonth = fuelRows.filter((row) => monthKeyFromDate(row.fuelled_at) === month);
         const driveRowsMonth = driveRows.filter((row) => monthKeyFromDate(row.driven_at) === month);
@@ -195,8 +192,6 @@
         })();
         const estimatedCommuteCost = driveRowsMonth.reduce((carry, row) => carry + toNumber(row.estimated_fuel_cost, 0), 0);
         const estimatedCommuteDistance = driveRowsMonth.reduce((carry, row) => carry + toNumber(row.distance_km, 0), 0);
-        const budgetRemaining = toNumber(state.monthlyTransportBudget, 0) - actualFuelSpending;
-        const projectedMonthEndFuelCost = elapsedDays > 0 ? (actualFuelSpending / elapsedDays) * daysInMonth : 0;
 
         return {
             actualFuelSpending,
@@ -204,8 +199,6 @@
             totalFuelLitres,
             avgLPer100,
             estimatedCommuteDistance,
-            budgetRemaining,
-            projectedMonthEndFuelCost,
         };
     }
 
@@ -348,8 +341,11 @@
                     <div class="log-cell-main">${row.origin} - ${row.destination}</div>
                     <div class="log-cell-sub">${row.commute_type === 'work_commute' ? 'Work Commute' : 'Personal Drive'}</div>
                 </td>
-                <td class="text-end">${money.format(toNumber(row.distance_km, 0))}</td>
-                <td class="text-end">${row.estimated_fuel_litres === null ? '-' : money.format(row.estimated_fuel_litres)}</td>
+                <td class="text-end">${money.format(toNumber(row.distance_km, 0))} km</td>
+                <td class="text-end">
+                    <div class="log-cell-main">${row.estimated_fuel_litres === null ? '-' : money.format(row.estimated_fuel_litres)} L</div>
+                    <div class="log-cell-sub">(${money.format(toNumber(row.mileageLPer100Km, 0))} L/100km)</div>
+                </td>
                 <td class="log-cell-cost">
                     <div class="log-cell-main">${row.estimated_fuel_cost === null ? '-' : `RM ${money.format(row.estimated_fuel_cost)}`}</div>
                     <div class="log-cell-sub">${row.estimated_cost_per_km === null ? '-' : `(RM ${money.format(row.estimated_cost_per_km)}/km)`}</div>
@@ -370,8 +366,6 @@
             { label: 'Total Fuel Litres Logged', value: money.format(summary.totalFuelLitres) },
             { label: 'Average L/100km', value: summary.avgLPer100 === null ? '-' : money.format(summary.avgLPer100) },
             { label: 'Estimated Commute Distance (km)', value: money.format(summary.estimatedCommuteDistance) },
-            { label: 'Fuel Budget Remaining', value: `RM ${money.format(summary.budgetRemaining)}` },
-            { label: 'Projected Month-End Fuel Cost', value: `RM ${money.format(summary.projectedMonthEndFuelCost)}` },
         ];
 
         wrap.innerHTML = '';
@@ -575,21 +569,6 @@
         });
     }
 
-    function wireBudgetSave() {
-        const input = document.getElementById('monthlyTransportBudget');
-        if (!input) return;
-        input.value = money.format(toNumber(state.monthlyTransportBudget, 250));
-        input.addEventListener('focus', () => {
-            input.value = String(toNumber(state.monthlyTransportBudget, 250));
-        });
-        input.addEventListener('blur', () => {
-            state.monthlyTransportBudget = toNumber(input.value, 0);
-            input.value = money.format(state.monthlyTransportBudget);
-            saveState();
-            renderDashboard();
-        });
-    }
-
     function wireFuelPriceModeHelpers() {
         const fuelMode = document.getElementById('fuelPriceMode');
         const fuelPrice = document.getElementById('fuelPricePerLitre');
@@ -695,7 +674,6 @@
     wireVehicleCardActions();
     wireFuelSave();
     wireDriveSave();
-    wireBudgetSave();
     wireFuelPriceModeHelpers();
     wireFuelTotalAutoCalculation();
     initDefaults();

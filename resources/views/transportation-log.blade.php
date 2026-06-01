@@ -203,14 +203,6 @@
             <div class="card panel-card mb-3">
                 <div class="card-header">Monthly Summary</div>
                 <div class="card-body">
-                    <div class="input-subcard">
-                        <div class="row g-2 align-items-end">
-                            <div class="col-sm-4">
-                                <label for="monthlyTransportBudget" class="form-label form-label-sm">Monthly Transport Budget (RM)</label>
-                                <input id="monthlyTransportBudget" type="number" min="0" step="0.01" class="form-control compact-input" value="250">
-                            </div>
-                        </div>
-                    </div>
                     <div class="row g-2" id="fuelDashboardCards"></div>
                 </div>
             </div>
@@ -251,8 +243,8 @@
                                     <th>Date &amp; Time</th>
                                     <th>Vehicle</th>
                                     <th>Route</th>
-                                    <th class="text-end">Distance (km)</th>
-                                    <th class="text-end">Fuel Used (L)</th>
+                                    <th class="text-end">Distance</th>
+                                    <th class="text-end">Fuel Used</th>
                                     <th class="text-end">Cost</th>
                                 </tr>
                                 </thead>
