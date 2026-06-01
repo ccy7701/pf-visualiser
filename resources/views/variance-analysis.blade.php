@@ -76,23 +76,19 @@
                             <div class="tab-pane fade show active" id="va-pane-balances" role="tabpanel" aria-labelledby="va-tab-balances" tabindex="0">
                                 <div class="input-subcard">
                                     <h2 class="section-subtitle">COH at Month End</h2>
-                                    <div class="input-group input-group-sm">
+                                    <div class="input-group input-group-sm mb-3">
                                         <span class="input-group-text">RM</span>
                                         <input id="actualClosingCoh" type="number" step="0.01" class="form-control compact-input va-input-control">
                                     </div>
-                                </div>
 
-                                <div class="input-subcard">
                                     <h2 class="section-subtitle">ELR at Month End</h2>
-                                    <div class="input-group input-group-sm">
+                                    <div class="input-group input-group-sm mb-3">
                                         <span class="input-group-text">RM</span>
                                         <input id="actualClosingElr" type="number" min="0" step="0.01" class="form-control compact-input va-input-control">
                                     </div>
-                                </div>
 
-                                <div class="input-subcard mb-0">
                                     <h2 class="section-subtitle">EPF at Month End</h2>
-                                    <div class="input-group input-group-sm">
+                                    <div class="input-group input-group-sm mb-1">
                                         <span class="input-group-text">RM</span>
                                         <input id="actualClosingEpf" type="number" min="0" step="0.01" class="form-control compact-input va-input-control">
                                     </div>
