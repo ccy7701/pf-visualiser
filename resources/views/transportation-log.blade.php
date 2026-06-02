@@ -16,14 +16,10 @@
     </script>
     <link href="{{ asset('css/projection.css') }}" rel="stylesheet">
     <link href="{{ asset('css/transportation-log.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/edge-nav.css') }}" rel="stylesheet">
 </head>
 <body>
-<div class="module-nav-dock module-nav-dock-right" aria-label="Counter navigation">
-    <span class="module-nav-label">Counter</span>
-    <a href="{{ route('counter') }}" class="module-nav-btn" aria-label="Back to counter">
-        <i class="fa-solid fa-wallet" aria-hidden="true"></i>
-    </a>
-</div>
+@include('components.module-nav', ['current' => 'transportation-log'])
 
 <div class="container-fluid py-4 px-3 px-lg-5">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
