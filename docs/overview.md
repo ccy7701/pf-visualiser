@@ -127,6 +127,22 @@ Key characteristics:
 * 24-hour datetime input/display consistency for refuel and drive records
 * transport-cost tracking aligned with BCOL/FCOL planning assumptions
 
+### Module E: History (`history`)
+
+Purpose:
+
+* track historical month-end COH, monthly income, and monthly expenses
+* visualise historical trend movement across rolling 12-month windows
+
+Key characteristics:
+
+* explicit month-scoped persistence in `history_months`
+* manual month-end COH entry
+* income and expense totals derived from category-level monthly breakdowns
+* month picker with automatic month load behavior
+* rolling 12-month navigation with one-month backward/forward window movement
+* two-chart desktop view: standalone COH line chart plus grouped income/expense bar chart
+
 ---
 
 ## 6. Development Phases (Historical Baseline)
@@ -210,6 +226,14 @@ Key characteristics:
 * Commute log entry and cost estimation
 * Monthly fuel dashboard and weighted mileage summary
 * Row-driven edit/delete workflow for refuel and drive logs
+
+## PHASE 12 - History Module
+
+* Historical month persistence model
+* Month-based save/load workflow
+* Category-level income and expense breakdown inputs
+* Rolling 12-month COH trend chart
+* Rolling 12-month income-versus-expense grouped bar chart
 
 ---
 
