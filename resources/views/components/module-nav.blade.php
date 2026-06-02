@@ -11,7 +11,7 @@
             'route' => 'projection.index',
         ],
         'variance-analysis' => [
-            'label' => 'Variance',
+            'label' => 'Variance Analysis',
             'icon' => 'fa-scale-balanced',
             'route' => 'variance-analysis.index',
         ],

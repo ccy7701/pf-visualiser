@@ -112,7 +112,7 @@ class HistoryController extends Controller
         );
 
         return response()->json([
-            'message' => 'History month saved successfully.',
+            'message' => 'Data saved successfully.',
             'month' => $this->monthPayload($historyMonth->month, $historyMonth, $expenseCategories, $incomeCategories),
         ]);
     }

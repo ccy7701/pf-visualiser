@@ -34,27 +34,30 @@
         <div class="col-xl-4">
             <div class="card panel-card history-input-card">
                 <div class="card-header">
-                    <div>Monthly Inputs</div>
-                    <div class="small text-secondary fw-normal">Saved per month</div>
+                    <div class="row">
+                        <div class="col-8">
+                            <div>Monthly Inputs</div>
+                            <div class="small text-secondary fw-normal">Select a month and enter actual values</div>
+                        </div>
+                        <div class="col-4 d-flex align-items-center justify-content-end">
+                            <button id="saveHistoryBtn" class="w-50 btn btn-dark btn-sm" type="button">Save</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="input-subcard">
-                        <div class="row g-2 align-items-end">
-                            <div class="col-7">
+                        <div class="row g-2">
+                            <div class="col-6">
                                 <label for="historyMonth" class="form-label form-label-sm">Month</label>
                                 <input id="historyMonth" class="form-control compact-input month-input" type="text" value="{{ $latestMonth }}" autocomplete="off">
                             </div>
-                            <div class="col-5">
-                                <button id="loadMonthBtn" class="btn btn-outline-secondary w-100" type="button">Load</button>
+                            <div class="col-6">
+                                <label for="closingCohInput" class="form-label form-label-sm">COH at Month End</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">RM</span>
+                                    <input id="closingCohInput" class="form-control compact-input" type="number" step="0.01" min="0" placeholder="0.00">
+                                </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="input-subcard">
-                        <label for="closingCohInput" class="form-label form-label-sm">COH at Month End</label>
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text">RM</span>
-                            <input id="closingCohInput" class="form-control compact-input" type="number" step="0.01" min="0" placeholder="0.00">
                         </div>
                     </div>
 
@@ -85,10 +88,6 @@
                                 <div id="incomeInputs" class="history-category-list"></div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="d-grid">
-                        <button id="saveHistoryBtn" class="btn btn-dark" type="button">Save Month</button>
                     </div>
                 </div>
             </div>

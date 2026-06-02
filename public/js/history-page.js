@@ -93,8 +93,8 @@
         container.innerHTML = '';
         categories.forEach((category) => {
             const id = `${containerId}-${category.id}`;
-            const row = document.createElement('div');
-            row.className = 'history-category-row';
+            const cell = document.createElement('div');
+            cell.className = 'history-category-cell';
 
             const label = document.createElement('label');
             label.setAttribute('for', id);
@@ -121,9 +121,9 @@
 
             group.appendChild(prefix);
             group.appendChild(input);
-            row.appendChild(label);
-            row.appendChild(group);
-            container.appendChild(row);
+            cell.appendChild(label);
+            cell.appendChild(group);
+            container.appendChild(cell);
         });
 
         const totalRow = document.createElement('div');
@@ -227,7 +227,7 @@
                         backgroundColor: 'rgba(13, 110, 253, 0.12)',
                         borderWidth: 3,
                         pointRadius: 4,
-                        tension: 0.28,
+                        tension: 0,
                         yAxisID: 'y',
                         spanGaps: true,
                     },
@@ -393,11 +393,6 @@
     document.addEventListener('DOMContentLoaded', () => {
         initTabs();
         initMonthPicker();
-
-        document.getElementById('loadMonthBtn')?.addEventListener('click', () => {
-            const latestMonth = document.getElementById('historyMonth')?.value || selectedMonth;
-            loadMonths(latestMonth).catch((error) => setStatus(error.message, true));
-        });
 
         document.getElementById('previousWindowBtn')?.addEventListener('click', () => {
             const latestMonth = shiftMonth(months[months.length - 1]?.month || selectedMonth, -1);
