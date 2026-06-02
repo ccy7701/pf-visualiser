@@ -204,6 +204,57 @@
         };
     }
 
+    function applySharedXAxisOptions(options, bottomPadding = 58) {
+        options.scales.x.offset = true;
+        options.scales.x.ticks = {
+            display: false,
+        };
+        options.layout = {
+            padding: {
+                bottom: bottomPadding,
+            },
+        };
+
+        return options;
+    }
+
+    function createHistoryAxisLabelPlugin(id, linesForRow) {
+        return {
+            id,
+            afterDraw(chart) {
+                const { ctx, chartArea, scales } = chart;
+                const xScale = scales.x;
+
+                if (!xScale) {
+                    return;
+                }
+
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+
+                xScale.ticks.forEach((_tick, index) => {
+                    const row = months[index];
+                    if (!row) {
+                        return;
+                    }
+
+                    const x = xScale.getPixelForTick(index);
+                    const y = chartArea.bottom + 12;
+                    const lines = linesForRow(row);
+
+                    lines.forEach((line, lineIndex) => {
+                        ctx.fillStyle = line.color;
+                        ctx.font = line.font || '11px system-ui, sans-serif';
+                        ctx.fillText(line.text, x, y + (lineIndex * 16));
+                    });
+                });
+
+                ctx.restore();
+            },
+        };
+    }
+
     function renderCohChart() {
         const canvas = document.getElementById('historyCohChart');
         if (!canvas || typeof Chart === 'undefined') return;
@@ -212,8 +263,7 @@
             cohChart.destroy();
         }
 
-        const options = baseChartOptions();
-        options.scales.x.offset = true;
+        const options = applySharedXAxisOptions(baseChartOptions(), 44);
 
         cohChart = new Chart(canvas, {
             type: 'line',
@@ -234,6 +284,12 @@
                 ],
             },
             options,
+            plugins: [
+                createHistoryAxisLabelPlugin('historyCohLabels', (row) => [
+                    { text: formatMonthLabel(row.month), color: '#212529' },
+                    { text: money.format(toNumber(row.closing_coh, 0)), color: '#0d6efd' },
+                ]),
+            ],
         });
     }
 
@@ -245,19 +301,13 @@
             incomeExpenseChart.destroy();
         }
 
+        const options = applySharedXAxisOptions(baseChartOptions(), 58);
+
         incomeExpenseChart = new Chart(canvas, {
             type: 'bar',
             data: {
                 labels: months.map((row) => formatMonthLabel(row.month)),
                 datasets: [
-                    {
-                        label: 'Expenses',
-                        data: months.map((row) => row.total_expenses),
-                        backgroundColor: 'rgba(220, 53, 69, 0.72)',
-                        borderColor: '#dc3545',
-                        borderWidth: 1,
-                        yAxisID: 'y',
-                    },
                     {
                         label: 'Income',
                         data: months.map((row) => row.total_income),
@@ -266,9 +316,24 @@
                         borderWidth: 1,
                         yAxisID: 'y',
                     },
+                    {
+                        label: 'Expenses',
+                        data: months.map((row) => row.total_expenses),
+                        backgroundColor: 'rgba(220, 53, 69, 0.72)',
+                        borderColor: '#dc3545',
+                        borderWidth: 1,
+                        yAxisID: 'y',
+                    },
                 ],
             },
-            options: baseChartOptions(),
+            options,
+            plugins: [
+                createHistoryAxisLabelPlugin('historyIncomeExpenseLabels', (row) => [
+                    { text: formatMonthLabel(row.month), color: '#212529' },
+                    { text: money.format(toNumber(row.total_income, 0)), color: '#198754' },
+                    { text: money.format(toNumber(row.total_expenses, 0)), color: '#dc3545' },
+                ]),
+            ],
         });
     }
 

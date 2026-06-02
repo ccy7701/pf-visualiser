@@ -62,13 +62,8 @@
 }
 
 .history-chart-wrap {
-    height: 42vh;
+    height: 38vh;
     min-height: 300px;
-}
-
-.history-chart-wrap-compact {
-    height: 34vh;
-    min-height: 260px;
 }
 
 .history-chart-wrap canvas {
