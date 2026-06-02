@@ -6,4 +6,5 @@ It combines:
 - a live counter (starting cash + transactions + accrued salary),
 - scenario-based projection (cash on hand, emergency liquid reserve, EPF),
 - variance analysis (plan vs actual by month),
-- transportation tracking (refuel + drive logs with monthly cost/efficiency summaries).
+- transportation tracking (refuel + drive logs with monthly cost/efficiency summaries),
+- history tracking (month-end COH plus monthly income/expense trends across rolling 12-month windows).

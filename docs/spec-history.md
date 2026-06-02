@@ -73,7 +73,19 @@ Income categories:
 The system shall use a two-column desktop layout:
 
 * left column: monthly inputs
-* right column: 12-month visualisation
+* right column: trend visualisation
+
+The left column shall include:
+
+* a header-level save action
+* a month picker
+* month-end COH input
+* tabbed expense and income input sections
+
+The right column shall include:
+
+* a COH trend chart
+* an income-versus-expenses chart
 
 Mobile optimisation is not required for this module.
 
@@ -86,6 +98,8 @@ Display order:
 * oldest visible month on the left
 * most recent visible month on the right
 * one month per step
+
+The system shall support navigating the visible window backward or forward by one month at a time.
 
 ### 3.3 Month-End COH Input
 
@@ -102,6 +116,16 @@ The system shall support manual expense entry by category for each month.
 
 The available expense categories are listed in section 2.
 
+The expense entry UI shall use a two-column grid of category input cells.
+
+Each category input cell contains:
+
+* category name
+* `RM` prefix
+* amount input
+
+The expense section shall include a computed total row at the bottom.
+
 The system shall derive total expenses as:
 
 ```text
@@ -114,6 +138,10 @@ The system shall support manual income entry by category for each month.
 
 The available income categories are listed in section 2.
 
+The income entry UI shall use the same category-cell structure as expenses.
+
+The income section shall include a computed total row at the bottom.
+
 The system shall derive total income as:
 
 ```text
@@ -124,10 +152,22 @@ Total Income = sum(income_category_amounts[].amount)
 
 The system shall render:
 
-* a line graph for month-end COH
-* side-by-side bar graphs for total expenses and total income
+* a dedicated line graph for month-end COH
+* a dedicated grouped bar graph for total income and total expenses
 
 The visualisation shall use the 12-month window described in section 3.2.
+
+COH chart rules:
+
+* render straight line segments between points
+* display month label and month-end COH label below the x-axis
+
+Income and expense chart rules:
+
+* render grouped bars with income and expense as separate bars
+* display month label, income value, and expense value below the x-axis
+* income label text should use the same green family as the income bars
+* expense label text should use the same red family as the expense bars
 
 ### 3.7 Save Inputs
 
@@ -140,6 +180,8 @@ Saveable inputs include:
 * income category breakdown values
 
 Saving shall update the stored month record for the selected month.
+
+Month selection shall automatically load the currently saved values for that month.
 
 ---
 
@@ -159,6 +201,13 @@ For a 12-month window:
 
 ```text
 visible_months = [latest_month - 11 months, ..., latest_month]
+```
+
+When the user navigates the history window:
+
+```text
+previous_window_latest_month = latest_month - 1 month
+next_window_latest_month = latest_month + 1 month
 ```
 
 ### 4.3 Expense Total Rule
@@ -233,13 +282,13 @@ Each entry contains:
 
 ### 5.4 Category Source
 
-The module shall use existing `categories` records to determine which input rows to render.
+The module shall prefer existing `categories` records to determine which input rows to render.
 
 Category selection rules:
 
 * expense inputs use categories whose `type` is `expense`
 * income inputs use categories whose `type` is `income`
-* category definitions should be read at runtime from the database, not copied from a one-time database snapshot
+* if category records are unavailable, the module may fall back to the documented category set in section 2
 
 ---
 
@@ -263,6 +312,7 @@ Initial payload includes:
 * `expense_categories[]`
 * `income_categories[]`
 * selected latest month
+* theme-aware desktop page shell for the monthly input and chart workflow
 
 ### 6.3 Month Data Response
 
@@ -281,6 +331,7 @@ Response fields:
 * `total_income`
 * `expense_breakdown[]`
 * `income_breakdown[]`
+* `has_record`
 
 ### 6.4 Save Month Request
 
@@ -310,6 +361,11 @@ The initial UI shall prioritise data entry and trend readability over mobile res
 Expected desktop view:
 
 * left input column for selected month values
-* right visualisation column for the 12-month chart
-* COH rendered as a line series
-* expenses and income rendered as side-by-side bar series
+* right visualisation column for two vertically stacked charts
+* save button in the monthly inputs header
+* month picker and COH input in the same top input card
+* income and expense inputs separated by tabs
+* category input cells arranged in a two-column grid
+* COH rendered as a standalone line series
+* income and expenses rendered as standalone grouped bar series
+* previous and next buttons for one-month history window paging
