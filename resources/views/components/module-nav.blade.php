@@ -23,7 +23,7 @@
         'history' => [
             'label' => 'History',
             'icon' => 'fa-clock-rotate-left',
-            'route' => null,
+            'route' => 'history.index',
         ],
     ];
 
