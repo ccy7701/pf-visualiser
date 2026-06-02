@@ -14,14 +14,10 @@
         })();
     </script>
     <link href="{{ asset('css/projection.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/edge-nav.css') }}" rel="stylesheet">
 </head>
 <body>
-<div class="module-nav-dock" aria-label="Projection navigation">
-    <a href="{{ route('projection.index') }}" class="module-nav-btn" aria-label="Back to projection">
-        <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
-    </a>
-    <span class="module-nav-label">Projection</span>
-</div>
+@include('components.module-nav', ['current' => 'variance-analysis'])
 
 <div class="container-fluid py-4 px-3 px-lg-5">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">

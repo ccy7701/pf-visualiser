@@ -9,6 +9,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     @livewireStyles
     <link href="{{ asset('css/counter.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/edge-nav.css') }}" rel="stylesheet">
 </head>
 <body>
 
@@ -36,19 +37,7 @@
     <div id="incrementStatus" class="mt-2" style="font-size: 0.9rem; min-height: 1.2rem;"></div>
 </div>
 
-<div class="module-nav-dock module-nav-dock-left" aria-label="Transportation log navigation">
-    <a href="{{ route('transportation-log.index') }}" class="module-nav-btn" aria-label="Go to transportation log">
-        <i class="fa-solid fa-road" aria-hidden="true"></i>
-    </a>
-    <span class="module-nav-label">Transportation Log</span>
-</div>
-
-<div class="module-nav-dock module-nav-dock-right" aria-label="Projection navigation">
-    <span class="module-nav-label">Projection</span>
-    <a href="{{ route('projection.index') }}" class="module-nav-btn" aria-label="Go to projection">
-        <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
-    </a>
-</div>
+@include('components.module-nav', ['current' => 'counter'])
 
 {{-- Backdrop ────────────────────────── --}}
 <div class="popup-backdrop" id="popupBackdrop"></div>

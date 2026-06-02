@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CounterController;
+use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\ProjectionController;
 use App\Http\Controllers\TransportationLogController;
 use App\Http\Controllers\TransactionController;
@@ -31,6 +32,10 @@ Route::post('/projection/compare', [ProjectionController::class, 'compare'])->na
 Route::get('/variance-analysis', [VarianceAnalysisController::class, 'index'])->name('variance-analysis.index');
 Route::get('/variance-analysis/scenarios/{scenario}', [VarianceAnalysisController::class, 'showScenario'])->name('variance-analysis.scenarios.show');
 Route::post('/variance-analysis/scenarios/{scenario}/actuals', [VarianceAnalysisController::class, 'saveActuals'])->name('variance-analysis.scenarios.actuals.save');
+Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
+Route::get('/history/months', [HistoryController::class, 'months'])->name('history.months');
+Route::post('/history/months', [HistoryController::class, 'saveMonth'])->name('history.months.save');
+Route::put('/history/months/{month}', [HistoryController::class, 'updateMonth'])->name('history.months.update');
 
 Route::get('/counter/snapshot', [CounterController::class, 'snapshot'])->name('counter.snapshot');
 Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
