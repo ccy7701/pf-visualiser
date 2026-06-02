@@ -314,6 +314,8 @@
                         backgroundColor: 'rgba(25, 135, 84, 0.72)',
                         borderColor: '#198754',
                         borderWidth: 1,
+                        categoryPercentage: 0.72,
+                        barPercentage: 0.78,
                         yAxisID: 'y',
                     },
                     {
@@ -322,6 +324,8 @@
                         backgroundColor: 'rgba(220, 53, 69, 0.72)',
                         borderColor: '#dc3545',
                         borderWidth: 1,
+                        categoryPercentage: 0.72,
+                        barPercentage: 0.78,
                         yAxisID: 'y',
                     },
                 ],

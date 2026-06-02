@@ -62,11 +62,11 @@
                     </div>
 
                     <div class="projection-input-tabs nav" id="historyInputTabs" role="tablist">
-                        <button class="projection-input-tab active" id="history-tab-expenses" data-bs-toggle="tab" data-bs-target="#history-pane-expenses" type="button" role="tab" aria-controls="history-pane-expenses" aria-selected="true" data-bs-title="Expenses" data-bs-placement="top">
-                            <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
-                        </button>
                         <button class="projection-input-tab" id="history-tab-income" data-bs-toggle="tab" data-bs-target="#history-pane-income" type="button" role="tab" aria-controls="history-pane-income" aria-selected="false" data-bs-title="Income" data-bs-placement="top">
                             <i class="fa-solid fa-money-bill-trend-up" aria-hidden="true"></i>
+                        </button>
+                        <button class="projection-input-tab active" id="history-tab-expenses" data-bs-toggle="tab" data-bs-target="#history-pane-expenses" type="button" role="tab" aria-controls="history-pane-expenses" aria-selected="true" data-bs-title="Expenses" data-bs-placement="top">
+                            <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
                         </button>
                     </div>
 
