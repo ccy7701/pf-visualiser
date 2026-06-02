@@ -1,10 +1,5 @@
 @php
     $pages = [
-        'transportation-log' => [
-            'label' => 'Transportation Log',
-            'icon' => 'fa-road',
-            'route' => 'transportation-log.index',
-        ],
         'counter' => [
             'label' => 'Counter',
             'icon' => 'fa-wallet',
@@ -16,7 +11,7 @@
             'route' => 'projection.index',
         ],
         'variance-analysis' => [
-            'label' => 'Variance Analysis',
+            'label' => 'Variance',
             'icon' => 'fa-scale-balanced',
             'route' => 'variance-analysis.index',
         ],
@@ -25,35 +20,27 @@
             'icon' => 'fa-clock-rotate-left',
             'route' => 'history.index',
         ],
+        'transportation-log' => [
+            'label' => 'Transportation',
+            'icon' => 'fa-road',
+            'route' => 'transportation-log.index',
+        ],
     ];
-
-    $currentPage = $pages[$current] ?? $pages['counter'];
 @endphp
 
-<nav class="module-nav-radial" aria-label="Module navigation">
-    <div class="module-nav-current" aria-current="page">
-        <span class="module-nav-label">{{ $currentPage['label'] }}</span>
-        <span class="module-nav-btn module-nav-btn-current">
-            <i class="fa-solid {{ $currentPage['icon'] }}" aria-hidden="true"></i>
-        </span>
-    </div>
-
-    @php($navOption = 0)
+<nav class="module-nav-stack" aria-label="Module navigation">
     @foreach ($pages as $key => $page)
-        @continue($key === $current)
-        @php($navOption++)
-
-        <div class="module-nav-option module-nav-option-{{ $navOption }}">
+        @php($isCurrent = $key === $current)
+        <a
+            href="{{ route($page['route']) }}"
+            class="module-nav-row {{ $isCurrent ? 'is-current' : '' }}"
+            aria-label="Go to {{ strtolower($page['label']) }}"
+            @if($isCurrent) aria-current="page" @endif
+        >
             <span class="module-nav-label">{{ $page['label'] }}</span>
-            @if ($page['route'])
-                <a href="{{ route($page['route']) }}" class="module-nav-btn" aria-label="Go to {{ strtolower($page['label']) }}">
-                    <i class="fa-solid {{ $page['icon'] }}" aria-hidden="true"></i>
-                </a>
-            @else
-                <button class="module-nav-btn module-nav-btn-placeholder" type="button" disabled aria-label="{{ $page['label'] }} placeholder">
-                    <i class="fa-solid {{ $page['icon'] }}" aria-hidden="true"></i>
-                </button>
-            @endif
-        </div>
+            <span class="module-nav-btn">
+                <i class="fa-solid {{ $page['icon'] }}" aria-hidden="true"></i>
+            </span>
+        </a>
     @endforeach
 </nav>

@@ -192,6 +192,9 @@
                 },
             },
             plugins: {
+                legend: {
+                    display: false,
+                },
                 tooltip: {
                     callbacks: {
                         label: (context) => `${context.dataset.label}: RM ${money.format(context.parsed.y)}`,
@@ -209,12 +212,15 @@
             cohChart.destroy();
         }
 
+        const options = baseChartOptions();
+        options.scales.x.offset = true;
+
         cohChart = new Chart(canvas, {
+            type: 'line',
             data: {
                 labels: months.map((row) => formatMonthLabel(row.month)),
                 datasets: [
                     {
-                        type: 'line',
                         label: 'COH',
                         data: months.map((row) => row.closing_coh),
                         borderColor: '#0d6efd',
@@ -227,7 +233,7 @@
                     },
                 ],
             },
-            options: baseChartOptions(),
+            options,
         });
     }
 

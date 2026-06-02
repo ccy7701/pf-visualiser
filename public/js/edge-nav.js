@@ -1,5 +1,5 @@
 (() => {
-    const dock = document.querySelector('.module-nav-radial');
+    const dock = document.querySelector('.module-nav-stack');
 
     if (!dock) {
         return;
@@ -34,7 +34,7 @@
             return;
         }
 
-        if (!event.target.closest('.module-nav-radial')) {
+        if (!event.target.closest('.module-nav-stack')) {
             return;
         }
 
