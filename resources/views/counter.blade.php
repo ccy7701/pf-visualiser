@@ -31,10 +31,15 @@
 
 {{-- Main counter (always visible) ──── --}}
 <div class="counter-fullscreen">
-    <div id="counterValue" class="counter-value">RM {{ number_format($snapshot['counter'], 2) }}</div>
-
-    {{-- Incrementing status indicator --}}
-    <div id="incrementStatus" class="mt-2" style="font-size: 0.9rem; min-height: 1.2rem;"></div>
+    <div class="counter-stage" tabindex="0" aria-label="Actual cash on hand. Hover or focus to show expected cash on hand.">
+        <div class="counter-layer counter-layer-actual">
+            <div id="actualCounterValue" class="counter-value">RM {{ number_format($snapshot['actual_counter'] ?? $snapshot['counter'], 2) }}</div>
+        </div>
+        <div class="counter-layer counter-layer-expected">
+            <div id="expectedCounterValue" class="counter-value">RM {{ number_format($snapshot['expected_counter'] ?? $snapshot['counter'], 2) }}</div>
+            <div id="incrementStatus" class="counter-status"></div>
+        </div>
+    </div>
 </div>
 
 @include('components.module-nav', ['current' => 'counter'])

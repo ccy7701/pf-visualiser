@@ -13,6 +13,7 @@ new class extends Component
         'starting_amount' => 0,
         'net_transactions' => 0,
         'accrued_salary' => 0,
+        'expected_counter' => 0,
     ];
 
     public array $transactions = [];
@@ -207,7 +208,7 @@ new class extends Component
         <div class="col-4">
             <div class="card data-card h-100">
                 <div class="card-body text-center p-2">
-                    <div class="text-secondary" style="font-size:0.7rem;">Accrued Salary</div>
+                    <div class="text-secondary" style="font-size:0.7rem;">Unpaid Accrual</div>
                     <div class="fw-semibold" style="font-size:0.85rem;" id="accruedSalarySummary">RM {{ number_format($snapshot['accrued_salary'], 2) }}</div>
                 </div>
             </div>

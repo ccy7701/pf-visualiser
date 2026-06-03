@@ -22,9 +22,10 @@ class CounterService
         $income = (float) Transaction::query()->where('type', 'income')->sum('amount');
         $expense = (float) Transaction::query()->where('type', 'expense')->sum('amount');
         $netTransactions = $income - $expense;
+        $actualCounter = $startingAmount + $netTransactions;
 
-        $salary = $this->salaryAccrualService->computeAccruedSalary($asOf);
-        $counter = $startingAmount + $netTransactions + $salary['accrued_salary'];
+        $salary = $this->salaryAccrualService->computeAccruedSalary($asOf, $this->realizedSalaryByMonth());
+        $expectedCounter = $actualCounter + $salary['accrued_salary'];
 
         return [
             'as_of' => $asOf->toDateTimeString(),
@@ -33,10 +34,28 @@ class CounterService
             'expense_total' => round($expense, 2),
             'net_transactions' => round($netTransactions, 2),
             'accrued_salary' => round($salary['accrued_salary'], 2),
-            'counter' => round($counter, 2),
+            'scheduled_accrued_salary' => round($salary['scheduled_accrued_salary'], 2),
+            'realized_salary' => round($salary['realized_salary'], 2),
+            'actual_counter' => round($actualCounter, 2),
+            'expected_counter' => round($expectedCounter, 2),
+            'counter' => round($actualCounter, 2),
             'increment_per_second' => round((float) $salary['increment_per_second'], 10),
             'minute_rate' => round(((float) $salary['increment_per_second']) * 60, 8),
         ];
+    }
+
+    private function realizedSalaryByMonth(): array
+    {
+        return Transaction::query()
+            ->where('type', 'income')
+            ->whereHas('category', function ($query): void {
+                $query->where('type', 'income')
+                    ->where('name', 'Salary');
+            })
+            ->get(['datetime', 'amount'])
+            ->groupBy(fn (Transaction $transaction): string => Carbon::parse($transaction->datetime)->format('Y-m'))
+            ->map(fn ($transactions): float => (float) $transactions->sum('amount'))
+            ->all();
     }
 
     private function resolveAsOf(): Carbon

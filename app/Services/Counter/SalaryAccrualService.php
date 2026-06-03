@@ -19,13 +19,15 @@ class SalaryAccrualService
     {
     }
 
-    public function computeAccruedSalary(CarbonInterface $asOf): array
+    public function computeAccruedSalary(CarbonInterface $asOf, array $realizedSalaryByMonth = []): array
     {
         $firstSchedule = SalarySchedule::query()->orderBy('effective_from')->first();
 
         if (! $firstSchedule) {
             return [
                 'accrued_salary' => 0.0,
+                'scheduled_accrued_salary' => 0.0,
+                'realized_salary' => 0.0,
                 'increment_per_second' => 0.0,
             ];
         }
@@ -35,11 +37,14 @@ class SalaryAccrualService
         if ($asOf->lte($accrualStart)) {
             return [
                 'accrued_salary' => 0.0,
+                'scheduled_accrued_salary' => 0.0,
+                'realized_salary' => 0.0,
                 'increment_per_second' => 0.0,
             ];
         }
 
         $totalAccrued = 0.0;
+        $accruedByMonth = [];
         $cursor = $accrualStart->copy();
         $cache = [];
 
@@ -53,16 +58,38 @@ class SalaryAccrualService
                 if ($scheduledWorkdays > 0 && $this->workdayService->isWorkday($cursor)) {
                     $dailyAccruedSalary = (float) $schedule->monthly_net_salary / $scheduledWorkdays;
                     $eligibleSeconds = $this->eligibleWorkingSecondsForDay($cursor, $accrualStart, $asOf);
-                    $totalAccrued += $dailyAccruedSalary * ($eligibleSeconds / self::WORK_SECONDS_PER_DAY);
+                    $dayAccrued = $dailyAccruedSalary * ($eligibleSeconds / self::WORK_SECONDS_PER_DAY);
+                    $month = $cursor->format('Y-m');
+                    $accruedByMonth[$month] = ($accruedByMonth[$month] ?? 0.0) + $dayAccrued;
+                    $totalAccrued += $dayAccrued;
                 }
             }
 
             $cursor->addDay()->startOfDay();
         }
 
+        $realizedTotal = 0.0;
+        $unpaidAccrued = 0.0;
+
+        foreach ($accruedByMonth as $month => $scheduledAccrued) {
+            $realizedForMonth = max(0.0, (float) ($realizedSalaryByMonth[$month] ?? 0));
+            $realizedTotal += min($scheduledAccrued, $realizedForMonth);
+            $unpaidAccrued += max(0.0, $scheduledAccrued - $realizedForMonth);
+        }
+
+        $currentMonth = $asOf->format('Y-m');
+        $currentMonthUnpaid = max(
+            0.0,
+            (float) ($accruedByMonth[$currentMonth] ?? 0.0) - max(0.0, (float) ($realizedSalaryByMonth[$currentMonth] ?? 0))
+        );
+
         return [
-            'accrued_salary' => $totalAccrued,
-            'increment_per_second' => $this->currentIncrementPerSecond($asOf),
+            'accrued_salary' => $unpaidAccrued,
+            'scheduled_accrued_salary' => $totalAccrued,
+            'realized_salary' => $realizedTotal,
+            'increment_per_second' => $currentMonthUnpaid > 0 || empty($realizedSalaryByMonth[$currentMonth])
+                ? $this->currentIncrementPerSecond($asOf)
+                : 0.0,
         ];
     }
 
