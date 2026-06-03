@@ -23,7 +23,7 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
             <h1 class="h3 mb-1">Variance Analysis</h1>
-            <p class="text-secondary mb-2">Load a saved projection scenario and key in actual EOTM values for variance tracking</p>
+            <p class="text-secondary mb-2">Load a saved projection scenario and compare with actual EOTM values for variance tracking</p>
         </div>
     </div>
 
@@ -39,11 +39,8 @@
                         </div>
                         <div class="d-grid gap-2">
                             <div class="row">
-                                <div class="col-6">
+                                <div class="col-12">
                                     <button id="loadScenarioBtn" class="btn btn-dark w-100" type="button">Load Scenario</button>
-                                </div>
-                                <div class="col-6">
-                                    <button id="saveActualsBtn" class="btn btn-outline-secondary w-100" type="button" disabled>Save Actual Values</button>
                                 </div>
                             </div>
 
@@ -54,7 +51,7 @@
 
             <div class="card panel-card">
                 <div class="card-header">
-                    <div>Actual Inputs</div>
+                    <div>Actuals from History</div>
                     <div class="small text-secondary fw-normal">Selected Month: <span id="targetMonthDisplay">-</span></div>
                 </div>
                 <div class="card-body">
@@ -74,26 +71,29 @@
                                     <h2 class="section-subtitle">COH at Month End</h2>
                                     <div class="input-group input-group-sm mb-3">
                                         <span class="input-group-text">RM</span>
-                                        <input id="actualClosingCoh" type="number" step="0.01" class="form-control compact-input va-input-control">
+                                        <input id="actualClosingCoh" type="text" class="form-control compact-input va-input-control" readonly>
                                     </div>
 
                                     <h2 class="section-subtitle">ELR at Month End</h2>
                                     <div class="input-group input-group-sm mb-3">
                                         <span class="input-group-text">RM</span>
-                                        <input id="actualClosingElr" type="number" min="0" step="0.01" class="form-control compact-input va-input-control">
+                                        <input id="actualClosingElr" type="text" class="form-control compact-input va-input-control" readonly>
                                     </div>
 
                                     <h2 class="section-subtitle">EPF at Month End</h2>
                                     <div class="input-group input-group-sm mb-1">
                                         <span class="input-group-text">RM</span>
-                                        <input id="actualClosingEpf" type="number" min="0" step="0.01" class="form-control compact-input va-input-control">
+                                        <input id="actualClosingEpf" type="text" class="form-control compact-input va-input-control" readonly>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="tab-pane fade" id="va-pane-expenses" role="tabpanel" aria-labelledby="va-tab-expenses" tabindex="0">
                                 <div class="input-subcard mb-0">
-                                    <h2 class="section-subtitle">Expense Values by Category</h2>
+                                    <div class="d-flex justify-content-between align-items-center gap-2">
+                                        <h2 class="section-subtitle mb-0">Expense Values by Category</h2>
+                                        <div class="small text-secondary text-end" id="historyExpenseSourceLabel">Auto from History</div>
+                                    </div>
                                     <hr class="section-divider">
                                     <div class="table-responsive mb-2">
                                         <table class="table table-sm">
@@ -164,6 +164,10 @@
         'notes' => $scenario->notes,
         'updated_at' => optional($scenario->updated_at)->toDateTimeString(),
     ])->values();
+    $expenseCategoriesPayload = $expenseCategories->map(fn ($category) => [
+        'id' => (int) $category['id'],
+        'name' => $category['name'],
+    ])->values();
 @endphp
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -171,6 +175,7 @@
 <script>
     window.varianceAnalysisConfig = {
         initialScenarios: @json($initialScenarios),
+        expenseCategories: @json($expenseCategoriesPayload),
         showScenarioBase: '{{ url('/variance-analysis/scenarios') }}',
         saveActualsBase: '{{ url('/variance-analysis/scenarios') }}',
     };
