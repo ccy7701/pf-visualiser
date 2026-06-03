@@ -13,6 +13,8 @@ Related high-level project specification: `overview.md`
 The system visualises 12 months of historical values for:
 
 * Cash on Hand (COH)
+* Emergency Liquidity Reserve (ELR)
+* Employees Provident Fund (EPF)
 * total expenses
 * total income
 
@@ -27,10 +29,13 @@ The History module MUST use explicit historical month entries as its source of t
 The following constraints apply:
 
 * month-end COH is manually entered and must not be derived
+* month-end ELR is manually entered and must not be derived
+* month-end EPF is manually entered and must not be derived
 * total expenses are derived from user-entered expense category amounts
 * total income is derived from user-entered income category amounts
 * monthly inputs shall be saved and reloaded from persistent storage
 * chart values must be reproducible from stored monthly history records
+* Variance Analysis consumes History month records as its actual-values source of truth
 * category definitions are fixed to the current category set below for this module spec
 
 Expense categories:
@@ -78,9 +83,10 @@ The system shall use a two-column desktop layout:
 The left column shall include:
 
 * a header-level save action
-* a month picker
-* month-end COH input
-* tabbed expense and income input sections
+* selected month display in the monthly inputs header
+* tabbed balance, expense, and income input sections
+* month picker inside the balance input section
+* month-end COH, ELR, and EPF inputs inside the balance input section
 
 The right column shall include:
 
@@ -101,14 +107,18 @@ Display order:
 
 The system shall support navigating the visible window backward or forward by one month at a time.
 
-### 3.3 Month-End COH Input
+### 3.3 Month-End Balance Inputs
 
 The system shall support manual entry of:
 
 * month
 * COH at end of month
+* ELR at end of month
+* EPF at end of month
 
-Month-end COH is not derived from Counter, transactions, projections, or variance analysis.
+Month-end COH, ELR, and EPF are not derived from Counter, transactions, projections, or variance analysis.
+
+The balance section shall be navigable via its own tab/button, separate from income and expense entry.
 
 ### 3.4 Expense Inputs
 
@@ -176,6 +186,8 @@ The system shall support saving monthly history inputs for later retrieval.
 Saveable inputs include:
 
 * month-end COH
+* month-end ELR
+* month-end EPF
 * expense category breakdown values
 * income category breakdown values
 
@@ -230,12 +242,14 @@ total_income = sum(income_breakdown[].amount)
 
 Missing or blank category values are treated as `0`.
 
-### 4.5 COH Rule
+### 4.5 Month-End Balance Rules
 
 For each month:
 
 ```text
 month_end_coh = manually_entered_month_end_coh
+month_end_elr = manually_entered_month_end_elr
+month_end_epf = manually_entered_month_end_epf
 ```
 
 No fallback derivation is applied.
@@ -251,6 +265,8 @@ No fallback derivation is applied.
 | id                     | bigint        |
 | month                  | string(7)     |
 | closing_coh            | decimal(12,2) |
+| closing_elr            | nullable decimal(12,2) |
+| closing_epf            | nullable decimal(12,2) |
 | expense_breakdown_json | json          |
 | income_breakdown_json  | json          |
 | created_at             | timestamp     |
@@ -327,6 +343,8 @@ Response fields:
 
 * `month`
 * `closing_coh`
+* `closing_elr`
+* `closing_epf`
 * `total_expenses`
 * `total_income`
 * `expense_breakdown[]`
@@ -341,6 +359,8 @@ Request fields:
 
 * `month`
 * `closing_coh`
+* `closing_elr`
+* `closing_epf`
 * `expense_breakdown[]`
 * `income_breakdown[]`
 
@@ -363,8 +383,9 @@ Expected desktop view:
 * left input column for selected month values
 * right visualisation column for two vertically stacked charts
 * save button in the monthly inputs header
-* month picker and COH input in the same top input card
-* income and expense inputs separated by tabs
+* selected month display in the monthly inputs header
+* month picker, COH input, ELR input, and EPF input grouped in a balance tab
+* balance, income, and expense inputs separated by tabs
 * category input cells arranged in a two-column grid
 * COH rendered as a standalone line series
 * income and expenses rendered as standalone grouped bar series

@@ -10,7 +10,7 @@ Related high-level project specification: `overview.md`
 
 `variance-analysis` is a scenario-linked plan-versus-actual module for monthly financial tracking.
 
-The system compares saved projection outputs against user-entered month-end actual values for:
+The system compares saved projection outputs against History-sourced month-end actual values for:
 
 * Cash on Hand (COH)
 * Emergency Liquidity Reserve (ELR)
@@ -25,9 +25,9 @@ Variance Analysis MUST be anchored to a saved projection scenario.
 The following constraints apply:
 
 * projected months come from scenario-local projection outputs
-* actual values are stored separately from projection assumptions
+* actual values come from `history_months` and remain separate from projection assumptions
 * variance computation is deterministic from projected vs actual values
-* actual entry is month-scoped and user-driven
+* actual entry is handled in the History module, not in Variance Analysis
 * module does not mutate original projection assumptions
 
 ---
@@ -42,7 +42,8 @@ Loaded scenario context includes:
 
 * scenario metadata (`id`, `name`, `notes`, `updated_at`)
 * projected month rows (baseline plan)
-* persisted actual month rows (if any)
+* History-backed actual month rows for projected months (if any)
+* expense category metadata for rendering History breakdowns
 
 ### 3.2 Projected Baseline
 
@@ -59,15 +60,15 @@ For each projected month, the system shall expose:
 
 Projection values are read from scenario result cache; if missing, they are regenerated from scenario payload.
 
-### 3.3 Actual Month Inputs
+### 3.3 Actual Month Source
 
-The system shall support user entry of actual month-end values:
+The system shall source actual month-end values from History:
 
 * `closing_coh`
 * `closing_elr`
 * `closing_epf`
 
-The system shall also support optional additional actual fields:
+The system shall also expose derived or nullable actual fields:
 
 * `opening_coh`
 * `net_income`
@@ -77,30 +78,17 @@ The system shall also support optional additional actual fields:
 
 All actual amount fields are nullable.
 
-### 3.4 Expense Breakdown Inputs
+Variance Analysis shall render actual values as read-only values. Edits to actual values shall be made in the History module.
 
-The system shall support per-category actual expense entry via `expense_breakdown[]`:
+### 3.4 Expense Breakdown Source
+
+The system shall source per-category actual expense values from History via `expense_breakdown[]`:
 
 * `category_id`
 * `name`
 * `amount`
 
-Current UI category keys:
-
-* `food`
-* `groceries`
-* `personal_care`
-* `subscriptions`
-* `household`
-* `health`
-* `apparel`
-* `transportation`
-* `entertainment`
-* `prepaid_reload`
-* `books_stationery`
-* `others`
-
-Actual `expenses` value is derived in UI as the sum of category amounts.
+Expense categories use the same category catalog as the History module. Actual `expenses` value is derived as the sum of History expense breakdown amounts.
 
 ### 3.5 Monthly Comparison View
 
@@ -114,15 +102,15 @@ The system shall present month-by-month comparison rows:
 * EPF (actual vs projected)
 * EPF variance
 
-### 3.6 Save Behavior
+### 3.6 Read-Only Actuals
 
-The system shall persist actual values per scenario and month.
+The Variance Analysis UI shall not provide manual actual-value inputs or a save-actuals action.
 
-Save operation rules:
+Read-only actual panes include:
 
-* upsert by unique key (`scenario_id`, `month`)
-* include only months with at least one meaningful actual value
-* preserve nullable fields when not provided
+* COH / ELR / EPF values from History for the selected month
+* expense category values from History for the selected month
+* a source label indicating whether a History record exists for the selected month
 
 ---
 
@@ -154,7 +142,7 @@ If actual value is present:
 
 ### 4.3 Actual Expenses Derivation Rule
 
-When expense breakdown is edited, month `expenses` is recalculated as:
+When History expense breakdown is loaded, month `expenses` is calculated as:
 
 ```text
 Actual Expenses = sum(expense_breakdown[].amount)
@@ -170,7 +158,19 @@ Projected values remain immutable baseline values sourced from saved scenario ou
 
 ## 5. Data Model Requirements
 
-### 5.1 projection_actual_months
+### 5.1 history_months Actual Source
+
+Variance Analysis uses `history_months` as the active source for actual values:
+
+| Field                  | Use in Variance Analysis |
+| ---------------------- | ------------------------ |
+| month                  | month match against projected rows |
+| closing_coh            | actual COH |
+| closing_elr            | actual ELR |
+| closing_epf            | actual EPF |
+| expense_breakdown_json | actual expense breakdown |
+
+### 5.2 projection_actual_months Legacy Table
 
 | Field                 | Type          |
 | --------------------- | ------------- |
@@ -193,7 +193,9 @@ Unique constraint:
 
 * (`scenario_id`, `month`)
 
-### 5.2 projection_scenarios linkage
+The table may still exist for legacy compatibility, but current UI actuals are sourced from History.
+
+### 5.3 projection_scenarios linkage
 
 Variance analysis is linked to `projection_scenarios` by `scenario_id`.
 
@@ -209,13 +211,15 @@ Scenario delete behavior:
 
 * `GET /variance-analysis`
 * `GET /variance-analysis/scenarios/{scenario}`
-* `POST /variance-analysis/scenarios/{scenario}/actuals`
+* `POST /variance-analysis/scenarios/{scenario}/actuals` (legacy compatibility)
 
 ### 6.2 Load Scenario Response
 
 `GET /variance-analysis/scenarios/{scenario}` returns:
 
 * `scenario`
+* `expense_categories[]`
+* `history_months[]`
 * `projected_months[]`
 * `actual_months[]`
 
@@ -243,7 +247,14 @@ Scenario delete behavior:
 * `expense_breakdown[]`
 * `notes`
 
+`history_months[]` fields:
+
+* `month`
+* `expense_breakdown[]`
+
 ### 6.3 Save Actuals Request
+
+Current UI does not call this endpoint. The endpoint may remain available for legacy compatibility.
 
 `POST /variance-analysis/scenarios/{scenario}/actuals` request body:
 
@@ -275,8 +286,9 @@ Success response:
 Responsibilities:
 
 * render variance analysis page with saved scenarios
-* load scenario with projected and persisted actual rows
-* persist actual month values via upsert
+* load scenario with projected rows and History-backed actual rows
+* expose expense categories and History expense breakdowns for read-only rendering
+* retain legacy actual upsert endpoint where present
 
 ### ProjectionService integration
 
@@ -291,12 +303,11 @@ Responsibilities in this module context:
 
 1. User opens Variance Analysis module.
 2. User selects and loads a saved projection scenario.
-3. System returns projected baseline rows plus any saved actual rows.
+3. System returns projected baseline rows plus History-backed actual rows.
 4. User selects a month row.
-5. User enters actual balances and optional expense category values.
+5. UI displays read-only COH, ELR, EPF, and expense category values from History.
 6. UI computes variance immediately against projected values.
-7. User saves actual values.
-8. Backend upserts rows into `projection_actual_months`.
+7. User edits actual values in History if the History record needs correction.
 
 ---
 
@@ -307,4 +318,5 @@ This module does not:
 * edit projection assumptions directly
 * re-run live projection on every actual input change
 * infer actuals from transaction ledger automatically
+* edit or save actual values directly in Variance Analysis
 * replace projection scenario management features
