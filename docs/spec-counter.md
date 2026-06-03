@@ -12,7 +12,12 @@ Related high-level project specification: `overview.md`
 
 * starting liquidity
 * net transactions
-* workday-aware salary accrual
+* workday-aware unpaid salary accrual
+
+The module exposes two related balances:
+
+* Actual COH: static between transaction/settings changes
+* Expected COH: actual COH plus unpaid scheduled salary accrual
 
 ---
 
@@ -20,10 +25,11 @@ Related high-level project specification: `overview.md`
 
 The Counter value MUST NOT be stored as a minute-updated persistent value.
 
-Counter is always derived dynamically:
+Counter values are always derived dynamically:
 
 ```text
-Counter = Starting Amount + Net Transactions + Salary Accrual
+Actual COH = Starting Amount + Net Transactions
+Expected COH = Actual COH + Unpaid Salary Accrual
 ```
 
 This ensures:
@@ -38,11 +44,22 @@ This ensures:
 
 ### 3.1 Counter Display
 
-The system shall display one large Counter as the primary focus. It must:
+The system shall display one large Counter surface as the primary focus.
 
-* increase over time via accrual logic
-* respond immediately to transaction changes
-* represent projected current liquid cash
+Default visible state:
+
+* displays Actual COH
+* remains static unless transactions, settings, or other persisted inputs change
+* uses the neutral counter color
+
+Hover/focus state:
+
+* displays Expected COH
+* increases over time via unpaid salary accrual logic
+* displays increment status text below the value
+* uses a distinct accent color from the Actual COH state
+
+The hover/focus transition is presentation only; it does not change computation semantics.
 
 ### 3.2 Expense Logging
 
@@ -53,7 +70,7 @@ The system shall support expense logging with:
 * note
 * amount
 
-Expenses decrease the Counter.
+Expenses decrease Actual COH.
 
 ### 3.3 Income Logging
 
@@ -64,7 +81,9 @@ The system shall support income logging with:
 * note
 * amount
 
-Income increases the Counter.
+Income increases Actual COH.
+
+Income transactions categorized as `Salary` also reconcile against scheduled salary accrual for the transaction month so salary is not double-counted in Expected COH.
 
 ### 3.4 Salary Accrual
 
@@ -85,11 +104,14 @@ Total eligible work time per full workday: `8 hours = 28,800 seconds`.
 
 ## 4. Counter Computation Logic
 
-### 4.1 Formula
+### 4.1 Formulas
 
 ```text
-Current Counter Value = Starting Amount + Net Transactions + Salary Accrual
+Actual COH = Starting Amount + Net Transactions
+Expected COH = Actual COH + Unpaid Salary Accrual
 ```
+
+The `counter` snapshot field is the Actual COH value for backward-compatible page rendering.
 
 ### 4.2 Net Transactions
 
@@ -104,7 +126,8 @@ Net Transactions = Total Income - Total Expenses
 3. Resolve active salary schedule for that day by `effective_from/effective_until`.
 4. Count scheduled workdays in that month (`workday` + `absence`) to derive daily base salary.
 5. If day status is `workday`, accrue proportionally by eligible seconds within working windows.
-6. Sum all days into `accrued_salary`.
+6. Sum all days into `scheduled_accrued_salary`.
+7. Subtract realized salary transactions for each month to derive `accrued_salary` as unpaid accrual.
 
 Increment rate at a point in time:
 
@@ -112,6 +135,7 @@ Increment rate at a point in time:
 2. Ensure date status is `workday`.
 3. Ensure time is inside configured working windows.
 4. `increment_per_second = (monthly_net_salary / scheduled_workdays_in_month) / 28800`.
+5. If the current month's scheduled salary is already fully realized by `Income:Salary` transactions, `increment_per_second = 0`.
 
 Conceptual example:
 
@@ -120,7 +144,31 @@ Monthly Salary: RM1751.70
 Workdays in Month: 22
 Daily Salary Basis: 1751.70 / 22
 Per-second Rate (during working windows only): (1751.70 / 22) / 28800
-Accrued Salary = sum of each day's eligible_seconds * per-second_rate_for_that_day
+Scheduled Accrued Salary = sum of each day's eligible_seconds * per-second_rate_for_that_day
+```
+
+### 4.4 Salary Reconciliation Rule
+
+Salary transactions are grouped by transaction month.
+
+```text
+realized_salary_by_month[YYYY-MM] = sum(Income:Salary transactions in that month)
+unpaid_accrual_for_month = max(0, scheduled_accrual_for_month - realized_salary_by_month[YYYY-MM])
+Unpaid Salary Accrual = sum(unpaid_accrual_for_month)
+```
+
+Example:
+
+```text
+Starting Amount: RM871.61
+Scheduled June salary: RM1766.35
+No salary transaction yet:
+Actual COH = 871.61
+Expected COH = 2637.96
+
+After logging Income:Salary RM1766.35 for June:
+Actual COH = 2637.96
+Expected COH = 2637.96
 ```
 
 ---
@@ -176,7 +224,6 @@ Recommendation: store `amount` as positive and derive sign from `type`.
 | id         | bigint        |
 | date       | date          |
 | status     | string(16)    |
-| is_workday | boolean (legacy compatibility) |
 | notes      | nullable text |
 | created_at | timestamp     |
 | updated_at | timestamp     |
@@ -189,7 +236,7 @@ Recommendation: store `amount` as positive and derive sign from `type`.
 
 Notes:
 
-* `is_workday` is retained for backward compatibility.
+* legacy `is_workday` has been normalized away in current migrations.
 * `absense` (misspelling) is accepted at update boundary and normalized to `absence`.
 
 Workday definitions support manual override.
@@ -219,8 +266,8 @@ The backend must not run minute-based Counter persistence jobs.
 
 Instead:
 
-* backend returns current computed Counter + increment rate
-* frontend increments visible value locally (per-second animation)
+* backend returns computed Actual COH, Expected COH, unpaid accrual, and increment rate
+* frontend increments the Expected COH value locally while Actual COH remains static
 * full recomputation occurs on refresh, transaction mutation, config change, or manual sync
 
 Current snapshot endpoint:
@@ -235,9 +282,22 @@ Current response fields:
 * `expense_total`
 * `net_transactions`
 * `accrued_salary`
+* `scheduled_accrued_salary`
+* `realized_salary`
+* `actual_counter`
+* `expected_counter`
 * `counter`
 * `increment_per_second`
 * `minute_rate`
+
+Field meanings:
+
+* `actual_counter`: Starting Amount + Net Transactions
+* `expected_counter`: Actual COH + unpaid salary accrual
+* `counter`: alias of `actual_counter`
+* `accrued_salary`: unpaid scheduled salary accrual after salary transaction reconciliation
+* `scheduled_accrued_salary`: raw schedule-derived accrual before salary transaction reconciliation
+* `realized_salary`: schedule accrual amount covered by salary transactions
 
 `as_of` resolution:
 
@@ -252,8 +312,9 @@ Current response fields:
 
 * starting amount retrieval
 * transaction aggregation
+* salary transaction aggregation by month
 * salary accrual integration
-* final Counter derivation
+* Actual COH and Expected COH derivation
 
 ### SalaryAccrualService
 
@@ -261,6 +322,7 @@ Current response fields:
 * scheduled-workday counting (`workday + absence`)
 * per-second rate computation
 * eligible working-seconds computation within configured windows
+* unpaid accrual calculation after realized salary offsets
 
 ### WorkdayService
 

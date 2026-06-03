@@ -32,11 +32,77 @@
             box-sizing: border-box;
         }
 
+        .counter-stage {
+            position: relative;
+            width: min(92vw, 980px);
+            min-height: clamp(4.5rem, 13vw, 9.5rem);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+        }
+
+        .counter-stage:focus-visible {
+            outline: 2px solid rgba(13, 110, 253, 0.55);
+            outline-offset: 10px;
+            border-radius: 8px;
+        }
+
+        .counter-layer {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.26s ease, transform 0.26s ease, filter 0.26s ease;
+            will-change: opacity, transform;
+        }
+
+        .counter-layer-actual {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .counter-layer-expected {
+            opacity: 0;
+            transform: translateY(18px) scale(0.985);
+            pointer-events: none;
+            filter: blur(2px);
+        }
+
+        .counter-layer-expected .counter-value {
+            color: #0f0cb0;
+        }
+
+        .counter-stage:hover .counter-layer-actual,
+        .counter-stage:focus-visible .counter-layer-actual,
+        .counter-stage:focus .counter-layer-actual {
+            opacity: 0;
+            transform: translateY(-18px) scale(0.985);
+            filter: blur(2px);
+        }
+
+        .counter-stage:hover .counter-layer-expected,
+        .counter-stage:focus-visible .counter-layer-expected,
+        .counter-stage:focus .counter-layer-expected {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+        }
+
         .counter-value {
             font-size: clamp(3rem, 10vw, 7rem);
             font-weight: 700;
             letter-spacing: 0.02em;
             line-height: 1.1;
+        }
+
+        .counter-status {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            min-height: 1.2rem;
+            color: #0f0cb0;
         }
 
         .counter-label {
@@ -315,6 +381,10 @@
         [data-bs-theme="dark"] .counter-label,
         [data-bs-theme="dark"] #incrementStatus {
             color: #aaa !important;
+        }
+        [data-bs-theme="dark"] .counter-layer-expected .counter-value,
+        [data-bs-theme="dark"] .counter-status {
+            color: #7fb0ff;
         }
         [data-bs-theme="dark"] .fab-btn {
             background: #343a40;

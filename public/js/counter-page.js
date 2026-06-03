@@ -3,7 +3,8 @@
     const snapshot = config.snapshot || {};
 
     /* DOM refs */
-    const counterElement = document.getElementById('counterValue');
+    const actualCounterElement = document.getElementById('actualCounterValue');
+    const expectedCounterElement = document.getElementById('expectedCounterValue');
     const fabBtn = document.getElementById('fabBtn');
     const backdrop = document.getElementById('popupBackdrop');
     const tabSelector = document.getElementById('tabSelector');
@@ -32,7 +33,8 @@
     let currentTab = null;
 
     /* state */
-    let currentValue = Number(snapshot.counter || 0);
+    let actualValue = Number(snapshot.actual_counter ?? snapshot.counter ?? 0);
+    let expectedValue = Number(snapshot.expected_counter ?? snapshot.counter ?? 0);
     let accruedSalaryValue = Number(snapshot.accrued_salary || 0);
     let incrementPerSecond = Number(snapshot.increment_per_second || 0);
 
@@ -42,11 +44,13 @@
     });
 
     function renderCounter() {
-        if (!counterElement) {
-            return;
+        if (actualCounterElement) {
+            actualCounterElement.textContent = `RM ${formatter.format(actualValue)}`;
         }
 
-        counterElement.textContent = `RM ${formatter.format(currentValue)}`;
+        if (expectedCounterElement) {
+            expectedCounterElement.textContent = `RM ${formatter.format(expectedValue)}`;
+        }
     }
 
     function renderAccruedSalary() {
@@ -72,7 +76,7 @@
     }
 
     function tick() {
-        currentValue += incrementPerSecond;
+        expectedValue += incrementPerSecond;
         accruedSalaryValue += incrementPerSecond;
         renderCounter();
         renderAccruedSalary();
@@ -93,7 +97,8 @@
         }
 
         const data = await response.json();
-        currentValue = Number(data.counter);
+        actualValue = Number(data.actual_counter ?? data.counter ?? 0);
+        expectedValue = Number(data.expected_counter ?? data.counter ?? 0);
         accruedSalaryValue = Number(data.accrued_salary);
         incrementPerSecond = Number(data.increment_per_second);
         renderCounter();
