@@ -37,7 +37,7 @@
                     <div class="row">
                         <div class="col-8">
                             <div>Monthly Inputs</div>
-                            <div class="small text-secondary fw-normal">Select a month and enter actual values</div>
+                            <div class="small text-secondary fw-normal">Selected Month: <span id="selectedMonthDisplay">-</span></div>
                         </div>
                         <div class="col-4 d-flex align-items-center justify-content-end">
                             <button id="saveHistoryBtn" class="w-50 btn btn-dark btn-sm" type="button">Save</button>
@@ -45,33 +45,52 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="input-subcard">
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <label for="historyMonth" class="form-label form-label-sm">Month</label>
-                                <input id="historyMonth" class="form-control compact-input month-input" type="text" value="{{ $latestMonth }}" autocomplete="off">
-                            </div>
-                            <div class="col-6">
-                                <label for="closingCohInput" class="form-label form-label-sm">COH at Month End</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">RM</span>
-                                    <input id="closingCohInput" class="form-control compact-input" type="number" step="0.01" min="0" placeholder="0.00">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="projection-input-tabs nav" id="historyInputTabs" role="tablist">
+                        <button class="projection-input-tab active" id="history-tab-balances" data-bs-toggle="tab" data-bs-target="#history-pane-balances" type="button" role="tab" aria-controls="history-pane-balances" aria-selected="true" data-bs-title="Month and Balances" data-bs-placement="top">
+                            <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+                        </button>
                         <button class="projection-input-tab" id="history-tab-income" data-bs-toggle="tab" data-bs-target="#history-pane-income" type="button" role="tab" aria-controls="history-pane-income" aria-selected="false" data-bs-title="Income" data-bs-placement="top">
                             <i class="fa-solid fa-money-bill-trend-up" aria-hidden="true"></i>
                         </button>
-                        <button class="projection-input-tab active" id="history-tab-expenses" data-bs-toggle="tab" data-bs-target="#history-pane-expenses" type="button" role="tab" aria-controls="history-pane-expenses" aria-selected="true" data-bs-title="Expenses" data-bs-placement="top">
+                        <button class="projection-input-tab" id="history-tab-expenses" data-bs-toggle="tab" data-bs-target="#history-pane-expenses" type="button" role="tab" aria-controls="history-pane-expenses" aria-selected="false" data-bs-title="Expenses" data-bs-placement="top">
                             <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
                         </button>
                     </div>
 
                     <div class="tab-content">
-                        <div class="tab-pane fade show active" id="history-pane-expenses" role="tabpanel" aria-labelledby="history-tab-expenses" tabindex="0">
+                        <div class="tab-pane fade show active" id="history-pane-balances" role="tabpanel" aria-labelledby="history-tab-balances" tabindex="0">
+                            <div class="input-subcard">
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <label for="historyMonth" class="form-label form-label-sm">Month</label>
+                                        <input id="historyMonth" class="form-control compact-input month-input" type="text" value="{{ $latestMonth }}" autocomplete="off">
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="closingCohInput" class="form-label form-label-sm">COH at Month End</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RM</span>
+                                            <input id="closingCohInput" class="form-control compact-input" type="number" step="0.01" min="0" placeholder="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="closingElrInput" class="form-label form-label-sm">ELR at Month End</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RM</span>
+                                            <input id="closingElrInput" class="form-control compact-input" type="number" step="0.01" min="0" placeholder="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="closingEpfInput" class="form-label form-label-sm">EPF at Month End</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RM</span>
+                                            <input id="closingEpfInput" class="form-control compact-input" type="number" step="0.01" min="0" placeholder="0.00">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="history-pane-expenses" role="tabpanel" aria-labelledby="history-tab-expenses" tabindex="0">
                             <div class="input-subcard history-category-card">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h2 class="section-subtitle mb-0">Expenses</h2>

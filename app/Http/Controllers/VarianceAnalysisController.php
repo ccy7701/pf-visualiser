@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\HistoryMonth;
 use App\Models\ProjectionActualMonth;
 use App\Models\ProjectionScenario;
 use App\Models\Setting;
+use App\Support\CategoryCatalog;
 use App\Services\ProjectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,6 +22,7 @@ class VarianceAnalysisController extends Controller
     {
         return view('variance-analysis', [
             'theme' => Setting::getValue('theme', 'light'),
+            'expenseCategories' => CategoryCatalog::forType('expense'),
             'scenarios' => ProjectionScenario::query()
                 ->latest('updated_at')
                 ->limit(50)
@@ -49,32 +52,43 @@ class VarianceAnalysisController extends Controller
                 'closing_epf' => (float) ($row['closing_epf'] ?? 0),
             ];
         }, array_filter($result['months'] ?? [], fn ($row) => is_array($row))));
+        $expenseCategories = CategoryCatalog::forType('expense');
+        $projectedMonthKeys = collect($projectedMonths)
+            ->pluck('month')
+            ->filter()
+            ->values();
+        $historyByMonth = HistoryMonth::query()
+            ->whereIn('month', $projectedMonthKeys)
+            ->get(['month', 'expense_breakdown_json'])
+            ->map(fn (HistoryMonth $month): array => [
+                'month' => $month->month,
+                'expense_breakdown' => CategoryCatalog::normalizeBreakdown($month->expense_breakdown_json ?? [], $expenseCategories),
+            ])
+            ->values();
 
-        $actualMonths = $scenario->actualMonths()
+        $actualMonths = HistoryMonth::query()
+            ->whereIn('month', $projectedMonthKeys)
             ->orderBy('month')
             ->get([
                 'month',
-                'opening_coh',
-                'net_income',
-                'expenses',
-                'debt_servicing',
                 'closing_coh',
                 'closing_elr',
                 'closing_epf',
                 'expense_breakdown_json',
-                'notes',
             ])
-            ->map(fn (ProjectionActualMonth $month) => [
+            ->map(fn (HistoryMonth $month): array => [
                 'month' => $month->month,
-                'opening_coh' => $month->opening_coh !== null ? (float) $month->opening_coh : null,
-                'net_income' => $month->net_income !== null ? (float) $month->net_income : null,
-                'expenses' => $month->expenses !== null ? (float) $month->expenses : null,
-                'debt_servicing' => $month->debt_servicing !== null ? (float) $month->debt_servicing : null,
+                'opening_coh' => null,
+                'net_income' => null,
+                'expenses' => CategoryCatalog::breakdownTotal(
+                    CategoryCatalog::normalizeBreakdown($month->expense_breakdown_json ?? [], $expenseCategories)
+                ),
+                'debt_servicing' => null,
                 'closing_coh' => $month->closing_coh !== null ? (float) $month->closing_coh : null,
                 'closing_elr' => $month->closing_elr !== null ? (float) $month->closing_elr : null,
                 'closing_epf' => $month->closing_epf !== null ? (float) $month->closing_epf : null,
-                'expense_breakdown' => is_array($month->expense_breakdown_json) ? $month->expense_breakdown_json : [],
-                'notes' => $month->notes,
+                'expense_breakdown' => CategoryCatalog::normalizeBreakdown($month->expense_breakdown_json ?? [], $expenseCategories),
+                'notes' => null,
             ])
             ->values();
 
@@ -85,6 +99,8 @@ class VarianceAnalysisController extends Controller
                 'notes' => $scenario->notes,
                 'updated_at' => $scenario->updated_at?->toDateTimeString(),
             ],
+            'expense_categories' => $expenseCategories->values(),
+            'history_months' => $historyByMonth,
             'projected_months' => $projectedMonths,
             'actual_months' => $actualMonths,
         ]);

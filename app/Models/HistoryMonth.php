@@ -12,6 +12,8 @@ class HistoryMonth extends Model
     protected $fillable = [
         'month',
         'closing_coh',
+        'closing_elr',
+        'closing_epf',
         'expense_breakdown_json',
         'income_breakdown_json',
     ];
@@ -20,6 +22,8 @@ class HistoryMonth extends Model
     {
         return [
             'closing_coh' => 'decimal:2',
+            'closing_elr' => 'decimal:2',
+            'closing_epf' => 'decimal:2',
             'expense_breakdown_json' => 'array',
             'income_breakdown_json' => 'array',
         ];

@@ -26,6 +26,8 @@ class HistoryModuleTest extends TestCase
         $saveResponse = $this->postJson(route('history.months.save'), [
             'month' => '2026-06',
             'closing_coh' => 1234.56,
+            'closing_elr' => 200.25,
+            'closing_epf' => 300.75,
             'expense_breakdown' => [
                 ['category_id' => $food->id, 'name' => 'Food', 'amount' => 321.10],
             ],
@@ -37,12 +39,16 @@ class HistoryModuleTest extends TestCase
         $saveResponse->assertOk();
         $saveResponse->assertJsonPath('month.month', '2026-06');
         $saveResponse->assertJsonPath('month.closing_coh', 1234.56);
+        $saveResponse->assertJsonPath('month.closing_elr', 200.25);
+        $saveResponse->assertJsonPath('month.closing_epf', 300.75);
         $saveResponse->assertJsonPath('month.total_expenses', 321.10);
         $saveResponse->assertJsonPath('month.total_income', 2200);
 
         $this->assertDatabaseHas('history_months', [
             'month' => '2026-06',
             'closing_coh' => 1234.56,
+            'closing_elr' => 200.25,
+            'closing_epf' => 300.75,
         ]);
 
         $reloadResponse = $this->getJson(route('history.months', ['latest_month' => '2026-06']));

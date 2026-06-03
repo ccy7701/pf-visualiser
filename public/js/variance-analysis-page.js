@@ -2,44 +2,20 @@
     const config = window.varianceAnalysisConfig || {};
     const scenarios = config.initialScenarios || [];
     const showScenarioBase = config.showScenarioBase || '';
-    const saveActualsBase = config.saveActualsBase || '';
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
     const money = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const monthLabelFormatter = new Intl.DateTimeFormat('en-MY', { month: 'short', year: 'numeric' });
-    const expenseCategories = [
-        { id: 'food', name: 'Food' },
-        { id: 'groceries', name: 'Groceries' },
-        { id: 'personal_care', name: 'Personal care' },
-        { id: 'subscriptions', name: 'Subscriptions' },
-        { id: 'household', name: 'Household' },
-        { id: 'health', name: 'Health' },
-        { id: 'apparel', name: 'Apparel' },
-        { id: 'transportation', name: 'Transportation' },
-        { id: 'entertainment', name: 'Entertainment' },
-        { id: 'prepaid_reload', name: 'Prepaid reload' },
-        { id: 'books_stationery', name: 'Books and stationery' },
-        { id: 'others', name: 'Others' },
-    ];
+    let expenseCategories = Array.isArray(config.expenseCategories) ? config.expenseCategories : [];
 
     let loadedScenarioId = null;
     let projectedMonths = [];
     let actualByMonth = new Map();
     let selectedMonth = null;
     let statusTimer = null;
-    let actualInputsEnabled = false;
 
     function toNumber(value, fallback = 0) {
         const parsed = Number(value);
         return Number.isFinite(parsed) ? parsed : fallback;
-    }
-
-    function normalizeNullableNumber(value) {
-        if (value === null || value === undefined) return null;
-        const raw = String(value).trim();
-        if (raw === '') return null;
-        const parsed = Number(raw);
-        return Number.isFinite(parsed) ? parsed : null;
     }
 
     function formatMonthLabel(month) {
@@ -122,27 +98,16 @@
     function normalizeActualRow(row = {}, month = '') {
         return {
             month: row.month || month,
-            opening_coh: normalizeNullableNumber(row.opening_coh),
-            net_income: normalizeNullableNumber(row.net_income),
-            expenses: normalizeNullableNumber(row.expenses),
-            debt_servicing: normalizeNullableNumber(row.debt_servicing),
-            closing_coh: normalizeNullableNumber(row.closing_coh),
-            closing_elr: normalizeNullableNumber(row.closing_elr),
-            closing_epf: normalizeNullableNumber(row.closing_epf),
+            opening_coh: row.opening_coh ?? null,
+            net_income: row.net_income ?? null,
+            expenses: row.expenses ?? null,
+            debt_servicing: row.debt_servicing ?? null,
+            closing_coh: row.closing_coh ?? null,
+            closing_elr: row.closing_elr ?? null,
+            closing_epf: row.closing_epf ?? null,
             notes: row.notes || null,
             expense_breakdown: normalizeExpenseBreakdown(row.expense_breakdown),
         };
-    }
-
-    function hasAnyValue(row) {
-        if (!row) return false;
-
-        const scalarFields = ['opening_coh', 'net_income', 'expenses', 'debt_servicing', 'closing_coh', 'closing_elr', 'closing_epf'];
-        if (scalarFields.some((field) => row[field] !== null && row[field] !== undefined)) {
-            return true;
-        }
-
-        return Array.isArray(row.expense_breakdown) && row.expense_breakdown.some((item) => toNumber(item.amount, 0) > 0);
     }
 
     function buildActualByMonth(actualMonths) {
@@ -166,45 +131,11 @@
         return actualByMonth.get(month);
     }
 
-    function setSelectedMonth(month) {
-        if (!month) return;
-
-        selectedMonth = month;
-
-        renderActualInputs();
-        renderRows();
-    }
-
-    function projectedByMonth(month) {
-        return projectedMonths.find((row) => row.month === month) || null;
-    }
-
     function expenseAmountForCategory(actualRow, categoryId) {
         if (!actualRow || !Array.isArray(actualRow.expense_breakdown)) return 0;
 
         const item = actualRow.expense_breakdown.find((entry) => entry.category_id === categoryId);
         return item ? toNumber(item.amount, 0) : 0;
-    }
-
-    function setExpenseAmountForCategory(actualRow, category, amount) {
-        if (!actualRow) return;
-        const normalizedAmount = Math.max(0, toNumber(amount, 0));
-
-        if (!Array.isArray(actualRow.expense_breakdown)) {
-            actualRow.expense_breakdown = [];
-        }
-
-        const existing = actualRow.expense_breakdown.find((entry) => entry.category_id === category.id);
-        if (existing) {
-            existing.amount = normalizedAmount;
-            existing.name = category.name;
-        } else {
-            actualRow.expense_breakdown.push({
-                category_id: category.id,
-                name: category.name,
-                amount: normalizedAmount,
-            });
-        }
     }
 
     function recalculateActualExpenses(actualRow) {
@@ -222,52 +153,31 @@
         el.textContent = `RM ${money.format(total)}`;
     }
 
+    function updateHistoryExpenseSourceLabel(hasHistory) {
+        const el = document.getElementById('historyExpenseSourceLabel');
+        if (!el) return;
+
+        el.textContent = hasHistory ? 'Auto from History' : 'No History record for month';
+    }
+
     function renderExpenseCategoryRows(actualRow) {
         const tbody = document.getElementById('actualExpenseCategoryRows');
         if (!tbody) return;
 
         tbody.innerHTML = '';
+        const hasHistory = selectedMonth ? actualByMonth.has(selectedMonth) : false;
+        updateHistoryExpenseSourceLabel(hasHistory);
 
         expenseCategories.forEach((category) => {
             const row = document.createElement('tr');
-            const amount = expenseAmountForCategory(actualRow, category.id);
+            const amount = expenseAmountForCategory(actualRow, String(category.id));
 
             row.innerHTML = `
                 <td>${category.name}</td>
-                <td>
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text">RM</span>
-                        <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            class="form-control compact-input text-end va-input-control"
-                            data-expense-category-id="${category.id}"
-                            value="${amount.toFixed(2)}"
-                            ${actualInputsEnabled ? '' : 'disabled'}
-                        >
-                    </div>
-                </td>
+                <td class="text-end">${money.format(amount)}</td>
             `;
 
             tbody.appendChild(row);
-        });
-
-        tbody.querySelectorAll('input[data-expense-category-id]').forEach((input) => {
-            input.addEventListener('input', () => {
-                const month = selectedMonth;
-                const actual = ensureActualMonth(month);
-                if (!actual) return;
-
-                const categoryId = input.dataset.expenseCategoryId;
-                const category = expenseCategories.find((item) => item.id === categoryId);
-                if (!category) return;
-
-                setExpenseAmountForCategory(actual, category, input.value);
-                const total = recalculateActualExpenses(actual);
-                updateExpensesTotalDisplay(total);
-                renderRows();
-            });
         });
     }
 
@@ -283,7 +193,6 @@
         }
 
         const isReady = loadedScenarioId !== null && projectedMonths.length > 0 && selectedMonth !== null;
-        actualInputsEnabled = isReady;
         fieldset.querySelectorAll('.va-input-control').forEach((input) => {
             input.disabled = !isReady;
         });
@@ -294,6 +203,7 @@
             closingEpfInput.value = '';
             monthDisplay.textContent = '-';
             updateExpensesTotalDisplay(0);
+            updateHistoryExpenseSourceLabel(false);
             document.getElementById('actualExpenseCategoryRows').innerHTML = '';
             return;
         }
@@ -302,9 +212,9 @@
         monthDisplay.textContent = formatMonthLabel(month);
         const actual = ensureActualMonth(month);
 
-        closingCohInput.value = actual.closing_coh ?? '';
-        closingElrInput.value = actual.closing_elr ?? '';
-        closingEpfInput.value = actual.closing_epf ?? '';
+        closingCohInput.value = actual.closing_coh === null ? '' : money.format(actual.closing_coh);
+        closingElrInput.value = actual.closing_elr === null ? '' : money.format(actual.closing_elr);
+        closingEpfInput.value = actual.closing_epf === null ? '' : money.format(actual.closing_epf);
 
         const totalExpenses = recalculateActualExpenses(actual);
         updateExpensesTotalDisplay(totalExpenses);
@@ -331,14 +241,12 @@
 
     function renderRows() {
         const tbody = document.getElementById('planActualRows');
-        const saveBtn = document.getElementById('saveActualsBtn');
         if (!tbody) return;
 
         tbody.innerHTML = '';
 
         if (!projectedMonths.length) {
             tbody.innerHTML = '<tr><td colspan="7" class="text-center text-secondary py-4">No projected months found for this scenario.</td></tr>';
-            if (saveBtn) saveBtn.disabled = true;
             return;
         }
 
@@ -371,36 +279,13 @@
                 <td class="va-variance-cell ${epfVariance.className}">${epfVariance.text}</td>
             `;
 
-            const handleSelect = () => {
-                setSelectedMonth(projected.month);
-            };
-
-            row.addEventListener('click', handleSelect);
+            row.addEventListener('click', () => {
+                selectedMonth = projected.month;
+                renderActualInputs();
+                renderRows();
+            });
             tbody.appendChild(row);
         });
-
-        if (saveBtn) saveBtn.disabled = false;
-    }
-
-    function buildActualSavePayload() {
-        return Array.from(actualByMonth.values())
-            .filter((row) => hasAnyValue(row))
-            .map((row) => ({
-                month: row.month,
-                opening_coh: row.opening_coh,
-                net_income: row.net_income,
-                expenses: row.expenses,
-                debt_servicing: row.debt_servicing,
-                closing_coh: row.closing_coh,
-                closing_elr: row.closing_elr,
-                closing_epf: row.closing_epf,
-                notes: row.notes,
-                expense_breakdown: (row.expense_breakdown || []).map((item) => ({
-                    category_id: item.category_id,
-                    name: item.name,
-                    amount: toNumber(item.amount, 0),
-                })),
-            }));
     }
 
     async function loadScenario() {
@@ -424,80 +309,19 @@
         }
 
         loadedScenarioId = Number(data?.scenario?.id || 0);
+        expenseCategories = Array.isArray(data?.expense_categories) ? data.expense_categories : expenseCategories;
         projectedMonths = Array.isArray(data?.projected_months) ? data.projected_months : [];
         actualByMonth = buildActualByMonth(data?.actual_months || []);
         selectedMonth = null;
 
         renderActualInputs();
         renderRows();
-        setStatus('Scenario loaded. Click a month row to enter actual values.');
+        setStatus('Scenario loaded. Click a month row to view actual values from History.');
     }
-
-    async function saveActuals() {
-        if (!loadedScenarioId) {
-            setStatus('Load a scenario before saving.', true);
-            return;
-        }
-
-        setStatus('Saving actual values...');
-
-        const response = await fetch(`${saveActualsBase}/${loadedScenarioId}/actuals`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-            },
-            body: JSON.stringify({
-                actuals: buildActualSavePayload(),
-            }),
-        });
-
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            const msg = data?.message || Object.values(data?.errors || {}).flat().join(' ') || 'Unable to save actual values.';
-            throw new Error(msg);
-        }
-
-        setStatus(data?.message || 'Actual values saved successfully.');
-    }
-
-    document.getElementById('actualClosingCoh')?.addEventListener('input', (event) => {
-        const actual = ensureActualMonth(selectedMonth);
-        if (!actual) return;
-
-        actual.closing_coh = normalizeNullableNumber(event.target.value);
-        renderRows();
-    });
-
-    document.getElementById('actualClosingElr')?.addEventListener('input', (event) => {
-        const actual = ensureActualMonth(selectedMonth);
-        if (!actual) return;
-
-        actual.closing_elr = normalizeNullableNumber(event.target.value);
-        renderRows();
-    });
-
-    document.getElementById('actualClosingEpf')?.addEventListener('input', (event) => {
-        const actual = ensureActualMonth(selectedMonth);
-        if (!actual) return;
-
-        actual.closing_epf = normalizeNullableNumber(event.target.value);
-        renderRows();
-    });
 
     document.getElementById('loadScenarioBtn')?.addEventListener('click', async () => {
         try {
             await loadScenario();
-        } catch (error) {
-            setStatus(error.message, true);
-        }
-    });
-
-    document.getElementById('saveActualsBtn')?.addEventListener('click', async () => {
-        try {
-            await saveActuals();
         } catch (error) {
             setStatus(error.message, true);
         }

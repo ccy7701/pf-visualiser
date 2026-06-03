@@ -162,9 +162,15 @@
         const row = findMonth(selectedMonth);
         const monthInput = document.getElementById('historyMonth');
         const closingCohInput = document.getElementById('closingCohInput');
+        const closingElrInput = document.getElementById('closingElrInput');
+        const closingEpfInput = document.getElementById('closingEpfInput');
+        const selectedMonthDisplay = document.getElementById('selectedMonthDisplay');
 
         if (monthInput) monthInput.value = selectedMonth;
         if (closingCohInput) closingCohInput.value = row?.closing_coh ?? '';
+        if (closingElrInput) closingElrInput.value = row?.closing_elr ?? '';
+        if (closingEpfInput) closingEpfInput.value = row?.closing_epf ?? '';
+        if (selectedMonthDisplay) selectedMonthDisplay.textContent = formatMonthLabel(selectedMonth);
 
         renderCategoryInputs('expenseInputs', expenseCategories, row?.expense_breakdown || [], 'history-expense-input');
         renderCategoryInputs('incomeInputs', incomeCategories, row?.income_breakdown || [], 'history-income-input');
@@ -376,8 +382,12 @@
     async function saveMonth() {
         const monthInput = document.getElementById('historyMonth');
         const closingCohInput = document.getElementById('closingCohInput');
+        const closingElrInput = document.getElementById('closingElrInput');
+        const closingEpfInput = document.getElementById('closingEpfInput');
         const month = monthInput?.value || selectedMonth;
         const closingCoh = closingCohInput?.value;
+        const closingElr = closingElrInput?.value;
+        const closingEpf = closingEpfInput?.value;
 
         if (!month) {
             setStatus('Select a month first.', true);
@@ -398,6 +408,8 @@
             body: JSON.stringify({
                 month,
                 closing_coh: Number(closingCoh),
+                closing_elr: String(closingElr || '').trim() === '' ? null : Number(closingElr),
+                closing_epf: String(closingEpf || '').trim() === '' ? null : Number(closingEpf),
                 expense_breakdown: collectBreakdown('history-expense-input'),
                 income_breakdown: collectBreakdown('history-income-input'),
             }),
