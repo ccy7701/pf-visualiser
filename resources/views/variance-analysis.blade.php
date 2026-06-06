@@ -92,7 +92,6 @@
                                 <div class="input-subcard mb-0">
                                     <div class="d-flex justify-content-between align-items-center gap-2">
                                         <h2 class="section-subtitle mb-0">Expense Values by Category</h2>
-                                        <div class="small text-secondary text-end" id="historyExpenseSourceLabel">Auto from History</div>
                                     </div>
                                     <hr class="section-divider">
                                     <div class="table-responsive mb-2">
