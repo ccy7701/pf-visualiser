@@ -153,20 +153,11 @@
         el.textContent = `RM ${money.format(total)}`;
     }
 
-    function updateHistoryExpenseSourceLabel(hasHistory) {
-        const el = document.getElementById('historyExpenseSourceLabel');
-        if (!el) return;
-
-        el.textContent = hasHistory ? 'Auto from History' : 'No History record for month';
-    }
-
     function renderExpenseCategoryRows(actualRow) {
         const tbody = document.getElementById('actualExpenseCategoryRows');
         if (!tbody) return;
 
         tbody.innerHTML = '';
-        const hasHistory = selectedMonth ? actualByMonth.has(selectedMonth) : false;
-        updateHistoryExpenseSourceLabel(hasHistory);
 
         expenseCategories.forEach((category) => {
             const row = document.createElement('tr');
@@ -203,7 +194,6 @@
             closingEpfInput.value = '';
             monthDisplay.textContent = '-';
             updateExpensesTotalDisplay(0);
-            updateHistoryExpenseSourceLabel(false);
             document.getElementById('actualExpenseCategoryRows').innerHTML = '';
             return;
         }
