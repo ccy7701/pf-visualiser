@@ -113,54 +113,53 @@
         </div>
 
         <div class="col-xl-8">
-            <div class="card panel-card mb-3">
+            <div class="card panel-card history-visualisation-card">
                 <div class="card-header">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 w-100">
-                        <div>
-                            <div>COH Trend</div>
+                    <div class="history-visualisation-header">
+                        <div class="history-visualisation-title">
+                            <div>Visualisation</div>
                             <div class="small text-secondary fw-normal">Latest: <span id="latestMonthDisplay">-</span></div>
                         </div>
-                        <div class="history-window-controls" aria-label="History month window controls">
-                            <button id="previousWindowBtn" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Show previous 12 months">
-                                <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-                            </button>
-                            <button id="nextWindowBtn" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Show next 12 months">
-                                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-                            </button>
+                        <div class="history-visualisation-actions">
+                            <div id="expensePieValueControls" class="btn-group btn-group-sm history-pie-value-toggle d-none" role="group" aria-label="Expense category value display">
+                                <input class="btn-check" type="radio" name="expensePieValueMode" id="expensePieModeSen" value="sen" checked>
+                                <label class="btn btn-outline-secondary" for="expensePieModeSen">sen/RM</label>
+                                <input class="btn-check" type="radio" name="expensePieValueMode" id="expensePieModeRm" value="rm">
+                                <label class="btn btn-outline-secondary" for="expensePieModeRm">RM</label>
+                            </div>
+                            <div class="history-visualisation-switcher">
+                                <select id="historyVisualisationSelect" class="form-select form-select-sm history-visualisation-select" aria-label="History visualisation">
+                                    <option value="coh" selected>COH Trend</option>
+                                    <option value="income-expense">Income and Expenses</option>
+                                    <option value="expense-category">Expenses by Category</option>
+                                </select>
+                                <div class="history-window-controls" aria-label="History month window controls">
+                                    <button id="previousWindowBtn" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Show previous 12 months">
+                                        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                                    </button>
+                                    <button id="nextWindowBtn" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Show next 12 months">
+                                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="history-chart-wrap">
-                        <canvas id="historyCohChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card panel-card">
-                <div class="card-header">Income and Expenses</div>
-                <div class="card-body">
-                    <div class="history-chart-wrap history-chart-wrap-compact">
-                        <canvas id="historyIncomeExpenseChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card panel-card mt-3">
-                <div class="card-header">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 w-100">
-                        <div>Expenses by Category</div>
-                        <div class="btn-group btn-group-sm history-pie-value-toggle" role="group" aria-label="Expense category value display">
-                            <input class="btn-check" type="radio" name="expensePieValueMode" id="expensePieModeSen" value="sen" checked>
-                            <label class="btn btn-outline-secondary" for="expensePieModeSen">sen/RM</label>
-                            <input class="btn-check" type="radio" name="expensePieValueMode" id="expensePieModeRm" value="rm">
-                            <label class="btn btn-outline-secondary" for="expensePieModeRm">RM</label>
+                    <div id="historyCohPane" class="history-visualisation-pane">
+                        <div class="history-chart-wrap">
+                            <canvas id="historyCohChart"></canvas>
                         </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    <div class="history-chart-wrap history-pie-chart-wrap">
-                        <canvas id="historyExpenseCategoryChart"></canvas>
+                    <div id="historyIncomeExpensePane" class="history-visualisation-pane d-none">
+                        <div class="history-chart-wrap history-chart-wrap-compact">
+                            <canvas id="historyIncomeExpenseChart"></canvas>
+                        </div>
+                    </div>
+                    <div id="historyExpenseCategoryPane" class="history-visualisation-pane d-none">
+                        <div class="history-chart-wrap history-pie-chart-wrap">
+                            <canvas id="historyExpenseCategoryChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>

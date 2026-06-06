@@ -12,6 +12,7 @@
     let expenseCategoryChart = null;
     let months = [];
     let selectedMonth = config.latestMonth || '';
+    let activeHistoryVisualisation = 'coh';
     let hoveredExpensePieCategoryId = null;
     let expensePieValueMode = 'sen';
     let statusTimer = null;
@@ -179,7 +180,7 @@
 
             input.addEventListener('input', () => {
                 updateTotals();
-                if (inputClass === 'history-expense-input') {
+                if (inputClass === 'history-expense-input' && activeHistoryVisualisation === 'expense-category') {
                     renderExpenseCategoryChart();
                 }
             });
@@ -504,6 +505,7 @@
                             : [],
                         hoverOffset: 0,
                         offset: 0,
+                        radius: '68%',
                     },
                 ],
             },
@@ -561,6 +563,27 @@
         updateExpensePieHoverState(expenseCategoryChart, breakdown, totalExpenses, hoveredExpensePieCategoryId);
     }
 
+    function setActiveVisualisation(value) {
+        activeHistoryVisualisation = ['coh', 'income-expense', 'expense-category'].includes(value) ? value : 'coh';
+
+        document.getElementById('historyCohPane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'coh');
+        document.getElementById('historyIncomeExpensePane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'income-expense');
+        document.getElementById('historyExpenseCategoryPane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'expense-category');
+        document.getElementById('expensePieValueControls')?.classList.toggle('d-none', activeHistoryVisualisation !== 'expense-category');
+    }
+
+    function renderActiveVisualisation() {
+        setActiveVisualisation(activeHistoryVisualisation);
+
+        if (activeHistoryVisualisation === 'coh') {
+            renderCohChart();
+        } else if (activeHistoryVisualisation === 'income-expense') {
+            renderIncomeExpenseChart();
+        } else {
+            renderExpenseCategoryChart();
+        }
+    }
+
     function renderAll() {
         const latestDisplay = document.getElementById('latestMonthDisplay');
         if (latestDisplay && months.length) {
@@ -568,9 +591,7 @@
         }
 
         renderInputs();
-        renderCohChart();
-        renderIncomeExpenseChart();
-        renderExpenseCategoryChart();
+        renderActiveVisualisation();
     }
 
     async function loadMonths(latestMonth) {
@@ -706,6 +727,11 @@
             loadMonths(nextMonth).catch((error) => setStatus(error.message, true));
         });
 
+        document.getElementById('historyVisualisationSelect')?.addEventListener('change', (event) => {
+            setActiveVisualisation(event.target.value);
+            renderActiveVisualisation();
+        });
+
         document.getElementById('saveHistoryBtn')?.addEventListener('click', () => {
             saveMonth().catch((error) => setStatus(error.message, true));
         });
@@ -713,10 +739,13 @@
         document.querySelectorAll('input[name="expensePieValueMode"]').forEach((input) => {
             input.addEventListener('change', (event) => {
                 expensePieValueMode = event.target.value === 'rm' ? 'rm' : 'sen';
-                renderExpenseCategoryChart();
+                if (activeHistoryVisualisation === 'expense-category') {
+                    renderExpenseCategoryChart();
+                }
             });
         });
 
+        setActiveVisualisation(activeHistoryVisualisation);
         loadMonths(selectedMonth).catch((error) => setStatus(error.message, true));
     });
 })();
