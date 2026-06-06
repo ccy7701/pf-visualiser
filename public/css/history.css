@@ -71,6 +71,16 @@
     height: 100% !important;
 }
 
+.history-pie-chart-wrap {
+    height: 44vh;
+    min-height: 430px;
+}
+
+.history-pie-value-toggle .btn {
+    min-width: 58px;
+    font-weight: 700;
+}
+
 .history-window-controls {
     display: inline-flex;
     gap: 0.35rem;

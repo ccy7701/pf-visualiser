@@ -145,6 +145,25 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card panel-card mt-3">
+                <div class="card-header">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 w-100">
+                        <div>Expenses by Category</div>
+                        <div class="btn-group btn-group-sm history-pie-value-toggle" role="group" aria-label="Expense category value display">
+                            <input class="btn-check" type="radio" name="expensePieValueMode" id="expensePieModeSen" value="sen" checked>
+                            <label class="btn btn-outline-secondary" for="expensePieModeSen">sen/RM</label>
+                            <input class="btn-check" type="radio" name="expensePieValueMode" id="expensePieModeRm" value="rm">
+                            <label class="btn btn-outline-secondary" for="expensePieModeRm">RM</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="history-chart-wrap history-pie-chart-wrap">
+                        <canvas id="historyExpenseCategoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

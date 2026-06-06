@@ -9,9 +9,26 @@
 
     let cohChart = null;
     let incomeExpenseChart = null;
+    let expenseCategoryChart = null;
     let months = [];
     let selectedMonth = config.latestMonth || '';
+    let hoveredExpensePieCategoryId = null;
+    let expensePieValueMode = 'sen';
     let statusTimer = null;
+    const categoryPalette = [
+        '#0d6efd',
+        '#198754',
+        '#dc3545',
+        '#fd7e14',
+        '#6f42c1',
+        '#20c997',
+        '#d63384',
+        '#ffc107',
+        '#0dcaf0',
+        '#6c757d',
+        '#6610f2',
+        '#2b8a3e',
+    ];
 
     function toNumber(value, fallback = 0) {
         const parsed = Number(value);
@@ -81,6 +98,49 @@
         return (items || []).reduce((carry, item) => carry + toNumber(item.amount, 0), 0);
     }
 
+    function percentOfTotal(value, totalValue) {
+        return totalValue > 0 ? (toNumber(value, 0) / totalValue) * 100 : 0;
+    }
+
+    function formatSenPerRinggit(value, totalValue) {
+        const percentage = percentOfTotal(value, totalValue);
+        return `${Math.round(percentage)} sen/RM`;
+    }
+
+    function formatExpensePieValue(value, totalValue) {
+        if (expensePieValueMode === 'rm') {
+            return `RM ${money.format(value)}`;
+        }
+
+        return formatSenPerRinggit(value, totalValue);
+    }
+
+    function updateExpensePieHoverState(chart, breakdown, totalExpenses, hoveredCategoryId) {
+        if (!chart || totalExpenses <= 0) {
+            return;
+        }
+
+        const dataset = chart.data.datasets[0];
+        dataset.backgroundColor = breakdown.map((item, index) => Number(item.category_id) === hoveredCategoryId
+            ? categoryPalette[index % categoryPalette.length]
+            : `${categoryPalette[index % categoryPalette.length]}b8`);
+        dataset.borderColor = breakdown.map((item) => Number(item.category_id) === hoveredCategoryId ? '#212529' : '#fff');
+        dataset.borderWidth = breakdown.map((item) => Number(item.category_id) === hoveredCategoryId ? 3 : 2);
+
+        const hoveredItemIndex = breakdown.findIndex((item) => Number(item.category_id) === hoveredCategoryId);
+        if (hoveredItemIndex >= 0) {
+            const hoveredItem = breakdown[hoveredItemIndex];
+            chart.$expensePieDetail = {
+                index: hoveredItemIndex,
+                text: `${hoveredItem.name}: ${formatExpensePieValue(hoveredItem.amount, totalExpenses)}`,
+            };
+        } else {
+            chart.$expensePieDetail = null;
+        }
+
+        chart.update();
+    }
+
     function renderCategoryInputs(containerId, categories, breakdown, inputClass) {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -117,7 +177,12 @@
             input.dataset.categoryName = category.name;
             input.value = String(amountByCategory.get(Number(category.id)) || 0);
 
-            input.addEventListener('input', updateTotals);
+            input.addEventListener('input', () => {
+                updateTotals();
+                if (inputClass === 'history-expense-input') {
+                    renderExpenseCategoryChart();
+                }
+            });
 
             group.appendChild(prefix);
             group.appendChild(input);
@@ -347,6 +412,155 @@
         });
     }
 
+    const expensePieHoverDetailPlugin = {
+        id: 'historyExpensePieHoverDetail',
+        afterDraw(chart) {
+            const detail = chart.$expensePieDetail;
+            if (!detail) {
+                return;
+            }
+
+            const { ctx, chartArea } = chart;
+            const arc = chart.getDatasetMeta(0)?.data?.[detail.index];
+            if (!arc) {
+                return;
+            }
+
+            const arcProps = arc.getProps(['x', 'y', 'startAngle', 'endAngle', 'outerRadius'], true);
+            const angle = (arcProps.startAngle + arcProps.endAngle) / 2;
+            const directionX = Math.cos(angle);
+            const directionY = Math.sin(angle);
+            const side = directionX >= 0 ? 1 : -1;
+            const lineColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-secondary-color').trim() || '#6c757d';
+            const textColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-body-color').trim() || '#212529';
+            const textMaxWidth = Math.min(190, Math.max(120, chartArea.width * 0.42));
+            const startX = arcProps.x + (directionX * (arcProps.outerRadius + 4));
+            const startY = arcProps.y + (directionY * (arcProps.outerRadius + 4));
+            const elbowX = arcProps.x + (directionX * (arcProps.outerRadius + 26));
+            const elbowY = arcProps.y + (directionY * (arcProps.outerRadius + 26));
+            const textX = side > 0
+                ? Math.min(chartArea.right - textMaxWidth - 8, elbowX + 62)
+                : Math.max(chartArea.left + textMaxWidth + 8, elbowX - 62);
+            const textY = elbowY;
+            const lineEndX = side > 0 ? textX - 8 : textX + 8;
+
+            ctx.save();
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(elbowX, elbowY);
+            ctx.lineTo(lineEndX, textY);
+            ctx.stroke();
+
+            ctx.textAlign = side > 0 ? 'left' : 'right';
+            ctx.textBaseline = 'middle';
+            ctx.font = '700 13px system-ui, sans-serif';
+            ctx.fillStyle = textColor;
+            ctx.fillText(detail.text, textX, textY, textMaxWidth);
+            ctx.restore();
+        },
+    };
+
+    function renderExpenseCategoryChart() {
+        const canvas = document.getElementById('historyExpenseCategoryChart');
+        if (!canvas || typeof Chart === 'undefined') return;
+
+        if (expenseCategoryChart) {
+            expenseCategoryChart.destroy();
+        }
+
+        const row = findMonth(selectedMonth);
+        const currentInputMonth = document.getElementById('historyMonth')?.value || selectedMonth;
+        const hasRenderedExpenseInputs = document.querySelectorAll('.history-expense-input').length > 0;
+        const sourceBreakdown = currentInputMonth === selectedMonth && hasRenderedExpenseInputs
+            ? collectBreakdown('history-expense-input')
+            : row?.expense_breakdown || [];
+        const breakdown = normalizeBreakdown(sourceBreakdown, expenseCategories)
+            .filter((item) => toNumber(item.amount, 0) > 0);
+        const totalExpenses = total(breakdown);
+        if (!breakdown.some((item) => Number(item.category_id) === hoveredExpensePieCategoryId)) {
+            hoveredExpensePieCategoryId = null;
+        }
+
+        expenseCategoryChart = new Chart(canvas, {
+            type: 'pie',
+            data: {
+                labels: totalExpenses > 0 ? breakdown.map((item) => item.name) : [],
+                datasets: [
+                    {
+                        label: 'Expenses',
+                        data: totalExpenses > 0 ? breakdown.map((item) => item.amount) : [],
+                        backgroundColor: totalExpenses > 0
+                            ? breakdown.map((item, index) => Number(item.category_id) === hoveredExpensePieCategoryId
+                                ? categoryPalette[index % categoryPalette.length]
+                                : `${categoryPalette[index % categoryPalette.length]}b8`)
+                            : [],
+                        borderColor: totalExpenses > 0
+                            ? breakdown.map((item) => Number(item.category_id) === hoveredExpensePieCategoryId ? '#212529' : '#fff')
+                            : [],
+                        borderWidth: totalExpenses > 0
+                            ? breakdown.map((item) => Number(item.category_id) === hoveredExpensePieCategoryId ? 3 : 2)
+                            : [],
+                        hoverOffset: 0,
+                        offset: 0,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 180,
+                    easing: 'easeOutQuart',
+                },
+                transitions: {
+                    active: {
+                        animation: {
+                            duration: 180,
+                        },
+                    },
+                },
+                layout: {
+                    padding: {
+                        left: 42,
+                        right: 52,
+                        top: 18,
+                        bottom: 18,
+                    },
+                },
+                onHover: (event, elements) => {
+                    const nextHoveredCategoryId = elements.length && totalExpenses > 0
+                        ? Number(breakdown[elements[0].index]?.category_id) || null
+                        : null;
+
+                    event.native.target.style.cursor = nextHoveredCategoryId ? 'pointer' : 'default';
+                    if (nextHoveredCategoryId !== hoveredExpensePieCategoryId) {
+                        hoveredExpensePieCategoryId = nextHoveredCategoryId;
+                        updateExpensePieHoverState(expenseCategoryChart, breakdown, totalExpenses, hoveredExpensePieCategoryId);
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        display: totalExpenses > 0,
+                        labels: {
+                            boxWidth: 14,
+                            boxHeight: 14,
+                            padding: 14,
+                        },
+                    },
+                    tooltip: {
+                        enabled: false,
+                    },
+                },
+            },
+            plugins: [expensePieHoverDetailPlugin],
+        });
+
+        updateExpensePieHoverState(expenseCategoryChart, breakdown, totalExpenses, hoveredExpensePieCategoryId);
+    }
+
     function renderAll() {
         const latestDisplay = document.getElementById('latestMonthDisplay');
         if (latestDisplay && months.length) {
@@ -356,6 +570,7 @@
         renderInputs();
         renderCohChart();
         renderIncomeExpenseChart();
+        renderExpenseCategoryChart();
     }
 
     async function loadMonths(latestMonth) {
@@ -493,6 +708,13 @@
 
         document.getElementById('saveHistoryBtn')?.addEventListener('click', () => {
             saveMonth().catch((error) => setStatus(error.message, true));
+        });
+
+        document.querySelectorAll('input[name="expensePieValueMode"]').forEach((input) => {
+            input.addEventListener('change', (event) => {
+                expensePieValueMode = event.target.value === 'rm' ? 'rm' : 'sen';
+                renderExpenseCategoryChart();
+            });
         });
 
         loadMonths(selectedMonth).catch((error) => setStatus(error.message, true));
