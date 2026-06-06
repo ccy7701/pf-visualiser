@@ -50,9 +50,11 @@ class ProjectionService
         foreach ($months as $month) {
             $monthEvents = $this->eventsForMonth($events, $month);
 
-            $grossIncome = $this->salaryCalculator->grossForMonth($month, $employment);
-            $employeeEpf = $this->epfCalculator->employeeContribution($grossIncome, $epf);
-            $employerEpf = $this->epfCalculator->employerContribution($grossIncome, $epf);
+            $salarySchedule = $this->salaryCalculator->scheduleForMonth($month, $employment);
+            $grossIncome = (float) ($salarySchedule['monthly_gross_salary'] ?? 0);
+            $monthEpf = $this->epfForSalarySchedule($epf, $salarySchedule);
+            $employeeEpf = $this->epfCalculator->employeeContribution($grossIncome, $monthEpf);
+            $employerEpf = $this->epfCalculator->employerContribution($grossIncome, $monthEpf);
             $statutory = $this->statutoryDeductionResolver->resolve($grossIncome);
             $socso = (float) ($statutory['socso'] ?? 0);
             $eis = (float) ($statutory['eis'] ?? 0);
@@ -218,6 +220,8 @@ class ProjectionService
                 'start_month' => MonthHelper::normalize((string) $schedule['start_month']),
                 'end_month' => $this->normalizeOptionalMonth($schedule['end_month'] ?? null),
                 'monthly_gross_salary' => (float) ($schedule['monthly_gross_salary'] ?? 0),
+                'employee_epf_rate_percent' => $this->normalizeOptionalPercent($schedule['employee_epf_rate_percent'] ?? null),
+                'employer_epf_rate_percent' => $this->normalizeOptionalPercent($schedule['employer_epf_rate_percent'] ?? null),
                 'note' => (string) ($schedule['note'] ?? ''),
             ];
         }, $rawSchedules));
@@ -239,6 +243,8 @@ class ProjectionService
                 'start_month' => $salaryStartMonth,
                 'end_month' => MonthHelper::fromIndex(MonthHelper::toIndex($confirmedStartMonth) - 1),
                 'monthly_gross_salary' => (float) ($employment['probation_salary'] ?? 0),
+                'employee_epf_rate_percent' => null,
+                'employer_epf_rate_percent' => null,
                 'note' => 'Probation',
             ];
         }
@@ -247,10 +253,33 @@ class ProjectionService
             'start_month' => $confirmedStartMonth,
             'end_month' => null,
             'monthly_gross_salary' => (float) ($employment['confirmed_salary'] ?? 0),
+            'employee_epf_rate_percent' => null,
+            'employer_epf_rate_percent' => null,
             'note' => 'Confirmed',
         ];
 
         return $schedules;
+    }
+
+    private function epfForSalarySchedule(array $epf, ?array $salarySchedule): array
+    {
+        if ($salarySchedule === null) {
+            return $epf;
+        }
+
+        return [
+            'employee_rate_percent' => $salarySchedule['employee_epf_rate_percent'] ?? $epf['employee_rate_percent'],
+            'employer_rate_percent' => $salarySchedule['employer_epf_rate_percent'] ?? $epf['employer_rate_percent'],
+        ];
+    }
+
+    private function normalizeOptionalPercent(mixed $value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (float) $value;
     }
 
     private function normalizeCostOfLivingBudgets(array $costOfLiving): array

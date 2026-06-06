@@ -6,6 +6,11 @@ class SalaryCalculator
 {
     public function grossForMonth(string $month, array $employment): float
     {
+        return (float) ($this->scheduleForMonth($month, $employment)['monthly_gross_salary'] ?? 0);
+    }
+
+    public function scheduleForMonth(string $month, array $employment): ?array
+    {
         $payMonthIndex = MonthHelper::toIndex($month);
         $workMonthIndex = ! empty($employment['salary_paid_in_arrears'])
             ? $payMonthIndex - 1
@@ -17,10 +22,10 @@ class SalaryCalculator
             $endIndex = $endMonth ? MonthHelper::toIndex((string) $endMonth) : PHP_INT_MAX;
 
             if ($workMonthIndex >= $startIndex && $workMonthIndex <= $endIndex) {
-                return (float) $schedule['monthly_gross_salary'];
+                return $schedule;
             }
         }
 
-        return 0.0;
+        return null;
     }
 }

@@ -69,6 +69,10 @@
         return Number.isNaN(d.getTime()) ? month : monthLabelFormatter.format(d);
     }
 
+    function formatCompactMonthLabel(month) {
+        return formatMonthLabel(month).replace(/\s+/, '-');
+    }
+
     function setStatus(message, isError = false) {
         const el = document.getElementById('statusMessage');
         el.textContent = message;
@@ -449,6 +453,8 @@
                 start_month: startMonth,
                 end_month: addMonths(startMonth, probationMonths - 1),
                 monthly_gross_salary: toNumber(employment.probation_salary, 0),
+                employee_epf_rate_percent: toNumber(employment.employee_epf_rate_percent, 11),
+                employer_epf_rate_percent: toNumber(employment.employer_epf_rate_percent, 13),
                 note: 'Probation',
             });
         }
@@ -457,6 +463,8 @@
             start_month: addMonths(startMonth, probationMonths),
             end_month: '',
             monthly_gross_salary: toNumber(employment.confirmed_salary, 0),
+            employee_epf_rate_percent: toNumber(employment.employee_epf_rate_percent, 11),
+            employer_epf_rate_percent: toNumber(employment.employer_epf_rate_percent, 13),
             note: 'Confirmed',
         });
 
@@ -469,13 +477,15 @@
             probation_duration_months: 3,
             probation_salary: 1800,
             confirmed_salary: 2200,
+            employee_epf_rate_percent: 11,
+            employer_epf_rate_percent: 13,
         });
     }
 
     function salaryScheduleDeductions(schedule) {
         const grossSalary = toNumber(schedule.monthly_gross_salary, 0);
-        const employeeEpfRatePercent = toNumber(document.getElementById('employeeEpfRatePercent')?.value ?? 0, 0);
-        const employerEpfRatePercent = toNumber(document.getElementById('employerEpfRatePercent')?.value ?? 0, 0);
+        const employeeEpfRatePercent = toNumber(schedule.employee_epf_rate_percent, 0);
+        const employerEpfRatePercent = toNumber(schedule.employer_epf_rate_percent, 0);
         const statutory = resolveStatutoryDeductions(grossSalary);
         const employeeEpf = grossSalary * (employeeEpfRatePercent / 100);
         const employerEpf = grossSalary * (employerEpfRatePercent / 100);
@@ -497,6 +507,8 @@
             end_month: toMonthOrNull(schedule.end_month) || '',
             note: String(schedule.note || '').trim(),
             monthly_gross_salary: toNumber(schedule.monthly_gross_salary, 0),
+            employee_epf_rate_percent: toNumber(schedule.employee_epf_rate_percent ?? 11, 11),
+            employer_epf_rate_percent: toNumber(schedule.employer_epf_rate_percent ?? 13, 13),
         };
     }
 
@@ -511,6 +523,8 @@
         document.getElementById('salaryScheduleUntil').value = schedule?.end_month || '';
         document.getElementById('salaryScheduleNote').value = schedule?.note || '';
         document.getElementById('salaryScheduleGross').value = formatToTwoDp(schedule?.monthly_gross_salary ?? 0);
+        document.getElementById('employeeEpfRatePercent').value = formatToTwoDp(schedule?.employee_epf_rate_percent ?? 11);
+        document.getElementById('employerEpfRatePercent').value = formatToTwoDp(schedule?.employer_epf_rate_percent ?? 13);
     }
 
     function renderSalaryScheduleCards() {
@@ -530,14 +544,15 @@
                 const item = document.createElement('div');
                 item.className = 'salary-schedule-list-item';
                 const deductions = salaryScheduleDeductions(schedule);
-                const endLabel = schedule.end_month || 'Ongoing';
+                const startLabel = schedule.start_month ? formatCompactMonthLabel(schedule.start_month) : '-';
+                const endLabel = schedule.end_month ? formatCompactMonthLabel(schedule.end_month) : 'Ongoing';
                 const note = schedule.note || '&nbsp;';
 
                 item.innerHTML = `
                     <div class="salary-schedule-list-card">
                         <div class="salary-schedule-list-row">
                             <div>
-                                <div class="salary-schedule-list-name">${schedule.start_month || '-'} to ${endLabel}</div>
+                                <div class="salary-schedule-list-name">${startLabel} to ${endLabel}</div>
                                 <div class="salary-schedule-list-description">${note}</div>
                             </div>
                             <div class="salary-schedule-list-right">
@@ -546,8 +561,8 @@
                             </div>
                         </div>
                         <div class="salary-schedule-deduction-grid">
-                            <div>Employee EPF<br><strong>RM ${money.format(deductions.employeeEpf)}</strong></div>
-                            <div>Employer EPF<br><strong>RM ${money.format(deductions.employerEpf)}</strong></div>
+                            <div>Employee EPF (${money.format(schedule.employee_epf_rate_percent)}%)<br><strong>RM ${money.format(deductions.employeeEpf)}</strong></div>
+                            <div>Employer EPF (${money.format(schedule.employer_epf_rate_percent)}%)<br><strong>RM ${money.format(deductions.employerEpf)}</strong></div>
                             <div>SOCSO<br><strong>RM ${money.format(deductions.socso)}</strong></div>
                             <div>EIS<br><strong>RM ${money.format(deductions.eis)}</strong></div>
                         </div>
@@ -672,6 +687,8 @@
                     start_month: schedule.start_month,
                     end_month: schedule.end_month || null,
                     monthly_gross_salary: toNumber(schedule.monthly_gross_salary, 0),
+                    employee_epf_rate_percent: toNumber(schedule.employee_epf_rate_percent, 0),
+                    employer_epf_rate_percent: toNumber(schedule.employer_epf_rate_percent, 0),
                     note: schedule.note || '',
                 })).filter((schedule) => schedule.start_month),
                 salary_paid_in_arrears: document.getElementById('salaryPaidInArrears').checked,
@@ -1136,6 +1153,8 @@
             end_month: document.getElementById('salaryScheduleUntil').value,
             note: document.getElementById('salaryScheduleNote').value,
             monthly_gross_salary: document.getElementById('salaryScheduleGross').value,
+            employee_epf_rate_percent: document.getElementById('employeeEpfRatePercent').value,
+            employer_epf_rate_percent: document.getElementById('employerEpfRatePercent').value,
         });
 
         if (!schedule.start_month) {

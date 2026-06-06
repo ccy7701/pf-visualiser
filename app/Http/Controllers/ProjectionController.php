@@ -157,6 +157,8 @@ class ProjectionController extends Controller
             'employment.salary_schedules.*.start_month' => ['required', 'regex:/^\d{4}-\d{2}$/'],
             'employment.salary_schedules.*.end_month' => ['nullable', 'regex:/^\d{4}-\d{2}$/'],
             'employment.salary_schedules.*.monthly_gross_salary' => ['required', 'numeric', 'min:0'],
+            'employment.salary_schedules.*.employee_epf_rate_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'employment.salary_schedules.*.employer_epf_rate_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'employment.salary_schedules.*.note' => ['nullable', 'string', 'max:200'],
             'employment.salary_paid_in_arrears' => ['required', 'boolean'],
 

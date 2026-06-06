@@ -33,6 +33,65 @@ class ProjectionServiceTest extends TestCase
         $this->assertSame(2400.0, $calculator->grossForMonth('2026-09', $employment));
     }
 
+    public function test_projection_uses_schedule_specific_epf_rates(): void
+    {
+        $service = app(ProjectionService::class);
+
+        $payload = [
+            'scenario' => [
+                'start_month' => '2026-06',
+                'end_month' => '2026-06',
+                'starting_coh' => 0,
+                'starting_elr' => 0,
+                'starting_epf' => 0,
+            ],
+            'employment' => [
+                'salary_schedules' => [
+                    [
+                        'start_month' => '2026-06',
+                        'end_month' => null,
+                        'monthly_gross_salary' => 1000,
+                        'employee_epf_rate_percent' => 5,
+                        'employer_epf_rate_percent' => 7,
+                        'note' => 'Custom EPF',
+                    ],
+                ],
+                'salary_paid_in_arrears' => false,
+            ],
+            'cost_of_living' => [
+                'budgets' => [
+                    'bcol' => ['category_allocations' => []],
+                    'fcol_lite' => ['category_allocations' => []],
+                    'fcol_max' => ['category_allocations' => []],
+                ],
+                'monthly_budget_selection' => [],
+            ],
+            'ptptn' => [
+                'waiver_granted' => false,
+                'monthly_repayment' => 0,
+                'repayment_start_month' => null,
+            ],
+            'bnpl' => [],
+            'events' => [],
+            'elr' => [
+                'schedules' => [],
+                'note' => '',
+                'compound_interest_enabled' => false,
+                'annual_interest_rate_percent' => 0,
+            ],
+            'epf' => [
+                'employee_rate_percent' => 10,
+                'employer_rate_percent' => 20,
+            ],
+        ];
+
+        $month = $service->project($payload)['months'][0];
+
+        $this->assertSame(50.0, $month['employee_epf']);
+        $this->assertSame(70.0, $month['employer_epf']);
+        $this->assertSame(120.0, $month['closing_epf']);
+    }
+
     public function test_projection_respects_locked_rules(): void
     {
         $service = app(ProjectionService::class);
