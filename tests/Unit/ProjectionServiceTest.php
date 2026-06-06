@@ -3,10 +3,36 @@
 namespace Tests\Unit;
 
 use App\Services\ProjectionService;
+use App\Services\Projection\SalaryCalculator;
 use Tests\TestCase;
 
 class ProjectionServiceTest extends TestCase
 {
+    public function test_salary_calculator_uses_future_salary_schedule_increments(): void
+    {
+        $calculator = app(SalaryCalculator::class);
+        $employment = [
+            'salary_schedules' => [
+                [
+                    'start_month' => '2026-06',
+                    'end_month' => '2026-08',
+                    'monthly_gross_salary' => 1800,
+                    'note' => 'Initial salary',
+                ],
+                [
+                    'start_month' => '2026-09',
+                    'end_month' => null,
+                    'monthly_gross_salary' => 2400,
+                    'note' => 'Raise',
+                ],
+            ],
+            'salary_paid_in_arrears' => false,
+        ];
+
+        $this->assertSame(1800.0, $calculator->grossForMonth('2026-08', $employment));
+        $this->assertSame(2400.0, $calculator->grossForMonth('2026-09', $employment));
+    }
+
     public function test_projection_respects_locked_rules(): void
     {
         $service = app(ProjectionService::class);
@@ -20,10 +46,26 @@ class ProjectionServiceTest extends TestCase
                 'starting_epf' => 0,
             ],
             'employment' => [
-                'probation_salary' => 1000,
-                'confirmed_salary' => 2000,
-                'probation_duration_months' => 1,
-                'salary_start_month' => '2026-06',
+                'salary_schedules' => [
+                    [
+                        'start_month' => '2026-06',
+                        'end_month' => '2026-06',
+                        'monthly_gross_salary' => 1000,
+                        'note' => 'Probation',
+                    ],
+                    [
+                        'start_month' => '2026-07',
+                        'end_month' => '2026-07',
+                        'monthly_gross_salary' => 2000,
+                        'note' => 'Confirmed',
+                    ],
+                    [
+                        'start_month' => '2026-08',
+                        'end_month' => null,
+                        'monthly_gross_salary' => 2500,
+                        'note' => 'Raise',
+                    ],
+                ],
                 'salary_paid_in_arrears' => true,
             ],
             'cost_of_living' => [
@@ -129,10 +171,14 @@ class ProjectionServiceTest extends TestCase
                 'starting_epf' => 0,
             ],
             'employment' => [
-                'probation_salary' => 0,
-                'confirmed_salary' => 0,
-                'probation_duration_months' => 0,
-                'salary_start_month' => '2026-06',
+                'salary_schedules' => [
+                    [
+                        'start_month' => '2026-06',
+                        'end_month' => null,
+                        'monthly_gross_salary' => 0,
+                        'note' => '',
+                    ],
+                ],
                 'salary_paid_in_arrears' => true,
             ],
             'cost_of_living' => [

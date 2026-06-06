@@ -153,10 +153,11 @@ class ProjectionController extends Controller
             'scenario.starting_epf' => ['required', 'numeric', 'min:0'],
 
             'employment' => ['required', 'array'],
-            'employment.probation_salary' => ['required', 'numeric', 'min:0'],
-            'employment.confirmed_salary' => ['required', 'numeric', 'min:0'],
-            'employment.probation_duration_months' => ['required', 'integer', 'min:0', 'max:120'],
-            'employment.salary_start_month' => ['required', 'regex:/^\d{4}-\d{2}$/'],
+            'employment.salary_schedules' => ['required', 'array', 'min:1'],
+            'employment.salary_schedules.*.start_month' => ['required', 'regex:/^\d{4}-\d{2}$/'],
+            'employment.salary_schedules.*.end_month' => ['nullable', 'regex:/^\d{4}-\d{2}$/'],
+            'employment.salary_schedules.*.monthly_gross_salary' => ['required', 'numeric', 'min:0'],
+            'employment.salary_schedules.*.note' => ['nullable', 'string', 'max:200'],
             'employment.salary_paid_in_arrears' => ['required', 'boolean'],
 
             'cost_of_living' => ['required', 'array'],

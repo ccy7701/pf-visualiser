@@ -93,10 +93,20 @@ class ProjectionModuleTest extends TestCase
                 'starting_epf' => 0,
             ],
             'employment' => [
-                'probation_salary' => 1800,
-                'confirmed_salary' => 2200,
-                'probation_duration_months' => 3,
-                'salary_start_month' => '2026-06',
+                'salary_schedules' => [
+                    [
+                        'start_month' => '2026-06',
+                        'end_month' => '2026-08',
+                        'monthly_gross_salary' => 1800,
+                        'note' => 'Probation',
+                    ],
+                    [
+                        'start_month' => '2026-09',
+                        'end_month' => null,
+                        'monthly_gross_salary' => 2200,
+                        'note' => 'Confirmed',
+                    ],
+                ],
                 'salary_paid_in_arrears' => true,
             ],
             'cost_of_living' => [

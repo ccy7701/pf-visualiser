@@ -131,7 +131,32 @@
 
                         <div class="tab-pane fade" id="pane-employment" role="tabpanel" aria-labelledby="tab-employment" tabindex="0">
                             <div class="input-subcard mb-0">
+                                <input id="salaryScheduleEditingId" type="hidden" value="">
+                                <div class="mb-2">
+                                    <label for="salaryScheduleNote" class="form-label form-label-sm">Note</label>
+                                    <input id="salaryScheduleNote" type="text" class="form-control compact-input" placeholder="Example: Confirmed salary">
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label for="salaryScheduleFrom" class="form-label form-label-sm">From</label>
+                                        <input id="salaryScheduleFrom" type="text" class="form-control compact-input month-input" value="{{ now('Asia/Kuala_Lumpur')->startOfMonth()->format('Y-m') }}">
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="salaryScheduleUntil" class="form-label form-label-sm">Until</label>
+                                        <input id="salaryScheduleUntil" type="text" class="form-control compact-input month-input" placeholder="Ongoing">
+                                    </div>
+                                    <p class="text-secondary small mb-0">Schedules are inclusive month ranges. Leave Until blank for the current ongoing salary.</p>
+                                </div>
                                 <div class="row g-2 mb-3">
+                                    <div class="col-12">
+                                        <label for="salaryScheduleGross" class="form-label form-label-sm">Gross Salary (RM)</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RM</span>
+                                            <input id="salaryScheduleGross" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row g-2">
                                     <div class="col-6">
                                         <label class="form-label form-label-sm">Employee EPF (%)</label>
                                         <input id="employeeEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="11.00">
@@ -141,71 +166,22 @@
                                         <input id="employerEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="13.00">
                                     </div>
                                 </div>
-
-                                <div class="table-responsive mb-3">
-                                    <table class="table table-sm align-middle">
-                                        <thead>
-                                        <tr>
-                                            <th>Metric</th>
-                                            <th>Probation</th>
-                                            <th>Confirmed</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr>
-                                            <td>Salary</td>
-                                            <td>
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text">RM</span>
-                                                    <input id="probationSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="1800.00">
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text">RM</span>
-                                                    <input id="confirmedSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="2200.00">
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Employee EPF</td>
-                                            <td class="text-end"><span id="probationEmployeeEpfAmount">RM 0.00</span></td>
-                                            <td class="text-end"><span id="confirmedEmployeeEpfAmount">RM 0.00</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Employer EPF</td>
-                                            <td class="text-end"><span id="probationEmployerEpfAmount">RM 0.00</span></td>
-                                            <td class="text-end"><span id="confirmedEmployerEpfAmount">RM 0.00</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>SOCSO (Act 4)</td>
-                                            <td class="text-end"><span id="probationSocsoAmount">RM 0.00</span></td>
-                                            <td class="text-end"><span id="confirmedSocsoAmount">RM 0.00</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>EIS (Act 800)</td>
-                                            <td class="text-end"><span id="probationEisAmount">RM 0.00</span></td>
-                                            <td class="text-end"><span id="confirmedEisAmount">RM 0.00</span></td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <div class="row g-2 mb-3">
-                                    <div class="col-6">
-                                        <label class="form-label form-label-sm">Probation Months</label>
-                                        <input id="probationDuration" type="number" min="0" class="form-control compact-input" value="3">
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label form-label-sm">Salary Start Month</label>
-                                        <input id="salaryStartMonth" type="text" class="form-control compact-input month-input" value="{{ now('Asia/Kuala_Lumpur')->startOfMonth()->format('Y-m') }}">
-                                    </div>
+                                <div class="row g-2 mt-1 mb-3">
                                     <div class="col-12">
                                         <div class="form-check mt-1">
                                             <input id="salaryPaidInArrears" class="form-check-input" type="checkbox" checked>
                                             <label class="form-check-label" for="salaryPaidInArrears">Salary paid in arrears (full-month lag)</label>
                                         </div>
                                     </div>
+                                </div>
+                                <button id="saveSalaryScheduleBtn" type="button" class="btn btn-dark w-100">Add</button>
+                            </div>
+
+                            <div class="input-subcard mt-3 mb-0">
+                                <h2 class="section-subtitle">Salary Schedules Added</h2>
+                                <hr class="section-divider">
+                                <div id="salaryScheduleListCards">
+                                    <div class="text-center text-secondary py-3">No salary schedules added yet.</div>
                                 </div>
                             </div>
                         </div>
