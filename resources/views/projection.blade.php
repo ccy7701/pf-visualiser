@@ -85,7 +85,8 @@
                     <div class="projection-input-tabs nav" id="projectionInputTabs" role="tablist">
                         <button class="projection-input-tab active" id="tab-scenario" data-bs-toggle="tab" data-bs-target="#pane-scenario" type="button" role="tab" aria-controls="pane-scenario" aria-selected="true" data-bs-title="Starting Parameters" data-bs-placement="top"><i class="fa-solid fa-calendar-days"></i></button>
                         <button class="projection-input-tab" id="tab-employment" data-bs-toggle="tab" data-bs-target="#pane-employment" type="button" role="tab" aria-controls="pane-employment" aria-selected="false" data-bs-title="Employment" data-bs-placement="top"><i class="fa-solid fa-briefcase"></i></button>
-                        <button class="projection-input-tab" id="tab-col" data-bs-toggle="tab" data-bs-target="#pane-col" type="button" role="tab" aria-controls="pane-col" aria-selected="false" data-bs-title="Cost of Living" data-bs-placement="top"><i class="fa-solid fa-basket-shopping"></i></button>
+                        <button class="projection-input-tab" id="tab-budget-profiles" data-bs-toggle="tab" data-bs-target="#pane-budget-profiles" type="button" role="tab" aria-controls="pane-budget-profiles" aria-selected="false" data-bs-title="Budget Profiles" data-bs-placement="top"><i class="fa-solid fa-wallet"></i></button>
+                        <button class="projection-input-tab" id="tab-monthly-budget" data-bs-toggle="tab" data-bs-target="#pane-monthly-budget" type="button" role="tab" aria-controls="pane-monthly-budget" aria-selected="false" data-bs-title="Monthly Budget Selection" data-bs-placement="top"><i class="fa-solid fa-list-check"></i></button>
                         <button class="projection-input-tab" id="tab-ptptn" data-bs-toggle="tab" data-bs-target="#pane-ptptn" type="button" role="tab" aria-controls="pane-ptptn" aria-selected="false" data-bs-title="PTPTN" data-bs-placement="top"><i class="fa-solid fa-graduation-cap"></i></button>
                         <button class="projection-input-tab" id="tab-bnpl" data-bs-toggle="tab" data-bs-target="#pane-bnpl" type="button" role="tab" aria-controls="pane-bnpl" aria-selected="false" data-bs-title="BNPL" data-bs-placement="top"><i class="fa-solid fa-credit-card"></i></button>
                         <button class="projection-input-tab" id="tab-events" data-bs-toggle="tab" data-bs-target="#pane-events" type="button" role="tab" aria-controls="pane-events" aria-selected="false" data-bs-title="Events" data-bs-placement="top"><i class="fa-solid fa-calendar-plus"></i></button>
@@ -186,25 +187,45 @@
                             </div>
                         </div>
 
-                        <div class="tab-pane fade" id="pane-col" role="tabpanel" aria-labelledby="tab-col" tabindex="0">
+                        <div class="tab-pane fade" id="pane-budget-profiles" role="tabpanel" aria-labelledby="tab-budget-profiles" tabindex="0">
                             <div class="input-subcard mb-0">
-                                <h2 class="section-subtitle">Budget Amounts</h2>
+                                <h2 class="section-subtitle">Budget Profiles</h2>
                                 <hr class="section-divider">
-                                <div class="table-responsive mb-3">
+                                <div class="row g-2 align-items-end mb-3">
+                                    <div class="col-md-8">
+                                        <label class="form-label form-label-sm">Profile Name</label>
+                                        <input id="budgetProfileName" type="text" class="form-control form-control-sm" maxlength="120">
+                                    </div>
+                                    <div class="col-md-2 d-grid">
+                                        <button id="saveBudgetProfileBtn" type="button" class="btn btn-sm btn-dark">Add</button>
+                                    </div>
+                                    <div class="col-md-2 d-grid">
+                                        <button id="newBudgetProfileBtn" type="button" class="btn btn-sm btn-outline-secondary">New</button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive mb-0">
                                     <table class="table table-sm">
                                         <thead>
-                                        <tr>
-                                            <th>Expense Category</th>
-                                            <th>BCOL</th>
-                                            <th>FCOL Lite</th>
-                                            <th>FCOL Max</th>
-                                        </tr>
+                                        <tr id="costAllocationHeaderRows"></tr>
                                         </thead>
                                         <tbody id="costAllocationRows"></tbody>
                                     </table>
                                 </div>
+                            </div>
 
-                                <h3 class="section-subtitle">Monthly Budget Selection</h3>
+                            <div class="input-subcard mt-3 mb-0">
+                                <h2 class="section-subtitle">Budget Profiles Added</h2>
+                                <hr class="section-divider">
+                                <div id="budgetPlanListCards">
+                                    <div class="text-center text-secondary py-3">No budget profiles added yet.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="pane-monthly-budget" role="tabpanel" aria-labelledby="tab-monthly-budget" tabindex="0">
+                            <div class="input-subcard mb-0">
+                                <h2 class="section-subtitle">Monthly Budget Selection</h2>
+                                <hr class="section-divider">
                                 <div class="table-responsive mb-2">
                                     <table class="table table-sm">
                                         <thead>

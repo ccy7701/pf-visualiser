@@ -217,6 +217,72 @@ class ProjectionServiceTest extends TestCase
         $this->assertSame(900.0, $months[2]['closing_epf']);
     }
 
+    public function test_projection_uses_custom_budget_profiles(): void
+    {
+        $service = app(ProjectionService::class);
+
+        $payload = [
+            'scenario' => [
+                'start_month' => '2026-06',
+                'end_month' => '2026-07',
+                'starting_coh' => 0,
+                'starting_elr' => 0,
+                'starting_epf' => 0,
+            ],
+            'employment' => [
+                'salary_schedules' => [[
+                    'start_month' => '2026-06',
+                    'end_month' => null,
+                    'monthly_gross_salary' => 0,
+                    'note' => '',
+                ]],
+                'salary_paid_in_arrears' => false,
+            ],
+            'cost_of_living' => [
+                'budgets' => [
+                    'lean_month' => [
+                        'name' => 'Lean Month',
+                        'category_allocations' => [
+                            ['category_id' => 'food', 'name' => 'Food', 'amount' => 75],
+                        ],
+                    ],
+                    'travel_month' => [
+                        'name' => 'Travel Month',
+                        'category_allocations' => [
+                            ['category_id' => 'food', 'name' => 'Food', 'amount' => 120],
+                            ['category_id' => 'transportation', 'name' => 'Transportation', 'amount' => 430],
+                        ],
+                    ],
+                ],
+                'monthly_budget_selection' => [
+                    ['month' => '2026-07', 'budget' => 'travel_month'],
+                ],
+            ],
+            'ptptn' => [
+                'waiver_granted' => false,
+                'monthly_repayment' => 0,
+                'repayment_start_month' => null,
+            ],
+            'bnpl' => [],
+            'events' => [],
+            'elr' => [
+                'schedules' => [],
+                'note' => '',
+                'compound_interest_enabled' => false,
+                'annual_interest_rate_percent' => 0,
+            ],
+            'epf' => [
+                'employee_rate_percent' => 0,
+                'employer_rate_percent' => 0,
+            ],
+        ];
+
+        $months = $service->project($payload)['months'];
+
+        $this->assertSame(75.0, $months[0]['living_expenses']);
+        $this->assertSame(550.0, $months[1]['living_expenses']);
+    }
+
     public function test_elr_compound_interest_applies_interest_before_daily_contribution(): void
     {
         $service = app(ProjectionService::class);

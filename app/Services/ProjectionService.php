@@ -284,11 +284,23 @@ class ProjectionService
 
     private function normalizeCostOfLivingBudgets(array $costOfLiving): array
     {
-        $budgetKeys = ['bcol', 'fcol_lite', 'fcol_max'];
+        $budgetNames = [
+            'bcol' => 'BCOL',
+            'fcol_lite' => 'FCOL Lite',
+            'fcol_max' => 'FCOL Max',
+        ];
         $normalized = [];
 
-        foreach ($budgetKeys as $key) {
-            $budget = $costOfLiving['budgets'][$key] ?? [];
+        foreach (($costOfLiving['budgets'] ?? []) as $key => $budget) {
+            if (! is_array($budget)) {
+                continue;
+            }
+
+            $profileKey = trim((string) $key);
+            if ($profileKey === '') {
+                continue;
+            }
+
             $allocations = array_values(array_map(function (array $item): array {
                 return [
                     'category_id' => (string) ($item['category_id'] ?? ''),
@@ -297,8 +309,16 @@ class ProjectionService
                 ];
             }, array_filter($budget['category_allocations'] ?? [], fn ($item) => is_array($item))));
 
-            $normalized[$key] = [
+            $normalized[$profileKey] = [
+                'name' => (string) ($budget['name'] ?? $budgetNames[$profileKey] ?? $profileKey),
                 'category_allocations' => $allocations,
+            ];
+        }
+
+        if ($normalized === []) {
+            $normalized['bcol'] = [
+                'name' => 'BCOL',
+                'category_allocations' => [],
             ];
         }
 
