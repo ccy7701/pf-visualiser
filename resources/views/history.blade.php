@@ -46,13 +46,13 @@
                 </div>
                 <div class="card-body">
                     <div class="projection-input-tabs nav" id="historyInputTabs" role="tablist">
-                        <button class="projection-input-tab active" id="history-tab-balances" data-bs-toggle="tab" data-bs-target="#history-pane-balances" type="button" role="tab" aria-controls="history-pane-balances" aria-selected="true" data-bs-title="Month and Balances" data-bs-placement="top">
+                        <button class="projection-input-tab active" id="history-tab-balances" data-bs-toggle="tab" data-bs-target="#history-pane-balances" type="button" role="tab" aria-controls="history-pane-balances" aria-selected="true" aria-label="Month and Balances" data-bs-title="Month and Balances">
                             <i class="fa-solid fa-wallet" aria-hidden="true"></i>
                         </button>
-                        <button class="projection-input-tab" id="history-tab-income" data-bs-toggle="tab" data-bs-target="#history-pane-income" type="button" role="tab" aria-controls="history-pane-income" aria-selected="false" data-bs-title="Income" data-bs-placement="top">
+                        <button class="projection-input-tab" id="history-tab-income" data-bs-toggle="tab" data-bs-target="#history-pane-income" type="button" role="tab" aria-controls="history-pane-income" aria-selected="false" aria-label="Income" data-bs-title="Income">
                             <i class="fa-solid fa-money-bill-trend-up" aria-hidden="true"></i>
                         </button>
-                        <button class="projection-input-tab" id="history-tab-expenses" data-bs-toggle="tab" data-bs-target="#history-pane-expenses" type="button" role="tab" aria-controls="history-pane-expenses" aria-selected="false" data-bs-title="Expenses" data-bs-placement="top">
+                        <button class="projection-input-tab" id="history-tab-expenses" data-bs-toggle="tab" data-bs-target="#history-pane-expenses" type="button" role="tab" aria-controls="history-pane-expenses" aria-selected="false" aria-label="Expenses" data-bs-title="Expenses">
                             <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
                         </button>
                     </div>

@@ -668,14 +668,6 @@
     }
 
     function initTabs() {
-        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-            document.querySelectorAll('#historyInputTabs [data-bs-title]').forEach((el) => {
-                if (!bootstrap.Tooltip.getInstance(el)) {
-                    new bootstrap.Tooltip(el, { trigger: 'hover focus' });
-                }
-            });
-        }
-
         document.querySelectorAll('#historyInputTabs [data-bs-toggle="tab"]').forEach((tabButton) => {
             tabButton.addEventListener('shown.bs.tab', () => {
                 document.querySelectorAll('#historyInputTabs .projection-input-tab').forEach((btn) => {

@@ -1018,17 +1018,6 @@
     }
 
     function initFuelInputTabUI() {
-        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-            document.querySelectorAll('#fuelInputTabs [data-bs-toggle="tab"]').forEach((el) => {
-                const existing = bootstrap.Tooltip.getInstance(el);
-                if (!existing) {
-                    new bootstrap.Tooltip(el, {
-                        trigger: 'hover focus',
-                    });
-                }
-            });
-        }
-
         document.querySelectorAll('#fuelInputTabs [data-bs-toggle="tab"]').forEach((tabButton) => {
             tabButton.addEventListener('shown.bs.tab', () => {
                 document.querySelectorAll('#fuelInputTabs .projection-input-tab').forEach((btn) => {

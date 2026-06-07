@@ -261,6 +261,7 @@
             flex-wrap: wrap;
         }
         .projection-input-tab {
+            position: relative;
             width: 40px;
             height: 40px;
             border-radius: 50%;
@@ -294,6 +295,37 @@
             background: #212529;
             color: #fff;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+        }
+        #projectionInputTabs .projection-input-tab::after,
+        #vaInputTabs .projection-input-tab::after,
+        #fuelInputTabs .projection-input-tab::after {
+            content: attr(data-bs-title);
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% + 0.45rem);
+            z-index: 10;
+            max-width: 12rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            background: rgba(33, 37, 41, 0.95);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 600;
+            line-height: 1.2;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, 0.2rem);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+        #projectionInputTabs .projection-input-tab:hover::after,
+        #projectionInputTabs .projection-input-tab:focus-visible::after,
+        #vaInputTabs .projection-input-tab:hover::after,
+        #vaInputTabs .projection-input-tab:focus-visible::after,
+        #fuelInputTabs .projection-input-tab:hover::after,
+        #fuelInputTabs .projection-input-tab:focus-visible::after {
+            opacity: 1;
+            transform: translate(-50%, 0);
         }
         #savedScenariosModal .modal-dialog {
             max-width: 980px;

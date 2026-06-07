@@ -62,17 +62,6 @@
     }
 
     function initActualInputTabUI() {
-        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-            document.querySelectorAll('#vaInputTabs [data-bs-toggle="tab"]').forEach((el) => {
-                const existing = bootstrap.Tooltip.getInstance(el);
-                if (!existing) {
-                    new bootstrap.Tooltip(el, {
-                        trigger: 'hover focus',
-                    });
-                }
-            });
-        }
-
         document.querySelectorAll('#vaInputTabs [data-bs-toggle="tab"]').forEach((tabButton) => {
             tabButton.addEventListener('shown.bs.tab', () => {
                 document.querySelectorAll('#vaInputTabs .projection-input-tab').forEach((btn) => {
