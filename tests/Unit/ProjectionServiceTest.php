@@ -3,10 +3,95 @@
 namespace Tests\Unit;
 
 use App\Services\ProjectionService;
+use App\Services\Projection\SalaryCalculator;
 use Tests\TestCase;
 
 class ProjectionServiceTest extends TestCase
 {
+    public function test_salary_calculator_uses_future_salary_schedule_increments(): void
+    {
+        $calculator = app(SalaryCalculator::class);
+        $employment = [
+            'salary_schedules' => [
+                [
+                    'start_month' => '2026-06',
+                    'end_month' => '2026-08',
+                    'monthly_gross_salary' => 1800,
+                    'note' => 'Initial salary',
+                ],
+                [
+                    'start_month' => '2026-09',
+                    'end_month' => null,
+                    'monthly_gross_salary' => 2400,
+                    'note' => 'Raise',
+                ],
+            ],
+            'salary_paid_in_arrears' => false,
+        ];
+
+        $this->assertSame(1800.0, $calculator->grossForMonth('2026-08', $employment));
+        $this->assertSame(2400.0, $calculator->grossForMonth('2026-09', $employment));
+    }
+
+    public function test_projection_uses_schedule_specific_epf_rates(): void
+    {
+        $service = app(ProjectionService::class);
+
+        $payload = [
+            'scenario' => [
+                'start_month' => '2026-06',
+                'end_month' => '2026-06',
+                'starting_coh' => 0,
+                'starting_elr' => 0,
+                'starting_epf' => 0,
+            ],
+            'employment' => [
+                'salary_schedules' => [
+                    [
+                        'start_month' => '2026-06',
+                        'end_month' => null,
+                        'monthly_gross_salary' => 1000,
+                        'employee_epf_rate_percent' => 5,
+                        'employer_epf_rate_percent' => 7,
+                        'note' => 'Custom EPF',
+                    ],
+                ],
+                'salary_paid_in_arrears' => false,
+            ],
+            'cost_of_living' => [
+                'budgets' => [
+                    'bcol' => ['category_allocations' => []],
+                    'fcol_lite' => ['category_allocations' => []],
+                    'fcol_max' => ['category_allocations' => []],
+                ],
+                'monthly_budget_selection' => [],
+            ],
+            'ptptn' => [
+                'waiver_granted' => false,
+                'monthly_repayment' => 0,
+                'repayment_start_month' => null,
+            ],
+            'bnpl' => [],
+            'events' => [],
+            'elr' => [
+                'schedules' => [],
+                'note' => '',
+                'compound_interest_enabled' => false,
+                'annual_interest_rate_percent' => 0,
+            ],
+            'epf' => [
+                'employee_rate_percent' => 10,
+                'employer_rate_percent' => 20,
+            ],
+        ];
+
+        $month = $service->project($payload)['months'][0];
+
+        $this->assertSame(50.0, $month['employee_epf']);
+        $this->assertSame(70.0, $month['employer_epf']);
+        $this->assertSame(120.0, $month['closing_epf']);
+    }
+
     public function test_projection_respects_locked_rules(): void
     {
         $service = app(ProjectionService::class);
@@ -20,10 +105,26 @@ class ProjectionServiceTest extends TestCase
                 'starting_epf' => 0,
             ],
             'employment' => [
-                'probation_salary' => 1000,
-                'confirmed_salary' => 2000,
-                'probation_duration_months' => 1,
-                'salary_start_month' => '2026-06',
+                'salary_schedules' => [
+                    [
+                        'start_month' => '2026-06',
+                        'end_month' => '2026-06',
+                        'monthly_gross_salary' => 1000,
+                        'note' => 'Probation',
+                    ],
+                    [
+                        'start_month' => '2026-07',
+                        'end_month' => '2026-07',
+                        'monthly_gross_salary' => 2000,
+                        'note' => 'Confirmed',
+                    ],
+                    [
+                        'start_month' => '2026-08',
+                        'end_month' => null,
+                        'monthly_gross_salary' => 2500,
+                        'note' => 'Raise',
+                    ],
+                ],
                 'salary_paid_in_arrears' => true,
             ],
             'cost_of_living' => [
@@ -116,6 +217,72 @@ class ProjectionServiceTest extends TestCase
         $this->assertSame(900.0, $months[2]['closing_epf']);
     }
 
+    public function test_projection_uses_custom_budget_profiles(): void
+    {
+        $service = app(ProjectionService::class);
+
+        $payload = [
+            'scenario' => [
+                'start_month' => '2026-06',
+                'end_month' => '2026-07',
+                'starting_coh' => 0,
+                'starting_elr' => 0,
+                'starting_epf' => 0,
+            ],
+            'employment' => [
+                'salary_schedules' => [[
+                    'start_month' => '2026-06',
+                    'end_month' => null,
+                    'monthly_gross_salary' => 0,
+                    'note' => '',
+                ]],
+                'salary_paid_in_arrears' => false,
+            ],
+            'cost_of_living' => [
+                'budgets' => [
+                    'lean_month' => [
+                        'name' => 'Lean Month',
+                        'category_allocations' => [
+                            ['category_id' => 'food', 'name' => 'Food', 'amount' => 75],
+                        ],
+                    ],
+                    'travel_month' => [
+                        'name' => 'Travel Month',
+                        'category_allocations' => [
+                            ['category_id' => 'food', 'name' => 'Food', 'amount' => 120],
+                            ['category_id' => 'transportation', 'name' => 'Transportation', 'amount' => 430],
+                        ],
+                    ],
+                ],
+                'monthly_budget_selection' => [
+                    ['month' => '2026-07', 'budget' => 'travel_month'],
+                ],
+            ],
+            'ptptn' => [
+                'waiver_granted' => false,
+                'monthly_repayment' => 0,
+                'repayment_start_month' => null,
+            ],
+            'bnpl' => [],
+            'events' => [],
+            'elr' => [
+                'schedules' => [],
+                'note' => '',
+                'compound_interest_enabled' => false,
+                'annual_interest_rate_percent' => 0,
+            ],
+            'epf' => [
+                'employee_rate_percent' => 0,
+                'employer_rate_percent' => 0,
+            ],
+        ];
+
+        $months = $service->project($payload)['months'];
+
+        $this->assertSame(75.0, $months[0]['living_expenses']);
+        $this->assertSame(550.0, $months[1]['living_expenses']);
+    }
+
     public function test_elr_compound_interest_applies_interest_before_daily_contribution(): void
     {
         $service = app(ProjectionService::class);
@@ -129,10 +296,14 @@ class ProjectionServiceTest extends TestCase
                 'starting_epf' => 0,
             ],
             'employment' => [
-                'probation_salary' => 0,
-                'confirmed_salary' => 0,
-                'probation_duration_months' => 0,
-                'salary_start_month' => '2026-06',
+                'salary_schedules' => [
+                    [
+                        'start_month' => '2026-06',
+                        'end_month' => null,
+                        'monthly_gross_salary' => 0,
+                        'note' => '',
+                    ],
+                ],
                 'salary_paid_in_arrears' => true,
             ],
             'cost_of_living' => [

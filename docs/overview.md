@@ -93,7 +93,7 @@ Key characteristics:
 * save/load/delete/compare scenario workflow
 * result caching through `projection_results_cache`
 * ELR schedule support with optional compound-interest progression
-* cost-of-living handled via budget sets and month-specific budget selection
+* cost-of-living handled via saved budget profiles and month-specific budget selection
 
 ### Module C: Variance Analysis (`variance-analysis`)
 
@@ -125,7 +125,7 @@ Key characteristics:
 * monthly dashboard for fuel spend, commute estimate, weighted average mileage, and commute distance
 * row-click edit workflow for refuel and drive logs (populate input tab + edit/delete actions)
 * 24-hour datetime input/display consistency for refuel and drive records
-* transport-cost tracking aligned with BCOL/FCOL planning assumptions
+* transport-cost tracking aligned with projection budget profile planning assumptions
 
 ### Module E: History (`history`)
 

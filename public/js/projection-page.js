@@ -23,7 +23,11 @@
         { id: 'books_stationery', name: 'Books and stationery' },
         { id: 'others', name: 'Others' },
     ];
-    const budgetKeys = ['bcol', 'fcol_lite', 'fcol_max'];
+    const defaultBudgetProfiles = [
+        { id: 'bcol', name: 'BCOL' },
+        { id: 'fcol_lite', name: 'FCOL Lite' },
+        { id: 'fcol_max', name: 'FCOL Max' },
+    ];
 
     const money = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const monthLabelFormatter = new Intl.DateTimeFormat('en-MY', { month: 'short', year: 'numeric' });
@@ -35,11 +39,16 @@
     let savedScenariosModal = null;
     let scenarioComparisonModal = null;
     let confirmActionModal = null;
+    let salarySchedules = [];
+    let editingSalaryScheduleId = null;
+    let nextSalaryScheduleId = 1;
+    let budgetProfiles = defaultBudgetProfiles.map((profile) => ({ ...profile, allocations: {} }));
+    let selectedBudgetProfileId = 'bcol';
 
     function budgetLabel(budget) {
-        if (budget === 'fcol_lite') return 'FCOL Lite';
-        if (budget === 'fcol_max') return 'FCOL Max';
-        return 'BCOL';
+        return defaultBudgetProfiles.find((profile) => profile.id === budget)?.name
+            || budgetProfiles.find((profile) => profile.id === budget)?.name
+            || budget;
     }
 
     function toNumber(value, fallback = 0) {
@@ -66,6 +75,10 @@
         return Number.isNaN(d.getTime()) ? month : monthLabelFormatter.format(d);
     }
 
+    function formatCompactMonthLabel(month) {
+        return formatMonthLabel(month).replace(/\s+/, '-');
+    }
+
     function setStatus(message, isError = false) {
         const el = document.getElementById('statusMessage');
         el.textContent = message;
@@ -82,6 +95,12 @@
         return Number.isFinite(number) ? number.toFixed(2) : '0.00';
     }
 
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = String(value ?? '');
+        return div.innerHTML;
+    }
+
     function normalizeDecimalInputs(root = document) {
         root.querySelectorAll('input.money-input, input[type="number"][step="0.01"]').forEach((input) => {
             if (input.closest('#projectionRows')) return;
@@ -93,48 +112,76 @@
         });
     }
 
-    function createCostAllocationRows(cost = {}) {
+    function normalizeCategoryToken(value) {
+        return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    }
+
+    function resolveCategoryKey(allocation) {
+        const validCategoryIds = new Set(expenseCategories.map((category) => category.id));
+        const normalizedId = normalizeCategoryToken(allocation?.category_id ?? '');
+        if (normalizedId && normalizedId !== '0' && validCategoryIds.has(normalizedId)) {
+            return normalizedId;
+        }
+
+        const normalizedName = normalizeCategoryToken(allocation?.name ?? '');
+        if (normalizedName && validCategoryIds.has(normalizedName)) {
+            return normalizedName;
+        }
+
+        const andNormalized = normalizedName.replace(/_and_/g, '_');
+        if (andNormalized && validCategoryIds.has(andNormalized)) {
+            return andNormalized;
+        }
+
+        return normalizedName;
+    }
+
+    function normalizeBudgetProfiles(cost = {}) {
+        const budgets = cost.budgets || {};
+        const profiles = Object.entries(budgets)
+            .filter(([, budget]) => budget && typeof budget === 'object')
+            .map(([id, budget]) => {
+                const allocations = {};
+                (budget.category_allocations || []).forEach((allocation) => {
+                    allocations[resolveCategoryKey(allocation)] = toNumber(allocation.amount, 0);
+                });
+
+                return {
+                    id,
+                    name: String(budget.name || budgetLabel(id)).trim() || id,
+                    allocations,
+                };
+            });
+
+        return profiles.length ? profiles : defaultBudgetProfiles.map((profile) => ({ ...profile, allocations: {} }));
+    }
+
+    function selectedBudgetProfile() {
+        return budgetProfiles.find((profile) => profile.id === selectedBudgetProfileId) || null;
+    }
+
+    function renderBudgetProfileControls() {
+        const selectedProfileExists = budgetProfiles.some((profile) => profile.id === selectedBudgetProfileId);
+        if (!selectedProfileExists) {
+            selectedBudgetProfileId = '';
+        }
+
+        document.getElementById('budgetProfileName').value = selectedBudgetProfile()?.name || '';
+        document.getElementById('saveBudgetProfileBtn').textContent = selectedBudgetProfileId ? 'Update' : 'Add';
+    }
+
+    function createCostAllocationRows(cost = null) {
+        if (cost) {
+            budgetProfiles = normalizeBudgetProfiles(cost);
+            selectedBudgetProfileId = budgetProfiles[0]?.id || '';
+        }
+
+        const header = document.getElementById('costAllocationHeaderRows');
         const tbody = document.getElementById('costAllocationRows');
+        header.innerHTML = '<th>Expense Category</th><th>Amount</th>';
         tbody.innerHTML = '';
 
-        const budgets = cost.budgets || {};
-        const allocationsByBudget = {};
-
-        budgetKeys.forEach((key) => {
-            allocationsByBudget[key] = {};
-            const allocations = budgets[key]?.category_allocations || [];
-            const validCategoryIds = new Set(expenseCategories.map((category) => category.id));
-
-            function normalizeCategoryToken(value) {
-                return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-            }
-
-            function resolveCategoryKey(allocation) {
-                const rawId = String(allocation?.category_id ?? '').trim();
-                const normalizedId = normalizeCategoryToken(rawId);
-                if (normalizedId && normalizedId !== '0' && validCategoryIds.has(normalizedId)) {
-                    return normalizedId;
-                }
-
-                const normalizedName = normalizeCategoryToken(allocation?.name ?? '');
-                if (normalizedName && validCategoryIds.has(normalizedName)) {
-                    return normalizedName;
-                }
-
-                const andNormalized = normalizedName.replace(/_and_/g, '_');
-                if (andNormalized && validCategoryIds.has(andNormalized)) {
-                    return andNormalized;
-                }
-
-                return normalizedName;
-            }
-
-            allocations.forEach((allocation) => {
-                const categoryKey = resolveCategoryKey(allocation);
-                allocationsByBudget[key][categoryKey] = toNumber(allocation.amount, 0);
-            });
-        });
-
+        const profile = selectedBudgetProfile();
         expenseCategories.forEach((category) => {
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -142,19 +189,7 @@
                 <td>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text">RM</span>
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm money-input" data-col-budget="bcol" data-col-category-id="${category.id}" value="${allocationsByBudget.bcol[category.id] ?? 0}">
-                    </div>
-                </td>
-                <td>
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text">RM</span>
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm money-input" data-col-budget="fcol_lite" data-col-category-id="${category.id}" value="${allocationsByBudget.fcol_lite[category.id] ?? 0}">
-                    </div>
-                </td>
-                <td>
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text">RM</span>
-                        <input type="text" inputmode="decimal" class="form-control form-control-sm money-input" data-col-budget="fcol_max" data-col-category-id="${category.id}" value="${allocationsByBudget.fcol_max[category.id] ?? 0}">
+                        <input type="text" inputmode="decimal" class="form-control form-control-sm money-input" data-col-category-id="${category.id}" value="${profile?.allocations?.[category.id] ?? 0}">
                     </div>
                 </td>
             `;
@@ -168,26 +203,17 @@
             <td>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text">RM</span>
-                    <input type="text" class="form-control form-control-sm" data-col-total="bcol" value="0.00" readonly>
-                </div>
-            </td>
-            <td>
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text">RM</span>
-                    <input type="text" class="form-control form-control-sm" data-col-total="fcol_lite" value="0.00" readonly>
-                </div>
-            </td>
-            <td>
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text">RM</span>
-                    <input type="text" class="form-control form-control-sm" data-col-total="fcol_max" value="0.00" readonly>
+                    <input type="text" class="form-control form-control-sm" data-col-total value="0.00" readonly>
                 </div>
             </td>
         `;
         tbody.appendChild(totalRow);
 
+        renderBudgetProfileControls();
+        renderBudgetPlanCards();
         normalizeDecimalInputs(tbody);
         attachBudgetAllocationListeners();
+        updateBudgetTotalsSummary();
     }
 
     function createMonthlyBudgetRow(data = {}) {
@@ -196,14 +222,14 @@
             <td><input type="text" class="form-control form-control-sm month-input" data-col-month value="${data.month ?? ''}"></td>
             <td>
                 <select class="form-select form-select-sm" data-col-budget>
-                    <option value="bcol">BCOL</option>
-                    <option value="fcol_lite">FCOL Lite</option>
-                    <option value="fcol_max">FCOL Max</option>
+                    ${budgetProfiles.map((profile) => `<option value="${escapeHtml(profile.id)}">${escapeHtml(profile.name)}</option>`).join('')}
                 </select>
             </td>
             <td><button type="button" class="btn btn-sm btn-outline-danger">×</button></td>
         `;
-        row.querySelector('[data-col-budget]').value = data.budget || 'bcol';
+        row.querySelector('[data-col-budget]').value = budgetProfiles.some((profile) => profile.id === data.budget)
+            ? data.budget
+            : (budgetProfiles[0]?.id || '');
         row.querySelector('button').addEventListener('click', () => row.remove());
         document.getElementById('monthlyBudgetRows').appendChild(row);
         initMonthPickers();
@@ -242,7 +268,7 @@
             Array.from(document.querySelectorAll('#monthlyBudgetRows tr'))
                 .map((row) => [
                     toMonthOrNull(row.querySelector('[data-col-month]')?.value),
-                    row.querySelector('[data-col-budget]')?.value || 'bcol',
+                    row.querySelector('[data-col-budget]')?.value || budgetProfiles[0]?.id || '',
                 ])
                 .filter(([month]) => Boolean(month)),
         );
@@ -252,7 +278,7 @@
         months.forEach((month) => {
             createMonthlyBudgetRow({
                 month,
-                budget: selectedMap.get(month) || existingMap.get(month) || 'bcol',
+                budget: selectedMap.get(month) || existingMap.get(month) || budgetProfiles[0]?.id || '',
             });
         });
     }
@@ -260,26 +286,21 @@
     function collectCostOfLivingPayload() {
         const budgets = {};
 
-        budgetKeys.forEach((budgetKey) => {
-            const allocations = expenseCategories.map((category) => {
-                const input = document.querySelector(`[data-col-budget="${budgetKey}"][data-col-category-id="${category.id}"]`);
-
-                return {
+        budgetProfiles.forEach((profile) => {
+            budgets[profile.id] = {
+                name: profile.name,
+                category_allocations: expenseCategories.map((category) => ({
                     category_id: category.id,
                     name: category.name,
-                    amount: toNumber(input?.value ?? 0, 0),
-                };
-            });
-
-            budgets[budgetKey] = {
-                category_allocations: allocations,
+                    amount: toNumber(profile.allocations?.[category.id] ?? 0, 0),
+                })),
             };
         });
 
         const monthlyBudgetSelection = Array.from(document.querySelectorAll('#monthlyBudgetRows tr')).map((row) => ({
             month: toMonthOrNull(row.querySelector('[data-col-month]').value),
             budget: row.querySelector('[data-col-budget]').value,
-        })).filter((item) => item.month && budgetKeys.includes(item.budget));
+        })).filter((item) => item.month && budgetProfiles.some((profile) => profile.id === item.budget));
 
         return {
             budgets,
@@ -288,25 +309,168 @@
     }
 
     function attachBudgetAllocationListeners() {
-        document.querySelectorAll('[data-col-budget][data-col-category-id]').forEach((input) => {
+        document.querySelectorAll('[data-col-category-id]').forEach((input) => {
             input.addEventListener('blur', updateBudgetTotalsSummary);
             input.addEventListener('input', updateBudgetTotalsSummary);
         });
     }
 
     function updateBudgetTotalsSummary() {
-        const payload = collectCostOfLivingPayload();
-        const bcolTotal = (payload.budgets.bcol?.category_allocations || []).reduce((carry, item) => carry + toNumber(item.amount, 0), 0);
-        const liteTotal = (payload.budgets.fcol_lite?.category_allocations || []).reduce((carry, item) => carry + toNumber(item.amount, 0), 0);
-        const maxTotal = (payload.budgets.fcol_max?.category_allocations || []).reduce((carry, item) => carry + toNumber(item.amount, 0), 0);
-        const totalInputs = {
-            bcol: document.querySelector('[data-col-total="bcol"]'),
-            fcol_lite: document.querySelector('[data-col-total="fcol_lite"]'),
-            fcol_max: document.querySelector('[data-col-total="fcol_max"]'),
-        };
-        if (totalInputs.bcol) totalInputs.bcol.value = money.format(bcolTotal);
-        if (totalInputs.fcol_lite) totalInputs.fcol_lite.value = money.format(liteTotal);
-        if (totalInputs.fcol_max) totalInputs.fcol_max.value = money.format(maxTotal);
+        const total = Array.from(document.querySelectorAll('[data-col-category-id]'))
+            .reduce((carry, input) => carry + toNumber(input.value, 0), 0);
+        const totalInput = document.querySelector('[data-col-total]');
+        if (totalInput) totalInput.value = money.format(total);
+    }
+
+    function saveVisibleBudgetProfileAllocations() {
+        const profile = selectedBudgetProfile();
+        if (!profile) return;
+
+        profile.allocations = {};
+        expenseCategories.forEach((category) => {
+            const input = document.querySelector(`[data-col-category-id="${category.id}"]`);
+            profile.allocations[category.id] = toNumber(input?.value ?? 0, 0);
+        });
+    }
+
+    function updateMonthlyBudgetOptions() {
+        document.querySelectorAll('[data-col-budget]').forEach((select) => {
+            const previousValue = select.value;
+            select.innerHTML = budgetProfiles
+                .map((profile) => `<option value="${escapeHtml(profile.id)}">${escapeHtml(profile.name)}</option>`)
+                .join('');
+            select.value = budgetProfiles.some((profile) => profile.id === previousValue)
+                ? previousValue
+                : (budgetProfiles[0]?.id || '');
+        });
+    }
+
+    function budgetProfileTotal(profile) {
+        return expenseCategories.reduce((carry, category) => carry + toNumber(profile.allocations?.[category.id] ?? 0, 0), 0);
+    }
+
+    function renderBudgetPlanCards() {
+        const container = document.getElementById('budgetPlanListCards');
+        if (!container) return;
+
+        container.innerHTML = '';
+        if (!budgetProfiles.length) {
+            container.innerHTML = '<div class="text-center text-secondary py-3">No budget plans added yet.</div>';
+            return;
+        }
+
+        budgetProfiles.forEach((profile) => {
+            const item = document.createElement('div');
+            item.className = 'salary-schedule-list-item';
+            const total = budgetProfileTotal(profile);
+            const categoryCount = expenseCategories.filter((category) => toNumber(profile.allocations?.[category.id] ?? 0, 0) > 0).length;
+            const categorySummary = `${categoryCount} categor${categoryCount === 1 ? 'y' : 'ies'} with assigned amounts`;
+            const isEditing = profile.id === selectedBudgetProfileId;
+
+            item.innerHTML = `
+                <div class="salary-schedule-list-card">
+                    <div class="salary-schedule-list-row">
+                        <div>
+                            <div class="salary-schedule-list-name">${escapeHtml(profile.name)}</div>
+                            <div class="salary-schedule-list-description">${categorySummary}</div>
+                        </div>
+                        <div class="salary-schedule-list-right">
+                            <div><strong>Total: RM ${money.format(total)}</strong></div>
+                            <div>${isEditing ? 'Editing' : '&nbsp;'}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="salary-schedule-list-actions">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-budget-plan-action="edit" data-budget-plan-id="${escapeHtml(profile.id)}" aria-label="Edit budget plan" title="Edit" data-bs-title="Edit" data-bs-placement="top">
+                        <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-budget-plan-action="delete" data-budget-plan-id="${escapeHtml(profile.id)}" aria-label="Delete budget plan" title="Delete" data-bs-title="Delete" data-bs-placement="top">
+                        <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            container.querySelectorAll('[data-budget-plan-action]').forEach((btn) => {
+                const existing = bootstrap.Tooltip.getInstance(btn);
+                if (!existing) new bootstrap.Tooltip(btn, { trigger: 'hover focus' });
+            });
+        }
+    }
+
+    function createBudgetProfileId(name) {
+        const base = normalizeCategoryToken(name) || 'budget_profile';
+        let candidate = base;
+        let counter = 2;
+        while (budgetProfiles.some((profile) => profile.id === candidate)) {
+            candidate = `${base}_${counter}`;
+            counter += 1;
+        }
+
+        return candidate;
+    }
+
+    function emptyBudgetAllocations() {
+        return expenseCategories.reduce((allocations, category) => {
+            allocations[category.id] = 0;
+            return allocations;
+        }, {});
+    }
+
+    function switchBudgetProfile(profileId) {
+        selectedBudgetProfileId = profileId;
+        createCostAllocationRows();
+    }
+
+    function saveBudgetProfileFromForm() {
+        const nameInput = document.getElementById('budgetProfileName');
+        const name = nameInput.value.trim();
+        if (!name) {
+            setStatus('Budget profile name is required.', true);
+            return;
+        }
+
+        const profile = selectedBudgetProfile();
+        if (!profile) {
+            const id = createBudgetProfileId(name);
+            budgetProfiles.push({ id, name, allocations: emptyBudgetAllocations() });
+            selectedBudgetProfileId = id;
+            saveVisibleBudgetProfileAllocations();
+        } else {
+            profile.name = name;
+            saveVisibleBudgetProfileAllocations();
+        }
+
+        renderBudgetProfileControls();
+        renderBudgetPlanCards();
+        updateMonthlyBudgetOptions();
+        setStatus(profile ? 'Budget plan updated.' : 'Budget plan added.');
+    }
+
+    function startNewBudgetProfile() {
+        selectedBudgetProfileId = '';
+        createCostAllocationRows();
+        document.getElementById('budgetProfileName').focus();
+        document.getElementById('budgetProfileName').select();
+        setStatus('Budget plan form cleared.');
+    }
+
+    function deleteBudgetProfile(profileId) {
+        if (budgetProfiles.length <= 1) {
+            setStatus('At least one budget profile is required.', true);
+            return;
+        }
+
+        const deletedId = profileId;
+        budgetProfiles = budgetProfiles.filter((profile) => profile.id !== deletedId);
+        if (selectedBudgetProfileId === deletedId) {
+            selectedBudgetProfileId = budgetProfiles[0]?.id || '';
+        }
+        createCostAllocationRows();
+        updateMonthlyBudgetOptions();
+        setStatus('Budget plan deleted.');
     }
 
     function findStatutoryBracket(brackets, grossSalary) {
@@ -339,35 +503,7 @@
     }
 
     function updateEmploymentContributionSummary() {
-        const probationSalary = toNumber(document.getElementById('probationSalary')?.value ?? 0, 0);
-        const confirmedSalary = toNumber(document.getElementById('confirmedSalary')?.value ?? 0, 0);
-        const employeeEpfRatePercent = toNumber(document.getElementById('employeeEpfRatePercent')?.value ?? 0, 0);
-        const employerEpfRatePercent = toNumber(document.getElementById('employerEpfRatePercent')?.value ?? 0, 0);
-
-        const probation = resolveStatutoryDeductions(probationSalary);
-        const confirmed = resolveStatutoryDeductions(confirmedSalary);
-        const probationEmployeeEpf = probationSalary * (employeeEpfRatePercent / 100);
-        const probationEmployerEpf = probationSalary * (employerEpfRatePercent / 100);
-        const confirmedEmployeeEpf = confirmedSalary * (employeeEpfRatePercent / 100);
-        const confirmedEmployerEpf = confirmedSalary * (employerEpfRatePercent / 100);
-
-        const probationEmployeeEpfEl = document.getElementById('probationEmployeeEpfAmount');
-        const probationEmployerEpfEl = document.getElementById('probationEmployerEpfAmount');
-        const probationSocso = document.getElementById('probationSocsoAmount');
-        const probationEis = document.getElementById('probationEisAmount');
-        const confirmedEmployeeEpfEl = document.getElementById('confirmedEmployeeEpfAmount');
-        const confirmedEmployerEpfEl = document.getElementById('confirmedEmployerEpfAmount');
-        const confirmedSocso = document.getElementById('confirmedSocsoAmount');
-        const confirmedEis = document.getElementById('confirmedEisAmount');
-
-        if (probationEmployeeEpfEl) probationEmployeeEpfEl.textContent = `RM ${money.format(probationEmployeeEpf)}`;
-        if (probationEmployerEpfEl) probationEmployerEpfEl.textContent = `RM ${money.format(probationEmployerEpf)}`;
-        if (probationSocso) probationSocso.textContent = `RM ${money.format(probation.socso)}`;
-        if (probationEis) probationEis.textContent = `RM ${money.format(probation.eis)}`;
-        if (confirmedEmployeeEpfEl) confirmedEmployeeEpfEl.textContent = `RM ${money.format(confirmedEmployeeEpf)}`;
-        if (confirmedEmployerEpfEl) confirmedEmployerEpfEl.textContent = `RM ${money.format(confirmedEmployerEpf)}`;
-        if (confirmedSocso) confirmedSocso.textContent = `RM ${money.format(confirmed.socso)}`;
-        if (confirmedEis) confirmedEis.textContent = `RM ${money.format(confirmed.eis)}`;
+        renderSalaryScheduleCards();
     }
 
     function initProjectionInputTabUI() {
@@ -453,6 +589,159 @@
             payload: collectPayload(),
             notes: document.getElementById('saveNotes').value.trim(),
         });
+    }
+
+    function legacySalarySchedules(employment = {}) {
+        if (!employment.salary_start_month) return [];
+
+        const startMonth = toMonthOrNull(employment.salary_start_month);
+        const probationMonths = Math.max(0, Math.trunc(toNumber(employment.probation_duration_months, 0)));
+        if (!startMonth) return [];
+
+        function addMonths(month, offset) {
+            const [year, monthNumber] = month.split('-').map(Number);
+            const date = new Date(year, monthNumber - 1 + offset, 1);
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        const schedules = [];
+        if (probationMonths > 0) {
+            schedules.push({
+                start_month: startMonth,
+                end_month: addMonths(startMonth, probationMonths - 1),
+                monthly_gross_salary: toNumber(employment.probation_salary, 0),
+                employee_epf_rate_percent: toNumber(employment.employee_epf_rate_percent, 11),
+                employer_epf_rate_percent: toNumber(employment.employer_epf_rate_percent, 13),
+                note: 'Probation',
+            });
+        }
+
+        schedules.push({
+            start_month: addMonths(startMonth, probationMonths),
+            end_month: '',
+            monthly_gross_salary: toNumber(employment.confirmed_salary, 0),
+            employee_epf_rate_percent: toNumber(employment.employee_epf_rate_percent, 11),
+            employer_epf_rate_percent: toNumber(employment.employer_epf_rate_percent, 13),
+            note: 'Confirmed',
+        });
+
+        return schedules;
+    }
+
+    function defaultSalarySchedules(startMonth) {
+        return legacySalarySchedules({
+            salary_start_month: startMonth,
+            probation_duration_months: 3,
+            probation_salary: 1800,
+            confirmed_salary: 2200,
+            employee_epf_rate_percent: 11,
+            employer_epf_rate_percent: 13,
+        });
+    }
+
+    function salaryScheduleDeductions(schedule) {
+        const grossSalary = toNumber(schedule.monthly_gross_salary, 0);
+        const employeeEpfRatePercent = toNumber(schedule.employee_epf_rate_percent, 0);
+        const employerEpfRatePercent = toNumber(schedule.employer_epf_rate_percent, 0);
+        const statutory = resolveStatutoryDeductions(grossSalary);
+        const employeeEpf = grossSalary * (employeeEpfRatePercent / 100);
+        const employerEpf = grossSalary * (employerEpfRatePercent / 100);
+
+        return {
+            grossSalary,
+            employeeEpf,
+            employerEpf,
+            socso: statutory.socso,
+            eis: statutory.eis,
+            net: grossSalary - employeeEpf - statutory.socso - statutory.eis,
+        };
+    }
+
+    function normalizeSalarySchedule(schedule = {}) {
+        return {
+            id: schedule.id || `salary-schedule-${nextSalaryScheduleId++}`,
+            start_month: toMonthOrNull(schedule.start_month) || '',
+            end_month: toMonthOrNull(schedule.end_month) || '',
+            note: String(schedule.note || '').trim(),
+            monthly_gross_salary: toNumber(schedule.monthly_gross_salary, 0),
+            employee_epf_rate_percent: toNumber(schedule.employee_epf_rate_percent ?? 11, 11),
+            employer_epf_rate_percent: toNumber(schedule.employer_epf_rate_percent ?? 13, 13),
+        };
+    }
+
+    function setSalaryScheduleFormMode(isEdit) {
+        const btn = document.getElementById('saveSalaryScheduleBtn');
+        if (btn) btn.textContent = isEdit ? 'Update' : 'Add';
+    }
+
+    function fillSalaryScheduleForm(schedule = null) {
+        document.getElementById('salaryScheduleEditingId').value = schedule?.id || '';
+        document.getElementById('salaryScheduleFrom').value = schedule?.start_month || toMonthOrNull(document.getElementById('startMonth').value) || '';
+        document.getElementById('salaryScheduleUntil').value = schedule?.end_month || '';
+        document.getElementById('salaryScheduleNote').value = schedule?.note || '';
+        document.getElementById('salaryScheduleGross').value = formatToTwoDp(schedule?.monthly_gross_salary ?? 0);
+        document.getElementById('employeeEpfRatePercent').value = formatToTwoDp(schedule?.employee_epf_rate_percent ?? 11);
+        document.getElementById('employerEpfRatePercent').value = formatToTwoDp(schedule?.employer_epf_rate_percent ?? 13);
+    }
+
+    function renderSalaryScheduleCards() {
+        const container = document.getElementById('salaryScheduleListCards');
+        if (!container) return;
+
+        container.innerHTML = '';
+        if (!salarySchedules.length) {
+            container.innerHTML = '<div class="text-center text-secondary py-3">No salary schedules added yet.</div>';
+            return;
+        }
+
+        salarySchedules
+            .slice()
+            .sort((a, b) => String(a.start_month).localeCompare(String(b.start_month)))
+            .forEach((schedule) => {
+                const item = document.createElement('div');
+                item.className = 'salary-schedule-list-item';
+                const deductions = salaryScheduleDeductions(schedule);
+                const startLabel = schedule.start_month ? formatCompactMonthLabel(schedule.start_month) : '-';
+                const endLabel = schedule.end_month ? formatCompactMonthLabel(schedule.end_month) : 'Ongoing';
+                const note = schedule.note || '&nbsp;';
+
+                item.innerHTML = `
+                    <div class="salary-schedule-list-card">
+                        <div class="salary-schedule-list-row">
+                            <div>
+                                <div class="salary-schedule-list-name">${startLabel} to ${endLabel}</div>
+                                <div class="salary-schedule-list-description">${note}</div>
+                            </div>
+                            <div class="salary-schedule-list-right">
+                                <div><strong>Gross: RM ${money.format(deductions.grossSalary)}</strong></div>
+                                <div>Net: RM ${money.format(deductions.net)}</div>
+                            </div>
+                        </div>
+                        <div class="salary-schedule-deduction-grid">
+                            <div>Employee EPF (${money.format(schedule.employee_epf_rate_percent)}%)<br><strong>RM ${money.format(deductions.employeeEpf)}</strong></div>
+                            <div>Employer EPF (${money.format(schedule.employer_epf_rate_percent)}%)<br><strong>RM ${money.format(deductions.employerEpf)}</strong></div>
+                            <div>SOCSO<br><strong>RM ${money.format(deductions.socso)}</strong></div>
+                            <div>EIS<br><strong>RM ${money.format(deductions.eis)}</strong></div>
+                        </div>
+                    </div>
+                    <div class="salary-schedule-list-actions">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-salary-schedule-action="edit" data-salary-schedule-id="${schedule.id}" aria-label="Edit salary schedule" title="Edit" data-bs-title="Edit" data-bs-placement="top">
+                            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-salary-schedule-action="delete" data-salary-schedule-id="${schedule.id}" aria-label="Delete salary schedule" title="Delete" data-bs-title="Delete" data-bs-placement="top">
+                            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            container.querySelectorAll('[data-salary-schedule-action]').forEach((btn) => {
+                const existing = bootstrap.Tooltip.getInstance(btn);
+                if (!existing) new bootstrap.Tooltip(btn, { trigger: 'hover focus' });
+            });
+        }
     }
 
     function createBnplRow(data = {}) {
@@ -551,10 +840,14 @@
                 starting_epf: toNumber(document.getElementById('startingEpf').value, 0),
             },
             employment: {
-                probation_salary: toNumber(document.getElementById('probationSalary').value, 0),
-                confirmed_salary: toNumber(document.getElementById('confirmedSalary').value, 0),
-                probation_duration_months: Math.max(0, Math.trunc(toNumber(document.getElementById('probationDuration').value, 0))),
-                salary_start_month: toMonthOrNull(document.getElementById('salaryStartMonth').value),
+                salary_schedules: salarySchedules.map((schedule) => ({
+                    start_month: schedule.start_month,
+                    end_month: schedule.end_month || null,
+                    monthly_gross_salary: toNumber(schedule.monthly_gross_salary, 0),
+                    employee_epf_rate_percent: toNumber(schedule.employee_epf_rate_percent, 0),
+                    employer_epf_rate_percent: toNumber(schedule.employer_epf_rate_percent, 0),
+                    note: schedule.note || '',
+                })).filter((schedule) => schedule.start_month),
                 salary_paid_in_arrears: document.getElementById('salaryPaidInArrears').checked,
             },
             cost_of_living: {
@@ -594,10 +887,11 @@
         document.getElementById('startingElr').value = scenario.starting_elr ?? 0;
         document.getElementById('startingEpf').value = scenario.starting_epf ?? 0;
 
-        document.getElementById('probationSalary').value = employment.probation_salary ?? 0;
-        document.getElementById('confirmedSalary').value = employment.confirmed_salary ?? 0;
-        document.getElementById('probationDuration').value = employment.probation_duration_months ?? 0;
-        document.getElementById('salaryStartMonth').value = employment.salary_start_month || '';
+        salarySchedules = (employment.salary_schedules || legacySalarySchedules(employment)).map(normalizeSalarySchedule);
+        editingSalaryScheduleId = null;
+        setSalaryScheduleFormMode(false);
+        fillSalaryScheduleForm(null);
+        renderSalaryScheduleCards();
         document.getElementById('salaryPaidInArrears').checked = Boolean(employment.salary_paid_in_arrears);
         updateEmploymentContributionSummary();
 
@@ -949,10 +1243,11 @@
         document.getElementById('startingElr').value = '0.00';
         document.getElementById('startingEpf').value = '0.00';
 
-        document.getElementById('probationSalary').value = '1800.00';
-        document.getElementById('confirmedSalary').value = '2200.00';
-        document.getElementById('probationDuration').value = '3';
-        document.getElementById('salaryStartMonth').value = startMonth || '';
+        salarySchedules = defaultSalarySchedules(startMonth).map(normalizeSalarySchedule);
+        editingSalaryScheduleId = null;
+        setSalaryScheduleFormMode(false);
+        fillSalaryScheduleForm(null);
+        renderSalaryScheduleCards();
         document.getElementById('salaryPaidInArrears').checked = true;
 
         createCostAllocationRows();
@@ -1008,12 +1303,89 @@
         amount: 0,
     }));
 
+    document.getElementById('saveSalaryScheduleBtn').addEventListener('click', () => {
+        const schedule = normalizeSalarySchedule({
+            id: editingSalaryScheduleId,
+            start_month: document.getElementById('salaryScheduleFrom').value,
+            end_month: document.getElementById('salaryScheduleUntil').value,
+            note: document.getElementById('salaryScheduleNote').value,
+            monthly_gross_salary: document.getElementById('salaryScheduleGross').value,
+            employee_epf_rate_percent: document.getElementById('employeeEpfRatePercent').value,
+            employer_epf_rate_percent: document.getElementById('employerEpfRatePercent').value,
+        });
+
+        if (!schedule.start_month) {
+            setStatus('Salary schedule From month is required.', true);
+            return;
+        }
+
+        if (editingSalaryScheduleId) {
+            salarySchedules = salarySchedules.map((item) => item.id === editingSalaryScheduleId ? schedule : item);
+            editingSalaryScheduleId = null;
+            setSalaryScheduleFormMode(false);
+            setStatus('Salary schedule updated.');
+        } else {
+            salarySchedules.push(schedule);
+            setStatus('Salary schedule added.');
+        }
+
+        fillSalaryScheduleForm(null);
+        renderSalaryScheduleCards();
+    });
+
+    document.getElementById('salaryScheduleListCards').addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-salary-schedule-action]');
+        if (!button) return;
+
+        const action = button.getAttribute('data-salary-schedule-action');
+        const scheduleId = button.getAttribute('data-salary-schedule-id');
+        const schedule = salarySchedules.find((item) => item.id === scheduleId);
+        if (!schedule) return;
+
+        if (action === 'edit') {
+            editingSalaryScheduleId = scheduleId;
+            fillSalaryScheduleForm(schedule);
+            setSalaryScheduleFormMode(true);
+            setStatus('Editing salary schedule.');
+            return;
+        }
+
+        if (action === 'delete') {
+            salarySchedules = salarySchedules.filter((item) => item.id !== scheduleId);
+            if (editingSalaryScheduleId === scheduleId) {
+                editingSalaryScheduleId = null;
+                setSalaryScheduleFormMode(false);
+                fillSalaryScheduleForm(null);
+            }
+            renderSalaryScheduleCards();
+            setStatus('Salary schedule deleted.');
+        }
+    });
+
+    document.getElementById('saveBudgetProfileBtn').addEventListener('click', saveBudgetProfileFromForm);
+    document.getElementById('newBudgetProfileBtn').addEventListener('click', startNewBudgetProfile);
+    document.getElementById('budgetPlanListCards').addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-budget-plan-action]');
+        if (!button) return;
+
+        const action = button.getAttribute('data-budget-plan-action');
+        const profileId = button.getAttribute('data-budget-plan-id');
+        const profile = budgetProfiles.find((item) => item.id === profileId);
+        if (!profile) return;
+
+        if (action === 'edit') {
+            switchBudgetProfile(profileId);
+            setStatus('Editing budget plan.');
+            return;
+        }
+
+        if (action === 'delete') {
+            deleteBudgetProfile(profileId);
+        }
+    });
+
     document.getElementById('startMonth').addEventListener('change', () => syncMonthlyBudgetRows());
     document.getElementById('endMonth').addEventListener('change', () => syncMonthlyBudgetRows());
-    document.getElementById('probationSalary').addEventListener('input', updateEmploymentContributionSummary);
-    document.getElementById('probationSalary').addEventListener('blur', updateEmploymentContributionSummary);
-    document.getElementById('confirmedSalary').addEventListener('input', updateEmploymentContributionSummary);
-    document.getElementById('confirmedSalary').addEventListener('blur', updateEmploymentContributionSummary);
     document.getElementById('employeeEpfRatePercent').addEventListener('input', updateEmploymentContributionSummary);
     document.getElementById('employeeEpfRatePercent').addEventListener('blur', updateEmploymentContributionSummary);
     document.getElementById('employerEpfRatePercent').addEventListener('input', updateEmploymentContributionSummary);
@@ -1171,6 +1543,9 @@
     initMonthPickers();
     normalizeDecimalInputs();
     syncMonthlyBudgetRows();
+    salarySchedules = defaultSalarySchedules(toMonthOrNull(document.getElementById('startMonth').value)).map(normalizeSalarySchedule);
+    fillSalaryScheduleForm(null);
+    renderSalaryScheduleCards();
     updateEmploymentContributionSummary();
 
     createBnplRow({

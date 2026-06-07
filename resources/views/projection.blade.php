@@ -85,7 +85,8 @@
                     <div class="projection-input-tabs nav" id="projectionInputTabs" role="tablist">
                         <button class="projection-input-tab active" id="tab-scenario" data-bs-toggle="tab" data-bs-target="#pane-scenario" type="button" role="tab" aria-controls="pane-scenario" aria-selected="true" data-bs-title="Starting Parameters" data-bs-placement="top"><i class="fa-solid fa-calendar-days"></i></button>
                         <button class="projection-input-tab" id="tab-employment" data-bs-toggle="tab" data-bs-target="#pane-employment" type="button" role="tab" aria-controls="pane-employment" aria-selected="false" data-bs-title="Employment" data-bs-placement="top"><i class="fa-solid fa-briefcase"></i></button>
-                        <button class="projection-input-tab" id="tab-col" data-bs-toggle="tab" data-bs-target="#pane-col" type="button" role="tab" aria-controls="pane-col" aria-selected="false" data-bs-title="Cost of Living" data-bs-placement="top"><i class="fa-solid fa-basket-shopping"></i></button>
+                        <button class="projection-input-tab" id="tab-budget-profiles" data-bs-toggle="tab" data-bs-target="#pane-budget-profiles" type="button" role="tab" aria-controls="pane-budget-profiles" aria-selected="false" data-bs-title="Budget Profiles" data-bs-placement="top"><i class="fa-solid fa-wallet"></i></button>
+                        <button class="projection-input-tab" id="tab-monthly-budget" data-bs-toggle="tab" data-bs-target="#pane-monthly-budget" type="button" role="tab" aria-controls="pane-monthly-budget" aria-selected="false" data-bs-title="Monthly Budget Selection" data-bs-placement="top"><i class="fa-solid fa-list-check"></i></button>
                         <button class="projection-input-tab" id="tab-ptptn" data-bs-toggle="tab" data-bs-target="#pane-ptptn" type="button" role="tab" aria-controls="pane-ptptn" aria-selected="false" data-bs-title="PTPTN" data-bs-placement="top"><i class="fa-solid fa-graduation-cap"></i></button>
                         <button class="projection-input-tab" id="tab-bnpl" data-bs-toggle="tab" data-bs-target="#pane-bnpl" type="button" role="tab" aria-controls="pane-bnpl" aria-selected="false" data-bs-title="BNPL" data-bs-placement="top"><i class="fa-solid fa-credit-card"></i></button>
                         <button class="projection-input-tab" id="tab-events" data-bs-toggle="tab" data-bs-target="#pane-events" type="button" role="tab" aria-controls="pane-events" aria-selected="false" data-bs-title="Events" data-bs-placement="top"><i class="fa-solid fa-calendar-plus"></i></button>
@@ -131,7 +132,32 @@
 
                         <div class="tab-pane fade" id="pane-employment" role="tabpanel" aria-labelledby="tab-employment" tabindex="0">
                             <div class="input-subcard mb-0">
+                                <input id="salaryScheduleEditingId" type="hidden" value="">
+                                <div class="mb-2">
+                                    <label for="salaryScheduleNote" class="form-label form-label-sm">Note</label>
+                                    <input id="salaryScheduleNote" type="text" class="form-control compact-input" placeholder="Example: Confirmed salary">
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label for="salaryScheduleFrom" class="form-label form-label-sm">From</label>
+                                        <input id="salaryScheduleFrom" type="text" class="form-control compact-input month-input" value="{{ now('Asia/Kuala_Lumpur')->startOfMonth()->format('Y-m') }}">
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="salaryScheduleUntil" class="form-label form-label-sm">Until</label>
+                                        <input id="salaryScheduleUntil" type="text" class="form-control compact-input month-input" placeholder="Ongoing">
+                                    </div>
+                                    <p class="text-secondary small mb-0">Schedules are inclusive month ranges. Leave Until blank for the current ongoing salary.</p>
+                                </div>
                                 <div class="row g-2 mb-3">
+                                    <div class="col-12">
+                                        <label for="salaryScheduleGross" class="form-label form-label-sm">Gross Salary (RM)</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RM</span>
+                                            <input id="salaryScheduleGross" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row g-2">
                                     <div class="col-6">
                                         <label class="form-label form-label-sm">Employee EPF (%)</label>
                                         <input id="employeeEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="11.00">
@@ -141,65 +167,7 @@
                                         <input id="employerEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="13.00">
                                     </div>
                                 </div>
-
-                                <div class="table-responsive mb-3">
-                                    <table class="table table-sm align-middle">
-                                        <thead>
-                                        <tr>
-                                            <th>Metric</th>
-                                            <th>Probation</th>
-                                            <th>Confirmed</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr>
-                                            <td>Salary</td>
-                                            <td>
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text">RM</span>
-                                                    <input id="probationSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="1800.00">
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text">RM</span>
-                                                    <input id="confirmedSalary" type="text" inputmode="decimal" class="form-control compact-input money-input" value="2200.00">
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Employee EPF</td>
-                                            <td class="text-end"><span id="probationEmployeeEpfAmount">RM 0.00</span></td>
-                                            <td class="text-end"><span id="confirmedEmployeeEpfAmount">RM 0.00</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Employer EPF</td>
-                                            <td class="text-end"><span id="probationEmployerEpfAmount">RM 0.00</span></td>
-                                            <td class="text-end"><span id="confirmedEmployerEpfAmount">RM 0.00</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>SOCSO (Act 4)</td>
-                                            <td class="text-end"><span id="probationSocsoAmount">RM 0.00</span></td>
-                                            <td class="text-end"><span id="confirmedSocsoAmount">RM 0.00</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>EIS (Act 800)</td>
-                                            <td class="text-end"><span id="probationEisAmount">RM 0.00</span></td>
-                                            <td class="text-end"><span id="confirmedEisAmount">RM 0.00</span></td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <div class="row g-2 mb-3">
-                                    <div class="col-6">
-                                        <label class="form-label form-label-sm">Probation Months</label>
-                                        <input id="probationDuration" type="number" min="0" class="form-control compact-input" value="3">
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label form-label-sm">Salary Start Month</label>
-                                        <input id="salaryStartMonth" type="text" class="form-control compact-input month-input" value="{{ now('Asia/Kuala_Lumpur')->startOfMonth()->format('Y-m') }}">
-                                    </div>
+                                <div class="row g-2 mt-1 mb-3">
                                     <div class="col-12">
                                         <div class="form-check mt-1">
                                             <input id="salaryPaidInArrears" class="form-check-input" type="checkbox" checked>
@@ -207,28 +175,57 @@
                                         </div>
                                     </div>
                                 </div>
+                                <button id="saveSalaryScheduleBtn" type="button" class="btn btn-dark w-100">Add</button>
+                            </div>
+
+                            <div class="input-subcard mt-3 mb-0">
+                                <h2 class="section-subtitle">Salary Schedules Added</h2>
+                                <hr class="section-divider">
+                                <div id="salaryScheduleListCards">
+                                    <div class="text-center text-secondary py-3">No salary schedules added yet.</div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="tab-pane fade" id="pane-col" role="tabpanel" aria-labelledby="tab-col" tabindex="0">
+                        <div class="tab-pane fade" id="pane-budget-profiles" role="tabpanel" aria-labelledby="tab-budget-profiles" tabindex="0">
                             <div class="input-subcard mb-0">
-                                <h2 class="section-subtitle">Budget Amounts</h2>
+                                <h2 class="section-subtitle">Budget Profiles</h2>
                                 <hr class="section-divider">
-                                <div class="table-responsive mb-3">
+                                <div class="row g-2 align-items-end mb-3">
+                                    <div class="col-md-8">
+                                        <label class="form-label form-label-sm">Profile Name</label>
+                                        <input id="budgetProfileName" type="text" class="form-control form-control-sm" maxlength="120">
+                                    </div>
+                                    <div class="col-md-2 d-grid">
+                                        <button id="saveBudgetProfileBtn" type="button" class="btn btn-sm btn-dark">Add</button>
+                                    </div>
+                                    <div class="col-md-2 d-grid">
+                                        <button id="newBudgetProfileBtn" type="button" class="btn btn-sm btn-outline-secondary">New</button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive mb-0">
                                     <table class="table table-sm">
                                         <thead>
-                                        <tr>
-                                            <th>Expense Category</th>
-                                            <th>BCOL</th>
-                                            <th>FCOL Lite</th>
-                                            <th>FCOL Max</th>
-                                        </tr>
+                                        <tr id="costAllocationHeaderRows"></tr>
                                         </thead>
                                         <tbody id="costAllocationRows"></tbody>
                                     </table>
                                 </div>
+                            </div>
 
-                                <h3 class="section-subtitle">Monthly Budget Selection</h3>
+                            <div class="input-subcard mt-3 mb-0">
+                                <h2 class="section-subtitle">Budget Profiles Added</h2>
+                                <hr class="section-divider">
+                                <div id="budgetPlanListCards">
+                                    <div class="text-center text-secondary py-3">No budget profiles added yet.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="pane-monthly-budget" role="tabpanel" aria-labelledby="tab-monthly-budget" tabindex="0">
+                            <div class="input-subcard mb-0">
+                                <h2 class="section-subtitle">Monthly Budget Selection</h2>
+                                <hr class="section-divider">
                                 <div class="table-responsive mb-2">
                                     <table class="table table-sm">
                                         <thead>

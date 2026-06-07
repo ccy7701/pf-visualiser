@@ -15,7 +15,7 @@ Related high-level project specification: `overview.md`
 * fuel-efficiency monitoring
 * monthly plan-versus-actual transport cost comparison
 
-This module supports the personal finance model where transportation can materially increase from BCOL to FCOL ranges.
+This module supports the personal finance model where transportation can materially vary between saved projection budget profiles.
 
 ---
 

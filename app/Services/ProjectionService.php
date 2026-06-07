@@ -50,9 +50,11 @@ class ProjectionService
         foreach ($months as $month) {
             $monthEvents = $this->eventsForMonth($events, $month);
 
-            $grossIncome = $this->salaryCalculator->grossForMonth($month, $employment);
-            $employeeEpf = $this->epfCalculator->employeeContribution($grossIncome, $epf);
-            $employerEpf = $this->epfCalculator->employerContribution($grossIncome, $epf);
+            $salarySchedule = $this->salaryCalculator->scheduleForMonth($month, $employment);
+            $grossIncome = (float) ($salarySchedule['monthly_gross_salary'] ?? 0);
+            $monthEpf = $this->epfForSalarySchedule($epf, $salarySchedule);
+            $employeeEpf = $this->epfCalculator->employeeContribution($grossIncome, $monthEpf);
+            $employerEpf = $this->epfCalculator->employerContribution($grossIncome, $monthEpf);
             $statutory = $this->statutoryDeductionResolver->resolve($grossIncome);
             $socso = (float) ($statutory['socso'] ?? 0);
             $eis = (float) ($statutory['eis'] ?? 0);
@@ -145,10 +147,7 @@ class ProjectionService
                 'starting_epf' => (float) ($scenario['starting_epf'] ?? 0),
             ],
             'employment' => [
-                'probation_salary' => (float) ($employment['probation_salary'] ?? 0),
-                'confirmed_salary' => (float) ($employment['confirmed_salary'] ?? 0),
-                'probation_duration_months' => (int) ($employment['probation_duration_months'] ?? 0),
-                'salary_start_month' => MonthHelper::normalize((string) $employment['salary_start_month']),
+                'salary_schedules' => $this->normalizeSalarySchedules($employment),
                 'salary_paid_in_arrears' => filter_var($employment['salary_paid_in_arrears'] ?? false, FILTER_VALIDATE_BOOL),
             ],
             'cost_of_living' => [
@@ -208,13 +207,100 @@ class ProjectionService
         return MonthHelper::normalize($month);
     }
 
+    private function normalizeSalarySchedules(array $employment): array
+    {
+        $rawSchedules = array_filter($employment['salary_schedules'] ?? [], fn ($schedule) => is_array($schedule));
+
+        if ($rawSchedules === [] && array_key_exists('salary_start_month', $employment)) {
+            $rawSchedules = $this->legacySalarySchedules($employment);
+        }
+
+        $schedules = array_values(array_map(function (array $schedule): array {
+            return [
+                'start_month' => MonthHelper::normalize((string) $schedule['start_month']),
+                'end_month' => $this->normalizeOptionalMonth($schedule['end_month'] ?? null),
+                'monthly_gross_salary' => (float) ($schedule['monthly_gross_salary'] ?? 0),
+                'employee_epf_rate_percent' => $this->normalizeOptionalPercent($schedule['employee_epf_rate_percent'] ?? null),
+                'employer_epf_rate_percent' => $this->normalizeOptionalPercent($schedule['employer_epf_rate_percent'] ?? null),
+                'note' => (string) ($schedule['note'] ?? ''),
+            ];
+        }, $rawSchedules));
+
+        usort($schedules, fn (array $a, array $b) => MonthHelper::toIndex($a['start_month']) <=> MonthHelper::toIndex($b['start_month']));
+
+        return $schedules;
+    }
+
+    private function legacySalarySchedules(array $employment): array
+    {
+        $salaryStartMonth = MonthHelper::normalize((string) $employment['salary_start_month']);
+        $probationDuration = max(0, (int) ($employment['probation_duration_months'] ?? 0));
+        $confirmedStartMonth = MonthHelper::fromIndex(MonthHelper::toIndex($salaryStartMonth) + $probationDuration);
+        $schedules = [];
+
+        if ($probationDuration > 0) {
+            $schedules[] = [
+                'start_month' => $salaryStartMonth,
+                'end_month' => MonthHelper::fromIndex(MonthHelper::toIndex($confirmedStartMonth) - 1),
+                'monthly_gross_salary' => (float) ($employment['probation_salary'] ?? 0),
+                'employee_epf_rate_percent' => null,
+                'employer_epf_rate_percent' => null,
+                'note' => 'Probation',
+            ];
+        }
+
+        $schedules[] = [
+            'start_month' => $confirmedStartMonth,
+            'end_month' => null,
+            'monthly_gross_salary' => (float) ($employment['confirmed_salary'] ?? 0),
+            'employee_epf_rate_percent' => null,
+            'employer_epf_rate_percent' => null,
+            'note' => 'Confirmed',
+        ];
+
+        return $schedules;
+    }
+
+    private function epfForSalarySchedule(array $epf, ?array $salarySchedule): array
+    {
+        if ($salarySchedule === null) {
+            return $epf;
+        }
+
+        return [
+            'employee_rate_percent' => $salarySchedule['employee_epf_rate_percent'] ?? $epf['employee_rate_percent'],
+            'employer_rate_percent' => $salarySchedule['employer_epf_rate_percent'] ?? $epf['employer_rate_percent'],
+        ];
+    }
+
+    private function normalizeOptionalPercent(mixed $value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (float) $value;
+    }
+
     private function normalizeCostOfLivingBudgets(array $costOfLiving): array
     {
-        $budgetKeys = ['bcol', 'fcol_lite', 'fcol_max'];
+        $budgetNames = [
+            'bcol' => 'BCOL',
+            'fcol_lite' => 'FCOL Lite',
+            'fcol_max' => 'FCOL Max',
+        ];
         $normalized = [];
 
-        foreach ($budgetKeys as $key) {
-            $budget = $costOfLiving['budgets'][$key] ?? [];
+        foreach (($costOfLiving['budgets'] ?? []) as $key => $budget) {
+            if (! is_array($budget)) {
+                continue;
+            }
+
+            $profileKey = trim((string) $key);
+            if ($profileKey === '') {
+                continue;
+            }
+
             $allocations = array_values(array_map(function (array $item): array {
                 return [
                     'category_id' => (string) ($item['category_id'] ?? ''),
@@ -223,8 +309,16 @@ class ProjectionService
                 ];
             }, array_filter($budget['category_allocations'] ?? [], fn ($item) => is_array($item))));
 
-            $normalized[$key] = [
+            $normalized[$profileKey] = [
+                'name' => (string) ($budget['name'] ?? $budgetNames[$profileKey] ?? $profileKey),
                 'category_allocations' => $allocations,
+            ];
+        }
+
+        if ($normalized === []) {
+            $normalized['bcol'] = [
+                'name' => 'BCOL',
+                'category_allocations' => [],
             ];
         }
 
