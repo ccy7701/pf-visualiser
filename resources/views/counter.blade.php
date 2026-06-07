@@ -4,10 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Personal Finance Counter</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     @livewireStyles
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="{{ asset('css/counter.css') }}" rel="stylesheet">
     <link href="{{ asset('css/edge-nav.css') }}" rel="stylesheet">
 </head>
@@ -95,9 +93,6 @@
 </div>
 
 {{-- Scripts ──────────────────────────── --}}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="{{ asset('js/edge-nav.js') }}"></script>
 <script>
     window.counterPageConfig = {
         snapshot: @json($snapshot),
@@ -105,7 +100,8 @@
         theme: @json($theme),
     };
 </script>
-<script src="{{ asset('js/counter-page.js') }}"></script>
+<script type="module" src="{{ asset('js/edge-nav.js') }}"></script>
+<script type="module" src="{{ asset('js/counter-page.js') }}"></script>
 @livewireScripts
 </body>
 </html>

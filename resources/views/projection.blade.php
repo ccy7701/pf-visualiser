@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>COH Projection</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css" rel="stylesheet">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script>
         (function () {
             const savedTheme = localStorage.getItem('theme') || @json($theme ?? 'light');
@@ -528,11 +525,6 @@
     $eisBrackets = json_decode((string) file_get_contents(base_path('data/contribution-brackets/eis_act800_brackets.json')), true);
 @endphp
 
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ asset('js/edge-nav.js') }}"></script>
 <script>
     window.projectionConfig = {
         runEndpoint: '{{ route('projection.run') }}',
@@ -547,6 +539,7 @@
         },
     };
 </script>
-<script src="{{ asset('js/projection-page.js') }}"></script>
+<script type="module" src="{{ asset('js/edge-nav.js') }}"></script>
+<script type="module" src="{{ asset('js/projection-page.js') }}"></script>
 </body>
 </html>
