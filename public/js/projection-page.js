@@ -394,8 +394,7 @@
 
         if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
             container.querySelectorAll('[data-budget-plan-action]').forEach((btn) => {
-                const existing = bootstrap.Tooltip.getInstance(btn);
-                if (!existing) new bootstrap.Tooltip(btn, { trigger: 'hover focus' });
+                bootstrap.Tooltip.getOrCreateInstance(btn, { trigger: 'hover focus' });
             });
         }
     }
@@ -729,8 +728,7 @@
 
         if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
             container.querySelectorAll('[data-salary-schedule-action]').forEach((btn) => {
-                const existing = bootstrap.Tooltip.getInstance(btn);
-                if (!existing) new bootstrap.Tooltip(btn, { trigger: 'hover focus' });
+                bootstrap.Tooltip.getOrCreateInstance(btn, { trigger: 'hover focus' });
             });
         }
     }

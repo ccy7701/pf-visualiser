@@ -354,12 +354,7 @@
 
         if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
             container.querySelectorAll('[data-vehicle-action]').forEach((btn) => {
-                const existing = bootstrap.Tooltip.getInstance(btn);
-                if (!existing) {
-                    new bootstrap.Tooltip(btn, {
-                        trigger: 'hover focus',
-                    });
-                }
+                bootstrap.Tooltip.getOrCreateInstance(btn, { trigger: 'hover focus' });
             });
         }
     }
