@@ -296,7 +296,9 @@
             color: #fff;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
         }
-        #projectionInputTabs .projection-input-tab::after {
+        #projectionInputTabs .projection-input-tab::after,
+        #vaInputTabs .projection-input-tab::after,
+        #fuelInputTabs .projection-input-tab::after {
             content: attr(data-bs-title);
             position: absolute;
             left: 50%;
@@ -317,7 +319,11 @@
             transition: opacity 0.15s ease, transform 0.15s ease;
         }
         #projectionInputTabs .projection-input-tab:hover::after,
-        #projectionInputTabs .projection-input-tab:focus-visible::after {
+        #projectionInputTabs .projection-input-tab:focus-visible::after,
+        #vaInputTabs .projection-input-tab:hover::after,
+        #vaInputTabs .projection-input-tab:focus-visible::after,
+        #fuelInputTabs .projection-input-tab:hover::after,
+        #fuelInputTabs .projection-input-tab:focus-visible::after {
             opacity: 1;
             transform: translate(-50%, 0);
         }

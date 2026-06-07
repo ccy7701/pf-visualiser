@@ -35,9 +35,9 @@
                 <div class="card-header">Inputs</div>
                 <div class="card-body">
                     <div class="projection-input-tabs nav" id="fuelInputTabs" role="tablist">
-                        <button class="projection-input-tab active" id="tab-vehicle" data-bs-toggle="tab" data-bs-target="#pane-vehicle" type="button" role="tab" aria-controls="pane-vehicle" aria-selected="true" data-bs-title="Vehicle Profile" data-bs-placement="top"><i class="fa-solid fa-car"></i></button>
-                        <button class="projection-input-tab" id="tab-fuel-entry" data-bs-toggle="tab" data-bs-target="#pane-fuel-entry" type="button" role="tab" aria-controls="pane-fuel-entry" aria-selected="false" data-bs-title="Refuel Log" data-bs-placement="top"><i class="fa-solid fa-gas-pump"></i></button>
-                        <button class="projection-input-tab" id="tab-drive-entry" data-bs-toggle="tab" data-bs-target="#pane-drive-entry" type="button" role="tab" aria-controls="pane-drive-entry" aria-selected="false" data-bs-title="Drive Log" data-bs-placement="top"><i class="fa-solid fa-road"></i></button>
+                        <button class="projection-input-tab active" id="tab-vehicle" data-bs-toggle="tab" data-bs-target="#pane-vehicle" type="button" role="tab" aria-controls="pane-vehicle" aria-selected="true" aria-label="Vehicle Profile" data-bs-title="Vehicle Profile"><i class="fa-solid fa-car"></i></button>
+                        <button class="projection-input-tab" id="tab-fuel-entry" data-bs-toggle="tab" data-bs-target="#pane-fuel-entry" type="button" role="tab" aria-controls="pane-fuel-entry" aria-selected="false" aria-label="Refuel Log" data-bs-title="Refuel Log"><i class="fa-solid fa-gas-pump"></i></button>
+                        <button class="projection-input-tab" id="tab-drive-entry" data-bs-toggle="tab" data-bs-target="#pane-drive-entry" type="button" role="tab" aria-controls="pane-drive-entry" aria-selected="false" aria-label="Drive Log" data-bs-title="Drive Log"><i class="fa-solid fa-road"></i></button>
                     </div>
 
                     <div class="tab-content">

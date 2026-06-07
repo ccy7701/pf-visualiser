@@ -57,10 +57,10 @@
                 <div class="card-body">
                     <div id="actualInputsFieldset">
                         <div class="projection-input-tabs nav" id="vaInputTabs" role="tablist">
-                            <button class="projection-input-tab active" id="va-tab-balances" data-bs-toggle="tab" data-bs-target="#va-pane-balances" type="button" role="tab" aria-controls="va-pane-balances" aria-selected="true" title="COH / ELR / EPF" data-bs-title="COH / ELR / EPF" data-bs-placement="top">
+                            <button class="projection-input-tab active" id="va-tab-balances" data-bs-toggle="tab" data-bs-target="#va-pane-balances" type="button" role="tab" aria-controls="va-pane-balances" aria-selected="true" aria-label="COH / ELR / EPF" data-bs-title="COH / ELR / EPF">
                                 <i class="fa-solid fa-wallet"></i>
                             </button>
-                            <button class="projection-input-tab" id="va-tab-expenses" data-bs-toggle="tab" data-bs-target="#va-pane-expenses" type="button" role="tab" aria-controls="va-pane-expenses" aria-selected="false" title="Expense Categories" data-bs-title="Expense Categories" data-bs-placement="top">
+                            <button class="projection-input-tab" id="va-tab-expenses" data-bs-toggle="tab" data-bs-target="#va-pane-expenses" type="button" role="tab" aria-controls="va-pane-expenses" aria-selected="false" aria-label="Expense Categories" data-bs-title="Expense Categories">
                                 <i class="fa-solid fa-basket-shopping"></i>
                             </button>
                         </div>
