@@ -41,7 +41,6 @@ The system shall support:
 
 * projection start month
 * projection end month
-* start-calculation-next-month toggle
 * starting COH
 * starting ELR
 * starting EPF
@@ -50,25 +49,39 @@ The system shall support:
 
 The system shall support:
 
-* probation salary
-* confirmed salary
-* probation duration months
-* salary start month
+* one or more salary schedules
+* schedule start month
+* optional schedule end month
+* schedule monthly gross salary
+* optional schedule-specific employee EPF rate percent
+* optional schedule-specific employer EPF rate percent
+* schedule note
 * salary paid-in-arrears toggle
 
 Employment settings are scenario-local.
 
-### 3.3 Cost of Living Configuration
+### 3.3 Budget Profiles Configuration
 
 The system shall support:
 
-* budget sets: `bcol`, `fcol_lite`, `fcol_max`
-* per-budget `category_allocations[]`
-* month-level budget selection override
+* separately navigable Budget Profiles projection input section
+* create, save, edit, and delete budget profiles
+* arbitrary budget profile keys, including but not limited to legacy `bcol`, `fcol_lite`, and `fcol_max`
+* per-profile display name
+* per-profile `category_allocations[]`
+* Budget Plans Added card list using the same card/action pattern as Salary Schedules Added
+
+### 3.4 Monthly Budget Selection Configuration
+
+The system shall support:
+
+* separately navigable Monthly Budget Selection projection input section
+* generated month rows for the configured projection month range
+* month-level selection of which saved budget profile to use
 
 Cost inputs are explicit projection inputs only.
 
-### 3.4 PTPTN Configuration
+### 3.5 PTPTN Configuration
 
 The system shall support:
 
@@ -76,7 +89,7 @@ The system shall support:
 * monthly repayment amount
 * repayment start month
 
-### 3.5 BNPL Configuration
+### 3.6 BNPL Configuration
 
 The system shall support:
 
@@ -85,7 +98,7 @@ The system shall support:
 * amount
 * note
 
-### 3.6 Events Configuration
+### 3.7 Events Configuration
 
 The system shall support monthly events with:
 
@@ -102,7 +115,7 @@ Supported event `type` values:
 * `one_off_expense`
 * `elr_override`
 
-### 3.7 ELR Configuration
+### 3.8 ELR Configuration
 
 The system shall support:
 
@@ -111,14 +124,14 @@ The system shall support:
 * compound interest toggle
 * annual interest rate percent
 
-### 3.8 EPF Configuration
+### 3.9 EPF Configuration
 
 The system shall support:
 
 * employee EPF rate percent
 * employer EPF rate percent
 
-### 3.9 Projection Output
+### 3.10 Projection Output
 
 The system shall return monthly rows containing core balances and breakdown fields, including:
 
@@ -136,8 +149,6 @@ The system shall also return metadata fields including:
 
 * `start_month`
 * `end_month`
-* `calculation_start_month`
-* `start_calculation_next_month`
 * `months_count`
 
 ---
@@ -146,13 +157,9 @@ The system shall also return metadata fields including:
 
 ### 4.1 Chronological Processing Rule
 
-Months are processed in ascending month order from calculation start month to `end_month`.
+Months are processed in ascending month order from `start_month` to `end_month`.
 
-Calculation start month resolution:
-
-* if `start_calculation_next_month = false`, calculation starts at `start_month`
-* if `start_calculation_next_month = true`, calculation starts at `start_month + 1 month`
-* if resolved calculation start month is after `end_month`, month sequence is empty
+If `end_month` is before `start_month`, month sequence is empty.
 
 Each month inherits opening balances from the previous month's closing balances.
 
@@ -212,9 +219,13 @@ Opening EPF
 
 ### 4.5 Salary Progression Logic
 
-If month is within probation period, use probation salary.
+Salary is resolved from `employment.salary_schedules`.
 
-Otherwise, use confirmed salary.
+Schedules are sorted by start month. For each month, the matching schedule is the latest schedule whose `start_month` is on or before the target month and whose optional `end_month` is either blank or on or after the target month.
+
+If no schedule matches a month, gross salary is 0.
+
+Schedule-specific EPF rates override the scenario-level EPF rates for months resolved to that schedule. If a schedule EPF rate is blank, the scenario-level rate is used.
 
 ### 4.6 Salary Arrears Rule
 
@@ -234,9 +245,11 @@ BNPL repayment for a month is the sum of BNPL entries matching that month.
 
 ### 4.9 Cost of Living Budget Selection Rule
 
-Monthly living expense is derived from selected budget for that month.
+Monthly living expense is derived from the selected budget profile for that month.
 
-If no monthly override is provided, default budget key is `bcol`.
+`monthly_budget_selection[].budget` stores the selected budget profile key.
+
+If no monthly selection is provided, or if a stale selected profile key no longer exists, the first available saved budget profile is used.
 
 ### 4.10 ELR Override Event Rule
 
@@ -300,20 +313,45 @@ Cache is written on save/load/compare paths when needed.
     "starting_epf": 0
   },
   "employment": {
-    "probation_salary": 1800,
-    "confirmed_salary": 2200,
-    "probation_duration_months": 3,
-    "salary_start_month": "2026-06",
+    "salary_schedules": [
+      {
+        "start_month": "2026-06",
+        "end_month": "2026-08",
+        "monthly_gross_salary": 1800,
+        "employee_epf_rate_percent": null,
+        "employer_epf_rate_percent": null,
+        "note": "Probation"
+      },
+      {
+        "start_month": "2026-09",
+        "end_month": null,
+        "monthly_gross_salary": 2200,
+        "employee_epf_rate_percent": null,
+        "employer_epf_rate_percent": null,
+        "note": "Confirmed"
+      }
+    ],
     "salary_paid_in_arrears": true
   },
   "cost_of_living": {
     "budgets": {
-      "bcol": { "category_allocations": [] },
-      "fcol_lite": { "category_allocations": [] },
-      "fcol_max": { "category_allocations": [] }
+      "bcol": {
+        "name": "BCOL",
+        "category_allocations": [
+          { "category_id": "food", "name": "Food", "amount": 500 },
+          { "category_id": "transportation", "name": "Transportation", "amount": 200 }
+        ]
+      },
+      "travel_month": {
+        "name": "Travel Month",
+        "category_allocations": [
+          { "category_id": "food", "name": "Food", "amount": 650 },
+          { "category_id": "transportation", "name": "Transportation", "amount": 500 }
+        ]
+      }
     },
     "monthly_budget_selection": [
-      { "month": "2026-07", "budget": "fcol_lite" }
+      { "month": "2026-07", "budget": "travel_month" }
     ]
   },
   "ptptn": {
@@ -405,13 +443,14 @@ Frontend responsibilities:
 
 ### SalaryCalculator
 
-* salary start handling
-* probation/confirmed salary selection
+* salary schedule matching
+* schedule-specific gross salary selection
+* schedule-specific EPF rate override support
 * arrears handling
 
 ### ExpenseCalculator
 
-* resolve monthly budget key
+* resolve monthly budget profile key
 * aggregate category allocations
 
 ### BNPLCalculator
@@ -453,5 +492,7 @@ The following decisions are finalized:
 * salary arrears means exact one-month lag
 * EPF is based on gross salary only
 * budget selection is month-specific via `monthly_budget_selection`
+* budget profiles are arbitrary saved plans keyed by profile ID
+* if a month has no valid selected budget profile, the first saved profile is used
 * PTPTN waiver is permanent per scenario
 * ELR supports optional compound-interest progression with daily compounding
