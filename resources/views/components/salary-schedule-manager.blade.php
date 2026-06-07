@@ -236,27 +236,31 @@ new class extends Component
     </div>
 </div>
 
-@push('scripts')
+@script
 <script>
-    document.addEventListener('livewire:init', function () {
-        function initDatepickers() {
-            document.querySelectorAll('.datepicker:not(.flatpickr-input)').forEach(el => {
-                const target = el.dataset.target;
-                flatpickr(el, {
-                    dateFormat: 'd/m/Y',
-                    allowInput: true,
-                    onChange: function(selectedDates, dateStr) {
-                        @this.set(target, dateStr);
-                    }
-                });
+    function initSalaryScheduleDatepickers() {
+        if (typeof flatpickr === 'undefined') return;
+
+        $wire.$el.querySelectorAll('.datepicker:not(.flatpickr-input)').forEach((el) => {
+            const target = el.dataset.target;
+            if (!target) return;
+
+            flatpickr(el, {
+                dateFormat: 'd/m/Y',
+                allowInput: true,
+                onChange: function (selectedDates, dateStr) {
+                    $wire.set(target, dateStr);
+                },
             });
-        }
-
-        initDatepickers();
-
-        Livewire.hook('message.processed', () => {
-            initDatepickers();
         });
+    }
+
+    initSalaryScheduleDatepickers();
+
+    Livewire.hook('morph.updated', ({ component }) => {
+        if (component.id !== $wire.$id) return;
+
+        initSalaryScheduleDatepickers();
     });
 </script>
-@endpush
+@endscript
