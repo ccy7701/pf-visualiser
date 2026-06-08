@@ -183,12 +183,32 @@
                                 </div>
                                 <div class="row g-2 mb-2">
                                     <div class="col-6">
-                                        <label for="commuteDate" class="form-label form-label-sm">Date</label>
+                                        <label for="commuteDate" class="form-label form-label-sm">Start Date</label>
                                         <input id="commuteDate" type="text" class="form-control compact-input date-picker" placeholder="DD/MM/YYYY">
                                     </div>
                                     <div class="col-6">
-                                        <label for="commuteTime" class="form-label form-label-sm">Time</label>
+                                        <label for="commuteTime" class="form-label form-label-sm">Start Time</label>
                                         <input id="commuteTime" type="time" class="form-control compact-input">
+                                    </div>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label for="commuteEndDate" class="form-label form-label-sm">End Date</label>
+                                        <input id="commuteEndDate" type="text" class="form-control compact-input date-picker" placeholder="DD/MM/YYYY">
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="commuteEndTime" class="form-label form-label-sm">End Time</label>
+                                        <input id="commuteEndTime" type="time" class="form-control compact-input">
+                                    </div>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label for="commuteAverageSpeedKmh" class="form-label form-label-sm">Avg Speed (km/h)</label>
+                                        <input id="commuteAverageSpeedKmh" type="number" min="0" step="0.01" class="form-control compact-input" value="0">
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="commuteTopSpeedKmh" class="form-label form-label-sm">Top Speed (km/h)</label>
+                                        <input id="commuteTopSpeedKmh" type="number" min="0" step="0.01" class="form-control compact-input" value="0">
                                     </div>
                                 </div>
                                 <div class="mb-3">
@@ -254,7 +274,7 @@
                             <table class="table table-striped table-sm mb-0 projection-table">
                                 <thead class="table-light sticky-top">
                                 <tr>
-                                    <th>Date &amp; Time</th>
+                                    <th>Trip Timing</th>
                                     <th>Vehicle</th>
                                     <th>Route</th>
                                     <th class="text-end">Distance</th>

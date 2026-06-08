@@ -19,6 +19,10 @@ class TransportationCommuteLog extends Model
         'consumption_value',
         'consumption_unit',
         'driven_at',
+        'ended_at',
+        'average_speed_kmh',
+        'top_speed_kmh',
+        'drive_time_minutes',
         'notes',
     ];
 

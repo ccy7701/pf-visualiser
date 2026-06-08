@@ -133,6 +133,35 @@
         return `${day}/${month}/${year} ${hours}:${minutes}`;
     }
 
+    function composeDateTime(date, time) {
+        if (!date || !time) return '';
+        return `${date}T${time}:00`;
+    }
+
+    function formatDateOnly(dateLike) {
+        const d = new Date(dateLike);
+        if (Number.isNaN(d.getTime())) return '-';
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    function formatTimeOnly(dateLike) {
+        const d = new Date(dateLike);
+        if (Number.isNaN(d.getTime())) return '-';
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
+    }
+
+    function minutesBetween(startIso, endIso) {
+        const start = new Date(startIso).getTime();
+        const end = new Date(endIso).getTime();
+        if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return 0;
+        return Math.max(1, Math.round((end - start) / 60000));
+    }
+
     function splitIsoDateTime(isoDateTime) {
         const d = new Date(isoDateTime);
         if (Number.isNaN(d.getTime())) {
@@ -425,7 +454,10 @@
                 tr.classList.add('table-active');
             }
             tr.innerHTML = `
-                <td>${formatDateTime(row.driven_at)}</td>
+                <td>
+                    <div class="log-cell-main">${formatDateOnly(row.driven_at)}</div>
+                    <div class="log-cell-sub">${formatTimeOnly(row.driven_at)} - ${row.ended_at ? formatTimeOnly(row.ended_at) : '-'}</div>
+                </td>
                 <td>${vehicleName(row.vehicle_id)}</td>
                 <td>
                     <div class="log-cell-main">${row.origin} - ${row.destination}</div>
@@ -552,6 +584,7 @@
 
     function setDriveFormValues(log) {
         const dateTime = splitIsoDateTime(log?.driven_at || '');
+        const endDateTime = splitIsoDateTime(log?.ended_at || log?.driven_at || '');
 
         const vehicle = document.getElementById('commuteVehicleId');
         const type = document.getElementById('commuteType');
@@ -561,6 +594,10 @@
         const consumption = document.getElementById('commuteConsumptionValue');
         const date = document.getElementById('commuteDate');
         const time = document.getElementById('commuteTime');
+        const endDate = document.getElementById('commuteEndDate');
+        const endTime = document.getElementById('commuteEndTime');
+        const averageSpeed = document.getElementById('commuteAverageSpeedKmh');
+        const topSpeed = document.getElementById('commuteTopSpeedKmh');
         const note = document.getElementById('commuteNote');
 
         if (vehicle) vehicle.value = log?.vehicle_id || (state.vehicles[0]?.id || '');
@@ -571,6 +608,10 @@
         if (consumption) consumption.value = String(toNumber(log?.consumption_value, 0));
         if (date) date.value = dateTime.date;
         if (time) time.value = dateTime.time;
+        if (endDate) endDate.value = endDateTime.date;
+        if (endTime) endTime.value = endDateTime.time;
+        if (averageSpeed) averageSpeed.value = String(toNumber(log?.average_speed_kmh, 0));
+        if (topSpeed) topSpeed.value = String(toNumber(log?.top_speed_kmh, 0));
         if (note) note.value = log?.notes || '';
 
         if (date?._flatpickr) {
@@ -578,6 +619,12 @@
         }
         if (time?._flatpickr) {
             time._flatpickr.setDate(dateTime.time, true, 'H:i');
+        }
+        if (endDate?._flatpickr) {
+            endDate._flatpickr.setDate(endDateTime.date, true, 'Y-m-d');
+        }
+        if (endTime?._flatpickr) {
+            endTime._flatpickr.setDate(endDateTime.time, true, 'H:i');
         }
     }
 
@@ -605,11 +652,24 @@
     }
 
     function defaultDateValue() {
-        return new Date().toISOString().slice(0, 10);
+        return dateValueFrom(new Date());
     }
 
     function defaultTimeValue() {
-        return new Date().toTimeString().slice(0, 5);
+        return timeValueFrom(new Date());
+    }
+
+    function dateValueFrom(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function timeValueFrom(date) {
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
     }
 
     function wireVehicleSave() {
@@ -826,39 +886,8 @@
         const btn = document.getElementById('addCommuteLogBtn');
         if (!btn) return;
         btn.addEventListener('click', async () => {
-            const vehicleId = String(document.getElementById('commuteVehicleId')?.value || '');
-            if (!vehicleId) {
-                setStatus('Add and select a vehicle first.', true);
-                return;
-            }
-
-            const driveDate = String(document.getElementById('commuteDate')?.value || '');
-            const driveTime = String(document.getElementById('commuteTime')?.value || '');
-            const distance = toNumber(document.getElementById('commuteDistanceKm')?.value, 0);
-            const mileage = toNumber(document.getElementById('commuteConsumptionValue')?.value, 0);
-
-            if (!driveDate || !driveTime) {
-                setStatus('Drive date and time are required.', true);
-                return;
-            }
-            if (distance <= 0 || mileage <= 0) {
-                setStatus('Please provide valid drive inputs.', true);
-                return;
-            }
-
-            const payload = {
-                vehicle_id: Number(vehicleId),
-                commute_type: String(document.getElementById('commuteType')?.value || 'personal_drive'),
-                origin: String(document.getElementById('commuteOrigin')?.value || '').trim() || 'Origin',
-                destination: String(document.getElementById('commuteDestination')?.value || '').trim() || 'Destination',
-                distance_km: distance,
-                consumption_value: mileage,
-                consumption_unit: 'L_PER_100KM',
-                driven_at: `${driveDate}T${driveTime}:00`,
-                notes: String(document.getElementById('commuteNote')?.value || '').trim(),
-            };
-
             try {
+                const payload = buildDrivePayload();
                 const snapshot = await apiRequest('POST', config.commuteLogsEndpoint, payload);
                 applySnapshot(snapshot);
                 setStatus('Drive log added.');
@@ -896,30 +925,8 @@
         editBtn.addEventListener('click', async () => {
             if (!editingCommuteLogId) return;
 
-            const vehicleId = String(document.getElementById('commuteVehicleId')?.value || '');
-            const driveDate = String(document.getElementById('commuteDate')?.value || '');
-            const driveTime = String(document.getElementById('commuteTime')?.value || '');
-            const distance = toNumber(document.getElementById('commuteDistanceKm')?.value, 0);
-            const mileage = toNumber(document.getElementById('commuteConsumptionValue')?.value, 0);
-
-            if (!vehicleId || !driveDate || !driveTime || distance <= 0 || mileage <= 0) {
-                setStatus('Please provide valid drive inputs.', true);
-                return;
-            }
-
-            const payload = {
-                vehicle_id: Number(vehicleId),
-                commute_type: String(document.getElementById('commuteType')?.value || 'personal_drive'),
-                origin: String(document.getElementById('commuteOrigin')?.value || '').trim() || 'Origin',
-                destination: String(document.getElementById('commuteDestination')?.value || '').trim() || 'Destination',
-                distance_km: distance,
-                consumption_value: mileage,
-                consumption_unit: 'L_PER_100KM',
-                driven_at: `${driveDate}T${driveTime}:00`,
-                notes: String(document.getElementById('commuteNote')?.value || '').trim(),
-            };
-
             try {
+                const payload = buildDrivePayload();
                 const endpoint = `${config.commuteLogsBaseUrl}/${encodeURIComponent(editingCommuteLogId)}`;
                 const snapshot = await apiRequest('PUT', endpoint, payload);
                 applySnapshot(snapshot);
@@ -945,6 +952,53 @@
                 setStatus(error.message || 'Failed to delete drive log.', true);
             }
         });
+    }
+
+    function buildDrivePayload() {
+        const vehicleId = String(document.getElementById('commuteVehicleId')?.value || '');
+        if (!vehicleId) {
+            throw new Error('Add and select a vehicle first.');
+        }
+
+        const driveDate = String(document.getElementById('commuteDate')?.value || '');
+        const driveTime = String(document.getElementById('commuteTime')?.value || '');
+        const endDate = String(document.getElementById('commuteEndDate')?.value || '');
+        const endTime = String(document.getElementById('commuteEndTime')?.value || '');
+        const startedAt = composeDateTime(driveDate, driveTime);
+        const endedAt = composeDateTime(endDate, endTime);
+        const distance = toNumber(document.getElementById('commuteDistanceKm')?.value, 0);
+        const mileage = toNumber(document.getElementById('commuteConsumptionValue')?.value, 0);
+        const averageSpeed = toNumber(document.getElementById('commuteAverageSpeedKmh')?.value, -1);
+        const topSpeed = toNumber(document.getElementById('commuteTopSpeedKmh')?.value, -1);
+        const driveMinutes = minutesBetween(startedAt, endedAt);
+
+        if (!startedAt || !endedAt) {
+            throw new Error('Drive start and end date/time are required.');
+        }
+        if (driveMinutes <= 0) {
+            throw new Error('Drive end time must be after start time.');
+        }
+        if (distance <= 0 || mileage <= 0 || averageSpeed < 0 || topSpeed < 0) {
+            throw new Error('Please provide valid drive inputs.');
+        }
+        if (topSpeed < averageSpeed) {
+            throw new Error('Top speed must be at least the average speed.');
+        }
+
+        return {
+            vehicle_id: Number(vehicleId),
+            commute_type: String(document.getElementById('commuteType')?.value || 'personal_drive'),
+            origin: String(document.getElementById('commuteOrigin')?.value || '').trim() || 'Origin',
+            destination: String(document.getElementById('commuteDestination')?.value || '').trim() || 'Destination',
+            distance_km: distance,
+            consumption_value: mileage,
+            consumption_unit: 'L_PER_100KM',
+            driven_at: startedAt,
+            ended_at: endedAt,
+            average_speed_kmh: averageSpeed,
+            top_speed_kmh: topSpeed,
+            notes: String(document.getElementById('commuteNote')?.value || '').trim(),
+        };
     }
 
     function wireFuelPriceModeHelpers() {
@@ -995,16 +1049,23 @@
         const fuelTime = document.getElementById('fuelledAtTime');
         const driveDate = document.getElementById('commuteDate');
         const driveTime = document.getElementById('commuteTime');
+        const driveEndDate = document.getElementById('commuteEndDate');
+        const driveEndTime = document.getElementById('commuteEndTime');
         const fuelMode = document.getElementById('fuelPriceMode');
         const fuelPrice = document.getElementById('fuelPricePerLitre');
+        const now = new Date();
+        const defaultDriveEnd = new Date(now.getTime() + 30 * 60000);
 
         if (fuelDate && !fuelDate.value) fuelDate.value = defaultDateValue();
         if (fuelTime && !fuelTime.value) fuelTime.value = defaultTimeValue();
-        if (driveDate && !driveDate.value) driveDate.value = defaultDateValue();
-        if (driveTime && !driveTime.value) driveTime.value = defaultTimeValue();
+        if (driveDate && !driveDate.value) driveDate.value = dateValueFrom(now);
+        if (driveTime && !driveTime.value) driveTime.value = timeValueFrom(now);
+        if (driveEndDate && !driveEndDate.value) driveEndDate.value = dateValueFrom(defaultDriveEnd);
+        if (driveEndTime && !driveEndTime.value) driveEndTime.value = timeValueFrom(defaultDriveEnd);
 
         if (fuelTime) fuelTime.setAttribute('placeholder', 'HH:MM');
         if (driveTime) driveTime.setAttribute('placeholder', 'HH:MM');
+        if (driveEndTime) driveEndTime.setAttribute('placeholder', 'HH:MM');
 
         if (fuelMode && fuelPrice && fuelMode.value === 'budi95' && toNumber(fuelPrice.value, 0) <= 0) {
             fuelPrice.value = String(PRICE_BUDI95);
@@ -1039,7 +1100,7 @@
             });
         });
 
-        ['fuelledAtTime', 'commuteTime'].forEach((id) => {
+        ['fuelledAtTime', 'commuteTime', 'commuteEndTime'].forEach((id) => {
             const input = document.getElementById(id);
             if (!input) return;
             if (input._flatpickr) {

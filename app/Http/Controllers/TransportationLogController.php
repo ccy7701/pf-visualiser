@@ -116,8 +116,13 @@ class TransportationLogController extends Controller
             'consumption_value' => ['required', 'numeric', 'min:0.0001'],
             'consumption_unit' => ['required', Rule::in(['L_PER_100KM', 'KM_PER_L'])],
             'driven_at' => ['required', 'date_format:Y-m-d\TH:i:s'],
+            'ended_at' => ['required', 'date_format:Y-m-d\TH:i:s', 'after:driven_at'],
+            'average_speed_kmh' => ['required', 'numeric', 'min:0'],
+            'top_speed_kmh' => ['required', 'numeric', 'min:0', 'gte:average_speed_kmh'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        $validated['drive_time_minutes'] = $this->driveTimeMinutes($validated['driven_at'], $validated['ended_at']);
 
         TransportationCommuteLog::query()->create($validated);
 
@@ -135,8 +140,13 @@ class TransportationLogController extends Controller
             'consumption_value' => ['required', 'numeric', 'min:0.0001'],
             'consumption_unit' => ['required', Rule::in(['L_PER_100KM', 'KM_PER_L'])],
             'driven_at' => ['required', 'date_format:Y-m-d\TH:i:s'],
+            'ended_at' => ['required', 'date_format:Y-m-d\TH:i:s', 'after:driven_at'],
+            'average_speed_kmh' => ['required', 'numeric', 'min:0'],
+            'top_speed_kmh' => ['required', 'numeric', 'min:0', 'gte:average_speed_kmh'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        $validated['drive_time_minutes'] = $this->driveTimeMinutes($validated['driven_at'], $validated['ended_at']);
 
         $commuteLog->update($validated);
 
@@ -172,5 +182,12 @@ class TransportationLogController extends Controller
             'fuelLogs' => $fuelLogs,
             'commuteLogs' => $commuteLogs,
         ];
+    }
+
+    private function driveTimeMinutes(string $startedAt, string $endedAt): int
+    {
+        $seconds = strtotime($endedAt) - strtotime($startedAt);
+
+        return max(1, (int) round($seconds / 60));
     }
 }
