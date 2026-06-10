@@ -8,6 +8,7 @@
     const incomeCategories = config.incomeCategories || [];
 
     let cohChart = null;
+    let cohBreakdownChart = null;
     let incomeExpenseChart = null;
     let expenseCategoryChart = null;
     let months = [];
@@ -97,6 +98,16 @@
 
     function total(items) {
         return (items || []).reduce((carry, item) => carry + toNumber(item.amount, 0), 0);
+    }
+
+    function balanceTotalFromValues(closingCoh, closingElr, closingEpf) {
+        return toNumber(closingCoh, 0) + toNumber(closingElr, 0) + toNumber(closingEpf, 0);
+    }
+
+    function balanceTotalForRow(row) {
+        if (!row) return 0;
+
+        return balanceTotalFromValues(row.closing_coh, row.closing_elr, row.closing_epf);
     }
 
     function percentOfTotal(value, totalValue) {
@@ -224,15 +235,27 @@
         });
     }
 
+    function updateMonthEndTotal() {
+        const totalInput = document.getElementById('monthEndTotalInput');
+        if (!totalInput) return;
+
+        const closingCoh = document.getElementById('closingCohInput')?.value;
+        const closingElr = document.getElementById('closingElrInput')?.value;
+        const closingEpf = document.getElementById('closingEpfInput')?.value;
+        totalInput.value = balanceTotalFromValues(closingCoh, closingElr, closingEpf).toFixed(2);
+    }
+
     function renderInputs() {
         const row = findMonth(selectedMonth);
         const monthInput = document.getElementById('historyMonth');
+        const monthEndTotalInput = document.getElementById('monthEndTotalInput');
         const closingCohInput = document.getElementById('closingCohInput');
         const closingElrInput = document.getElementById('closingElrInput');
         const closingEpfInput = document.getElementById('closingEpfInput');
         const selectedMonthDisplay = document.getElementById('selectedMonthDisplay');
 
         if (monthInput) monthInput.value = selectedMonth;
+        if (monthEndTotalInput) monthEndTotalInput.value = balanceTotalForRow(row).toFixed(2);
         if (closingCohInput) closingCohInput.value = row?.closing_coh ?? '';
         if (closingElrInput) closingElrInput.value = row?.closing_elr ?? '';
         if (closingEpfInput) closingEpfInput.value = row?.closing_epf ?? '';
@@ -336,6 +359,7 @@
         }
 
         const options = applySharedXAxisOptions(baseChartOptions(), 44);
+        options.plugins.tooltip.callbacks.label = (context) => `${context.dataset.label}: RM ${money.format(context.parsed.y)}`;
 
         cohChart = new Chart(canvas, {
             type: 'line',
@@ -343,8 +367,8 @@
                 labels: months.map((row) => formatMonthLabel(row.month)),
                 datasets: [
                     {
-                        label: 'COH',
-                        data: months.map((row) => row.closing_coh),
+                        label: 'Total Balance',
+                        data: months.map((row) => balanceTotalForRow(row)),
                         borderColor: '#0d6efd',
                         backgroundColor: 'rgba(13, 110, 253, 0.12)',
                         borderWidth: 3,
@@ -359,7 +383,73 @@
             plugins: [
                 createHistoryAxisLabelPlugin('historyCohLabels', (row) => [
                     { text: formatMonthLabel(row.month), color: '#212529' },
-                    { text: money.format(toNumber(row.closing_coh, 0)), color: '#0d6efd' },
+                    { text: money.format(balanceTotalForRow(row)), color: '#0d6efd' },
+                ]),
+            ],
+        });
+    }
+
+    function renderCohBreakdownChart() {
+        const canvas = document.getElementById('historyCohBreakdownChart');
+        if (!canvas || typeof Chart === 'undefined') return;
+
+        if (cohBreakdownChart) {
+            cohBreakdownChart.destroy();
+        }
+
+        const options = applySharedXAxisOptions(baseChartOptions(), 44);
+        options.scales.x.stacked = true;
+        options.scales.y.stacked = true;
+        options.plugins.legend.display = true;
+        options.plugins.legend.position = 'top';
+        options.plugins.tooltip.callbacks.label = (context) => `${context.dataset.label}: RM ${money.format(context.parsed.y)}`;
+        options.plugins.tooltip.callbacks.footer = (tooltipItems) => {
+            const dataIndex = tooltipItems[0]?.dataIndex;
+            const row = Number.isInteger(dataIndex) ? months[dataIndex] : null;
+            return row ? `Total: RM ${money.format(balanceTotalForRow(row))}` : '';
+        };
+
+        cohBreakdownChart = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: months.map((row) => formatMonthLabel(row.month)),
+                datasets: [
+                    {
+                        label: 'COH',
+                        data: months.map((row) => toNumber(row.closing_coh, 0)),
+                        backgroundColor: 'rgba(13, 110, 253, 0.76)',
+                        borderColor: '#0d6efd',
+                        borderWidth: 1,
+                        stack: 'balances',
+                        categoryPercentage: 0.72,
+                        barPercentage: 0.78,
+                    },
+                    {
+                        label: 'ELR',
+                        data: months.map((row) => toNumber(row.closing_elr, 0)),
+                        backgroundColor: 'rgba(25, 135, 84, 0.72)',
+                        borderColor: '#198754',
+                        borderWidth: 1,
+                        stack: 'balances',
+                        categoryPercentage: 0.72,
+                        barPercentage: 0.78,
+                    },
+                    {
+                        label: 'EPF',
+                        data: months.map((row) => toNumber(row.closing_epf, 0)),
+                        backgroundColor: 'rgba(111, 66, 193, 0.72)',
+                        borderColor: '#6f42c1',
+                        borderWidth: 1,
+                        stack: 'balances',
+                        categoryPercentage: 0.72,
+                        barPercentage: 0.78,
+                    },
+                ],
+            },
+            options,
+            plugins: [
+                createHistoryAxisLabelPlugin('historyCohBreakdownLabels', (row) => [
+                    { text: formatMonthLabel(row.month), color: '#212529' },
                 ]),
             ],
         });
@@ -564,9 +654,10 @@
     }
 
     function setActiveVisualisation(value) {
-        activeHistoryVisualisation = ['coh', 'income-expense', 'expense-category'].includes(value) ? value : 'coh';
+        activeHistoryVisualisation = ['coh', 'coh-breakdown', 'income-expense', 'expense-category'].includes(value) ? value : 'coh';
 
         document.getElementById('historyCohPane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'coh');
+        document.getElementById('historyCohBreakdownPane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'coh-breakdown');
         document.getElementById('historyIncomeExpensePane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'income-expense');
         document.getElementById('historyExpenseCategoryPane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'expense-category');
         document.getElementById('expensePieValueControls')?.classList.toggle('d-none', activeHistoryVisualisation !== 'expense-category');
@@ -577,6 +668,8 @@
 
         if (activeHistoryVisualisation === 'coh') {
             renderCohChart();
+        } else if (activeHistoryVisualisation === 'coh-breakdown') {
+            renderCohBreakdownChart();
         } else if (activeHistoryVisualisation === 'income-expense') {
             renderIncomeExpenseChart();
         } else {
@@ -699,9 +792,18 @@
         });
     }
 
+    function initBalanceTotalInputs() {
+        ['closingCohInput', 'closingElrInput', 'closingEpfInput'].forEach((id) => {
+            document.getElementById(id)?.addEventListener('input', updateMonthEndTotal);
+        });
+
+        updateMonthEndTotal();
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         initTabs();
         initMonthPicker();
+        initBalanceTotalInputs();
 
         document.getElementById('previousWindowBtn')?.addEventListener('click', () => {
             const latestMonth = shiftMonth(months[months.length - 1]?.month || selectedMonth, -1);

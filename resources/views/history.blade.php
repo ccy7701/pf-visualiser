@@ -64,6 +64,13 @@
                                         <input id="historyMonth" class="form-control compact-input month-input" type="text" value="{{ $latestMonth }}" autocomplete="off">
                                     </div>
                                     <div class="col-12">
+                                        <label for="monthEndTotalInput" class="form-label form-label-sm">Total at Month End</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">RM</span>
+                                            <input id="monthEndTotalInput" class="form-control compact-input" type="number" step="0.01" min="0" placeholder="0.00" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
                                         <label for="closingCohInput" class="form-label form-label-sm">COH at Month End</label>
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text">RM</span>
@@ -127,7 +134,8 @@
                             </div>
                             <div class="history-visualisation-switcher">
                                 <select id="historyVisualisationSelect" class="form-select form-select-sm history-visualisation-select" aria-label="History visualisation">
-                                    <option value="coh" selected>COH Trend</option>
+                                    <option value="coh" selected>Total Balance Trend</option>
+                                    <option value="coh-breakdown">COH, ELR and EPF</option>
                                     <option value="income-expense">Income and Expenses</option>
                                     <option value="expense-category">Expenses by Category</option>
                                 </select>
@@ -147,6 +155,11 @@
                     <div id="historyCohPane" class="history-visualisation-pane">
                         <div class="history-chart-wrap">
                             <canvas id="historyCohChart"></canvas>
+                        </div>
+                    </div>
+                    <div id="historyCohBreakdownPane" class="history-visualisation-pane d-none">
+                        <div class="history-chart-wrap history-chart-wrap-compact">
+                            <canvas id="historyCohBreakdownChart"></canvas>
                         </div>
                     </div>
                     <div id="historyIncomeExpensePane" class="history-visualisation-pane d-none">
