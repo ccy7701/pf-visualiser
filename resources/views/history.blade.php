@@ -126,6 +126,10 @@
                             <div class="small text-secondary fw-normal">Latest: <span id="latestMonthDisplay">-</span></div>
                         </div>
                         <div class="history-visualisation-actions">
+                            <div id="currentAccrualControls" class="form-check history-current-accrual-toggle d-none">
+                                <input id="showCurrentAccrualOverlay" class="form-check-input" type="checkbox">
+                                <label class="form-check-label" for="showCurrentAccrualOverlay">Current accrual</label>
+                            </div>
                             <div id="expensePieValueControls" class="btn-group btn-group-sm history-pie-value-toggle d-none" role="group" aria-label="Expense category value display">
                                 <input class="btn-check" type="radio" name="expensePieValueMode" id="expensePieModeSen" value="sen" checked>
                                 <label class="btn btn-outline-secondary" for="expensePieModeSen">sen/RM</label>
@@ -196,6 +200,7 @@
         latestMonth: @json($latestMonth),
         monthsEndpoint: @json(route('history.months')),
         saveEndpoint: @json(route('history.months.save')),
+        counterSnapshotEndpoint: @json(route('counter.snapshot')),
         expenseCategories: @json($expenseCategoriesPayload),
         incomeCategories: @json($incomeCategoriesPayload),
     };

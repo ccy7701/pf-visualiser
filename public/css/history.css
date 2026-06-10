@@ -144,6 +144,28 @@
     font-weight: 700;
 }
 
+.history-current-accrual-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.history-current-accrual-toggle .form-check-input {
+    margin-top: 0;
+}
+
+.history-current-accrual-toggle .form-check-label {
+    color: #495057;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+[data-bs-theme="dark"] .history-current-accrual-toggle .form-check-label {
+    color: #c6c6c6;
+}
+
 .history-window-controls {
     display: inline-flex;
     gap: 0.35rem;

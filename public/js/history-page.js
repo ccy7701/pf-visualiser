@@ -14,6 +14,8 @@
     let months = [];
     let selectedMonth = config.latestMonth || '';
     let activeHistoryVisualisation = 'coh';
+    let counterSnapshot = null;
+    let showCurrentAccrualOverlay = false;
     let hoveredExpensePieCategoryId = null;
     let expensePieValueMode = 'sen';
     let statusTimer = null;
@@ -108,6 +110,64 @@
         if (!row) return 0;
 
         return balanceTotalFromValues(row.closing_coh, row.closing_elr, row.closing_epf);
+    }
+
+    function currentMonthKey() {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function latestKnownRetirementBalances(beforeMonth) {
+        const currentIndex = months.findIndex((row) => row.month === beforeMonth);
+        const searchRows = currentIndex >= 0 ? months.slice(0, currentIndex + 1) : months;
+
+        for (let index = searchRows.length - 1; index >= 0; index--) {
+            const row = searchRows[index];
+            if (row && (row.closing_elr !== null || row.closing_epf !== null)) {
+                return {
+                    elr: toNumber(row.closing_elr, 0),
+                    epf: toNumber(row.closing_epf, 0),
+                };
+            }
+        }
+
+        return { elr: 0, epf: 0 };
+    }
+
+    function currentBalanceOverlayDatasets() {
+        if (!showCurrentAccrualOverlay || !counterSnapshot) return [];
+
+        const currentMonth = currentMonthKey();
+        const currentIndex = months.findIndex((row) => row.month === currentMonth);
+        if (currentIndex < 0) return [];
+
+        const currentRow = months[currentIndex];
+        const retirementBalances = latestKnownRetirementBalances(currentMonth);
+        const currentTotal = currentRow?.has_record
+            ? balanceTotalForRow(currentRow)
+            : balanceTotalFromValues(counterSnapshot.actual_counter, retirementBalances.elr, retirementBalances.epf);
+        const accruedCurrentTotal = currentTotal + toNumber(counterSnapshot.accrued_salary, 0);
+
+        const accruedData = months.map(() => null);
+        if (currentIndex > 0) {
+            accruedData[currentIndex - 1] = balanceTotalForRow(months[currentIndex - 1]);
+        }
+        accruedData[currentIndex] = accruedCurrentTotal;
+
+        return [
+            {
+                label: 'Total Balance + Accrual',
+                data: accruedData,
+                borderColor: 'rgba(25, 135, 84, 0.42)',
+                backgroundColor: 'rgba(25, 135, 84, 0.08)',
+                borderWidth: 2,
+                borderDash: [5, 4],
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                tension: 0,
+                spanGaps: true,
+            },
+        ];
     }
 
     function percentOfTotal(value, totalValue) {
@@ -377,6 +437,7 @@
                         yAxisID: 'y',
                         spanGaps: true,
                     },
+                    ...currentBalanceOverlayDatasets(),
                 ],
             },
             options,
@@ -660,6 +721,7 @@
         document.getElementById('historyCohBreakdownPane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'coh-breakdown');
         document.getElementById('historyIncomeExpensePane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'income-expense');
         document.getElementById('historyExpenseCategoryPane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'expense-category');
+        document.getElementById('currentAccrualControls')?.classList.toggle('d-none', activeHistoryVisualisation !== 'coh');
         document.getElementById('expensePieValueControls')?.classList.toggle('d-none', activeHistoryVisualisation !== 'expense-category');
     }
 
@@ -706,6 +768,20 @@
             monthInput.value = latestMonth;
         }
         renderAll();
+    }
+
+    async function loadCounterSnapshot() {
+        if (!config.counterSnapshotEndpoint) return;
+
+        const response = await fetch(config.counterSnapshotEndpoint);
+        if (!response.ok) {
+            throw new Error('Unable to load current Counter snapshot.');
+        }
+
+        counterSnapshot = await response.json();
+        if (activeHistoryVisualisation === 'coh' && showCurrentAccrualOverlay) {
+            renderCohChart();
+        }
     }
 
     async function saveMonth() {
@@ -800,10 +876,25 @@
         updateMonthEndTotal();
     }
 
+    function initCurrentAccrualOverlayToggle() {
+        const input = document.getElementById('showCurrentAccrualOverlay');
+        if (!input) return;
+
+        showCurrentAccrualOverlay = input.checked;
+        input.addEventListener('change', (event) => {
+            showCurrentAccrualOverlay = Boolean(event.target.checked);
+            if (showCurrentAccrualOverlay && !counterSnapshot) {
+                loadCounterSnapshot().catch((error) => setStatus(error.message, true));
+            }
+            renderCohChart();
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         initTabs();
         initMonthPicker();
         initBalanceTotalInputs();
+        initCurrentAccrualOverlayToggle();
 
         document.getElementById('previousWindowBtn')?.addEventListener('click', () => {
             const latestMonth = shiftMonth(months[months.length - 1]?.month || selectedMonth, -1);
