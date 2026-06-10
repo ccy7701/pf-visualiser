@@ -15,6 +15,31 @@
         vehicles: [],
         fuelLogs: [],
         commuteLogs: [],
+        summaryPeriod: 'monthly',
+    };
+
+    const summaryPeriods = {
+        monthly: {
+            title: 'Monthly Summary',
+            spendingLabel: "This Month's Fuel Spending",
+            driveCostLabel: "This Month's Estimated Drive Cost",
+            emptyFuelMessage: 'No refuel logs this month.',
+            emptyDriveMessage: 'No drive logs this month.',
+        },
+        weekly: {
+            title: 'Weekly Summary',
+            spendingLabel: "This Week's Fuel Spending",
+            driveCostLabel: "This Week's Estimated Drive Cost",
+            emptyFuelMessage: 'No refuel logs this week.',
+            emptyDriveMessage: 'No drive logs this week.',
+        },
+        since_refuel: {
+            title: 'Summary Since Last Refuel',
+            spendingLabel: 'Fuel Spending Since Last Refuel',
+            driveCostLabel: 'Estimated Drive Cost Since Last Refuel',
+            emptyFuelMessage: 'No refuel logs found.',
+            emptyDriveMessage: 'No drive logs since the last refuel.',
+        },
     };
 
     function setStatus(message, isError) {
@@ -115,6 +140,57 @@
         const d = new Date(dateLike);
         if (Number.isNaN(d.getTime())) return '';
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function startOfCurrentWeek() {
+        const now = new Date();
+        const start = new Date(now);
+        const daysSinceMonday = (start.getDay() + 6) % 7;
+        start.setDate(start.getDate() - daysSinceMonday);
+        start.setHours(0, 0, 0, 0);
+        return start;
+    }
+
+    function latestRefuelDate(fuelRows) {
+        return fuelRows.reduce((latest, row) => {
+            const timestamp = new Date(row.fuelled_at).getTime();
+            if (Number.isNaN(timestamp)) return latest;
+            return latest === null || timestamp > latest.getTime() ? new Date(timestamp) : latest;
+        }, null);
+    }
+
+    function rowDateInSelectedPeriod(row, dateKey, periodStart) {
+        const date = new Date(row[dateKey]);
+        if (Number.isNaN(date.getTime())) return false;
+
+        if (state.summaryPeriod === 'weekly') {
+            return date >= periodStart;
+        }
+
+        if (state.summaryPeriod === 'since_refuel') {
+            return periodStart !== null && date >= periodStart;
+        }
+
+        return monthKeyFromDate(date) === thisMonthKey();
+    }
+
+    function scopedTransportationRows() {
+        const fuelRows = deriveFuelRows();
+        const driveRows = state.commuteLogs
+            .map(deriveDriveRow)
+            .sort((a, b) => new Date(b.driven_at).getTime() - new Date(a.driven_at).getTime());
+
+        const periodStart = state.summaryPeriod === 'weekly'
+            ? startOfCurrentWeek()
+            : state.summaryPeriod === 'since_refuel'
+                ? latestRefuelDate(fuelRows)
+                : null;
+
+        return {
+            fuelRows: fuelRows.filter((row) => rowDateInSelectedPeriod(row, 'fuelled_at', periodStart)),
+            driveRows: driveRows.filter((row) => rowDateInSelectedPeriod(row, 'driven_at', periodStart)),
+            periodStart,
+        };
     }
 
     function vehicleName(vehicleId) {
@@ -283,18 +359,13 @@
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     }
 
-    function thisMonthSummary() {
-        const month = thisMonthKey();
-        const fuelRows = deriveFuelRows();
-        const driveRows = state.commuteLogs.map(deriveDriveRow);
+    function selectedPeriodSummary() {
+        const { fuelRows, driveRows } = scopedTransportationRows();
 
-        const fuelRowsMonth = fuelRows.filter((row) => monthKeyFromDate(row.fuelled_at) === month);
-        const driveRowsMonth = driveRows.filter((row) => monthKeyFromDate(row.driven_at) === month);
-
-        const actualFuelSpending = fuelRowsMonth.reduce((carry, row) => carry + toNumber(row.total_amount, 0), 0);
-        const totalFuelLitres = fuelRowsMonth.reduce((carry, row) => carry + toNumber(row.fuel_litres, 0), 0);
+        const actualFuelSpending = fuelRows.reduce((carry, row) => carry + toNumber(row.total_amount, 0), 0);
+        const totalFuelLitres = fuelRows.reduce((carry, row) => carry + toNumber(row.fuel_litres, 0), 0);
         const avgLPer100 = (() => {
-            const eligible = driveRowsMonth.filter((row) => toNumber(row.distance_km, 0) > 0 && toNumber(row.mileageLPer100Km, 0) > 0);
+            const eligible = driveRows.filter((row) => toNumber(row.distance_km, 0) > 0 && toNumber(row.mileageLPer100Km, 0) > 0);
             if (!eligible.length) return null;
             const totalDistance = eligible.reduce((carry, row) => carry + toNumber(row.distance_km, 0), 0);
             if (totalDistance <= 0) return null;
@@ -304,8 +375,8 @@
             );
             return weightedMileageSum / totalDistance;
         })();
-        const estimatedCommuteCost = driveRowsMonth.reduce((carry, row) => carry + toNumber(row.estimated_fuel_cost, 0), 0);
-        const estimatedCommuteDistance = driveRowsMonth.reduce((carry, row) => carry + toNumber(row.distance_km, 0), 0);
+        const estimatedCommuteCost = driveRows.reduce((carry, row) => carry + toNumber(row.estimated_fuel_cost, 0), 0);
+        const estimatedCommuteDistance = driveRows.reduce((carry, row) => carry + toNumber(row.distance_km, 0), 0);
 
         return {
             actualFuelSpending,
@@ -408,11 +479,12 @@
     function renderFuelRows() {
         const tbody = document.getElementById('fuelLogRows');
         if (!tbody) return;
-        const rows = deriveFuelRows();
+        const rows = scopedTransportationRows().fuelRows;
+        const period = summaryPeriods[state.summaryPeriod] || summaryPeriods.monthly;
         tbody.innerHTML = '';
 
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary py-4">No refuel logs yet.</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-secondary py-4">${period.emptyFuelMessage}</td></tr>`;
             return;
         }
 
@@ -436,13 +508,12 @@
     function renderDriveRows() {
         const tbody = document.getElementById('commuteLogRows');
         if (!tbody) return;
-        const rows = state.commuteLogs
-            .map(deriveDriveRow)
-            .sort((a, b) => new Date(b.driven_at).getTime() - new Date(a.driven_at).getTime());
+        const rows = scopedTransportationRows().driveRows;
+        const period = summaryPeriods[state.summaryPeriod] || summaryPeriods.monthly;
 
         tbody.innerHTML = '';
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-secondary py-4">No drive logs yet.</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-secondary py-4">${period.emptyDriveMessage}</td></tr>`;
             return;
         }
 
@@ -478,13 +549,16 @@
     }
 
     function renderDashboard() {
-        const summary = thisMonthSummary();
+        const period = summaryPeriods[state.summaryPeriod] || summaryPeriods.monthly;
+        const summary = selectedPeriodSummary();
         const wrap = document.getElementById('fuelDashboardCards');
+        const title = document.getElementById('transportationSummaryTitle');
+        if (title) title.textContent = period.title;
         if (!wrap) return;
 
         const items = [
-            { label: "This Month's Fuel Spending", value: `RM ${money.format(summary.actualFuelSpending)}` },
-            { label: "This Month's Estimated Drive Cost", value: `RM ${money.format(summary.estimatedCommuteCost)}` },
+            { label: period.spendingLabel, value: `RM ${money.format(summary.actualFuelSpending)}` },
+            { label: period.driveCostLabel, value: `RM ${money.format(summary.estimatedCommuteCost)}` },
             { label: 'Total Fuel Litres Logged', value: `${money.format(summary.totalFuelLitres)} L` },
             { label: 'Average Mileage', value: `${summary.avgLPer100 === null ? '-' : money.format(summary.avgLPer100)} L/100KM` },
             { label: 'Commute Distance', value: `${money.format(summary.estimatedCommuteDistance)} KM` },
@@ -512,6 +586,30 @@
         renderDashboard();
         renderFuelFormMode();
         renderDriveFormMode();
+    }
+
+    function wireSummaryPeriodSelect() {
+        const group = document.getElementById('transportationSummaryPeriod');
+        if (!group) return;
+
+        const buttons = Array.from(group.querySelectorAll('[data-summary-period]'));
+        const renderActivePeriod = () => {
+            buttons.forEach((button) => {
+                button.classList.toggle('active', button.dataset.summaryPeriod === state.summaryPeriod);
+            });
+        };
+
+        renderActivePeriod();
+        group.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-summary-period]');
+            if (!button || !group.contains(button)) return;
+
+            state.summaryPeriod = summaryPeriods[button.dataset.summaryPeriod] ? button.dataset.summaryPeriod : 'monthly';
+            renderActivePeriod();
+            renderFuelRows();
+            renderDriveRows();
+            renderDashboard();
+        });
     }
 
     function activateInputTab(tabButtonId) {
@@ -1129,6 +1227,7 @@
         wireDriveEditActions();
         wireFuelPriceModeHelpers();
         wireFuelTotalAutoCalculation();
+        wireSummaryPeriodSelect();
         initDefaults();
         initDatePickers();
         initFuelInputTabUI();

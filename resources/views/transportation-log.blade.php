@@ -235,17 +235,21 @@
         </div>
 
         <div class="col-xl-8">
-            <div class="card panel-card mb-3">
-                <div class="card-header">Monthly Summary</div>
-                <div class="card-body">
-                    <div class="row g-2" id="fuelDashboardCards"></div>
+            <div class="card panel-card">
+                <div class="card-header transportation-summary-shell-header">
+                    <div id="transportationSummaryTitle">Monthly Summary</div>
+                    <div class="summary-period-segmented" id="transportationSummaryPeriod" role="group" aria-label="Summary period">
+                        <button type="button" class="summary-period-option active" data-summary-period="monthly">Monthly</button>
+                        <button type="button" class="summary-period-option" data-summary-period="weekly">Weekly</button>
+                        <button type="button" class="summary-period-option" data-summary-period="since_refuel">Since Last Refuel</button>
+                    </div>
                 </div>
-            </div>
+                <div class="card-body">
+                    <h2 class="section-subtitle mb-3">Summary</h2>
+                    <div class="row g-2" id="fuelDashboardCards"></div>
 
-            <div class="card panel-card mb-3">
-                <div class="card-header">Refuel Logs</div>
-                <div class="card-body p-0">
-                    <div class="results-wrap">
+                    <h2 class="section-subtitle my-3">Refuel Logs</h2>
+                    <div class="results-wrap transportation-section-table">
                         <div class="table-responsive">
                             <table class="table table-striped table-sm mb-0 projection-table">
                                 <thead class="table-light sticky-top">
@@ -264,13 +268,9 @@
                             </table>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="card panel-card">
-                <div class="card-header">Drive Logs</div>
-                <div class="card-body p-0">
-                    <div class="results-wrap">
+                    <h2 class="section-subtitle my-3">Drive Logs</h2>
+                    <div class="results-wrap transportation-section-table">
                         <div class="table-responsive">
                             <table class="table table-striped table-sm mb-0 projection-table">
                                 <thead class="table-light sticky-top">
