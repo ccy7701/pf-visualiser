@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Personal Finance Counter</title>
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     @livewireStyles
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="{{ asset('css/counter.css') }}" rel="stylesheet">
