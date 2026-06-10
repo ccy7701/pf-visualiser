@@ -363,6 +363,27 @@
             -webkit-overflow-scrolling: touch;
             padding: 16px;
             flex: 1;
+            font-size: 0.95rem;
+        }
+
+        .content-popup-body .form-label,
+        .content-popup-body .form-control-sm,
+        .content-popup-body .form-select-sm,
+        .content-popup-body .btn-sm,
+        .content-popup-body .small,
+        .content-popup-body .alert,
+        .content-popup-body .table,
+        .content-popup-body [style*="font-size:0.7rem"],
+        .content-popup-body [style*="font-size:0.75rem"],
+        .content-popup-body [style*="font-size:0.78rem"],
+        .content-popup-body [style*="font-size:0.8rem"],
+        .content-popup-body [style*="font-size:0.85rem"] {
+            font-size: 0.9rem !important;
+        }
+
+        .content-popup-body h2.h6,
+        .content-popup-body h3.small {
+            font-size: 1rem !important;
         }
 
         /* ── summary cards ── */
