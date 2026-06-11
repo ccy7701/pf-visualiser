@@ -64,6 +64,22 @@
             border-radius: 0.55rem;
             overflow: hidden;
         }
+        .transportation-drive-logs-table {
+            max-height: none;
+            overflow: hidden;
+        }
+        .transportation-drive-logs-table thead,
+        .transportation-drive-logs-table tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+        .transportation-drive-logs-table tbody {
+            display: block;
+            max-height: min(38vh, 26rem);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
         [data-bs-theme="dark"] .transportation-section-table {
             border-color: #333;
         }

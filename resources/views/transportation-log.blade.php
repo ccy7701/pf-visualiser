@@ -245,7 +245,6 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <h2 class="section-subtitle mb-3">Summary</h2>
                     <div class="row g-2" id="fuelDashboardCards"></div>
 
                     <h2 class="section-subtitle my-3">Refuel Logs</h2>
@@ -270,7 +269,7 @@
                     </div>
 
                     <h2 class="section-subtitle my-3">Drive Logs</h2>
-                    <div class="results-wrap transportation-section-table">
+                    <div class="results-wrap transportation-section-table transportation-drive-logs-table">
                         <div class="table-responsive">
                             <table class="table table-striped table-sm mb-0 projection-table">
                                 <thead class="table-light sticky-top">
