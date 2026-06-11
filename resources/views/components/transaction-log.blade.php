@@ -22,6 +22,8 @@ new class extends Component
 
     public array $allCategories = [];
 
+    public string $recentTransactionPeriod = 'today';
+
     public string $type = 'income';
 
     public string $datetime = '';
@@ -49,12 +51,7 @@ new class extends Component
     {
         $this->snapshot = $counterService->snapshot();
 
-        $this->transactions = Transaction::query()
-            ->with('category')
-            ->latest('datetime')
-            ->limit(20)
-            ->get()
-            ->toArray();
+        $this->loadTransactions();
 
         $this->allCategories = Category::query()
             ->orderBy('type')
@@ -64,6 +61,39 @@ new class extends Component
 
         $this->setInitialDatetime();
         $this->filterCategoriesByType();
+    }
+
+    public function updatedRecentTransactionPeriod(): void
+    {
+        $this->loadTransactions();
+    }
+
+    public function setRecentTransactionPeriod(string $period): void
+    {
+        if (! in_array($period, ['today', 'yesterday', 'this_week', 'two_weeks'], true)) {
+            return;
+        }
+
+        $this->recentTransactionPeriod = $period;
+        $this->loadTransactions();
+    }
+
+    public function loadTransactions(): void
+    {
+        $now = now('Asia/Kuala_Lumpur');
+        $range = match ($this->recentTransactionPeriod) {
+            'yesterday' => [$now->copy()->subDay()->startOfDay(), $now->copy()->subDay()->endOfDay()],
+            'this_week' => [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()],
+            'two_weeks' => [$now->copy()->subWeeks(2), $now],
+            default => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
+        };
+
+        $this->transactions = Transaction::query()
+            ->with('category')
+            ->whereBetween('datetime', $range)
+            ->latest('datetime')
+            ->get()
+            ->toArray();
     }
 
     public function updatedType(): void
@@ -196,8 +226,12 @@ new class extends Component
 
 <div>
     {{-- Summary cards --}}
-    <div class="row g-2 mb-3">
-        <div class="col-4">
+    @php
+        $netTransactions = (float) ($snapshot['net_transactions'] ?? 0);
+        $netTransactionClass = $netTransactions > 0 ? 'text-success' : 'text-danger';
+    @endphp
+    <div class="counter-equation-summary mb-3">
+        <div class="counter-equation-card">
             <div class="card data-card h-100">
                 <div class="card-body text-center p-2">
                     <div class="text-secondary" style="font-size:0.7rem;">Starting Amount</div>
@@ -205,7 +239,17 @@ new class extends Component
                 </div>
             </div>
         </div>
-        <div class="col-4">
+        <div class="counter-equation-operator">+</div>
+        <div class="counter-equation-card">
+            <div class="card data-card h-100">
+                <div class="card-body text-center p-2">
+                    <div class="text-secondary" style="font-size:0.7rem;">Net Transactions</div>
+                    <div class="fw-semibold {{ $netTransactionClass }}" style="font-size:0.85rem;">RM {{ number_format($netTransactions, 2) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="counter-equation-operator">+</div>
+        <div class="counter-equation-card">
             <div class="card data-card h-100">
                 <div class="card-body text-center p-2">
                     <div class="text-secondary" style="font-size:0.7rem;">Unpaid Accrual</div>
@@ -213,11 +257,12 @@ new class extends Component
                 </div>
             </div>
         </div>
-        <div class="col-4">
+        <div class="counter-equation-operator">=</div>
+        <div class="counter-equation-card">
             <div class="card data-card h-100">
                 <div class="card-body text-center p-2">
-                    <div class="text-secondary" style="font-size:0.7rem;">Net Transactions</div>
-                    <div class="fw-semibold" style="font-size:0.85rem;">RM {{ number_format($snapshot['net_transactions'], 2) }}</div>
+                    <div class="text-secondary" style="font-size:0.7rem;">Projected Amount</div>
+                    <div class="fw-semibold" style="font-size:0.85rem;" id="dynamicTotalSummary">RM {{ number_format($snapshot['expected_counter'], 2) }}</div>
                 </div>
             </div>
         </div>
@@ -295,52 +340,66 @@ new class extends Component
     {{-- Recent transactions table --}}
     <div class="card data-card">
         <div class="card-body p-2">
-            <h2 class="h6 mb-2">Recent Transactions</h2>
-            <div class="table-responsive">
-                <table class="table table-striped table-hover table-sm align-middle mb-0" style="font-size:0.8rem;">
-                    <thead>
-                    <tr>
-                        <th>Date &amp; Time</th>
-                        <th>Category</th>
-                        <th>Note</th>
-                        <th class="text-end">Amount</th>
-                        <th class="text-center">Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @forelse ($transactions as $tx)
+            <div class="recent-transactions-header">
+                <h2 class="h6 mb-0">Recent Transactions</h2>
+                <div class="recent-transaction-filters" role="group" aria-label="Recent transaction period">
+                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'today' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('today')">Today</button>
+                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'yesterday' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('yesterday')">Yesterday</button>
+                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'this_week' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('this_week')">This Week</button>
+                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'two_weeks' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('two_weeks')">Past Two weeks</button>
+                </div>
+            </div>
+            <div class="transaction-log-table-shell">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-sm align-middle mb-0 transaction-log-table">
+                        <thead class="table-light">
                         <tr>
-                            <td>{{ $tx['datetime'] ? \Carbon\Carbon::parse($tx['datetime'])->setTimezone('Asia/Kuala_Lumpur')->format('d/m/Y H:i') : '' }}</td>
-                            <td>{{ $tx['category']['name'] ?? '' }}</td>
-                            <td>{{ $tx['note'] ?? '' }}</td>
-                            <td class="text-end">
-                                @if ($tx['type'] === 'income')
-                                    <span class="text-primary">RM {{ number_format($tx['amount'], 2) }}</span>
-                                @else
-                                    <span class="text-danger">RM {{ number_format($tx['amount'], 2) }}</span>
-                                @endif
-                            </td>
-                            <td class="text-center" style="white-space: nowrap;">
-                                <button class="btn btn-sm py-0 px-1 border-0 me-1" wire:click="edit({{ $tx['id'] }})" title="Edit" style="color: #000;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5-.5-.5z"/>
-                                    </svg>
-                                </button>
-                                <button class="btn btn-sm py-0 px-1 border-0" wire:click="confirmDelete({{ $tx['id'] }})" title="Delete" style="color: #dc3545;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                                    </svg>
-                                </button>
-                            </td>
+                            <th>Date &amp; Time</th>
+                            <th>Category</th>
+                            <th>Note</th>
+                            <th class="text-end">Income</th>
+                            <th class="text-end">Expense</th>
+                            <th class="text-center">Actions</th>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="text-center text-muted">No transactions yet</td>
-                        </tr>
-                    @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                        @forelse ($transactions as $tx)
+                            <tr>
+                                <td>{{ $tx['datetime'] ? \Carbon\Carbon::parse($tx['datetime'])->setTimezone('Asia/Kuala_Lumpur')->format('d/m/Y H:i') : '' }}</td>
+                                <td>{{ $tx['category']['name'] ?? '' }}</td>
+                                <td>{{ $tx['note'] ?? '' }}</td>
+                                <td class="text-end">
+                                    @if ($tx['type'] === 'income')
+                                        <span class="text-primary">RM {{ number_format($tx['amount'], 2) }}</span>
+                                    @endif
+                                </td>
+                                <td class="text-end">
+                                    @if ($tx['type'] === 'expense')
+                                        <span class="text-danger">RM {{ number_format($tx['amount'], 2) }}</span>
+                                    @endif
+                                </td>
+                                <td class="text-center" style="white-space: nowrap;">
+                                    <button class="btn btn-sm py-0 px-1 border-0 me-1" wire:click="edit({{ $tx['id'] }})" title="Edit" style="color: #000;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5-.5-.5z"/>
+                                        </svg>
+                                    </button>
+                                    <button class="btn btn-sm py-0 px-1 border-0" wire:click="confirmDelete({{ $tx['id'] }})" title="Delete" style="color: #dc3545;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">No transactions in this period</td>
+                            </tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

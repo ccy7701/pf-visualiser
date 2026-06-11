@@ -60,6 +60,13 @@
         }
     }
 
+    function renderDynamicTotal() {
+        const el = document.getElementById('dynamicTotalSummary');
+        if (el) {
+            el.textContent = `RM ${formatter.format(expectedValue)}`;
+        }
+    }
+
     function updateIncrementStatus() {
         const statusEl = document.getElementById('incrementStatus');
         if (!statusEl) {
@@ -80,6 +87,7 @@
         accruedSalaryValue += incrementPerSecond;
         renderCounter();
         renderAccruedSalary();
+        renderDynamicTotal();
         updateIncrementStatus();
     }
 
@@ -103,6 +111,7 @@
         incrementPerSecond = Number(data.increment_per_second);
         renderCounter();
         renderAccruedSalary();
+        renderDynamicTotal();
         updateIncrementStatus();
     }
 
@@ -210,6 +219,7 @@
 
     renderCounter();
     renderAccruedSalary();
+    renderDynamicTotal();
     updateIncrementStatus();
     setInterval(tick, 1000);
     setInterval(syncSnapshot, 60000);
