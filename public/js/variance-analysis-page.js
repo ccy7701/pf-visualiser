@@ -34,6 +34,19 @@
         return value === null || value === undefined ? '-' : money.format(toNumber(value, 0));
     }
 
+    function hasAnyBalanceValue(row) {
+        return row
+            && [row.closing_coh, row.closing_elr, row.closing_epf].some((value) => value !== null && value !== undefined);
+    }
+
+    function totalAmountFromBalances(row) {
+        if (!hasAnyBalanceValue(row)) return null;
+
+        return toNumber(row.closing_coh, 0)
+            + toNumber(row.closing_elr, 0)
+            + toNumber(row.closing_epf, 0);
+    }
+
     function setStatus(message, isError = false) {
         const el = document.getElementById('statusMessage');
         if (!el) return;
@@ -167,8 +180,9 @@
         const closingCohInput = document.getElementById('actualClosingCoh');
         const closingElrInput = document.getElementById('actualClosingElr');
         const closingEpfInput = document.getElementById('actualClosingEpf');
+        const totalAmountInput = document.getElementById('actualTotalAmount');
 
-        if (!fieldset || !monthDisplay || !closingCohInput || !closingElrInput || !closingEpfInput) {
+        if (!fieldset || !monthDisplay || !closingCohInput || !closingElrInput || !closingEpfInput || !totalAmountInput) {
             return;
         }
 
@@ -181,6 +195,7 @@
             closingCohInput.value = '';
             closingElrInput.value = '';
             closingEpfInput.value = '';
+            totalAmountInput.value = '';
             monthDisplay.textContent = '-';
             updateExpensesTotalDisplay(0);
             document.getElementById('actualExpenseCategoryRows').innerHTML = '';
@@ -194,6 +209,7 @@
         closingCohInput.value = actual.closing_coh === null ? '' : money.format(actual.closing_coh);
         closingElrInput.value = actual.closing_elr === null ? '' : money.format(actual.closing_elr);
         closingEpfInput.value = actual.closing_epf === null ? '' : money.format(actual.closing_epf);
+        totalAmountInput.value = formatAmountOrDash(totalAmountFromBalances(actual));
 
         const totalExpenses = recalculateActualExpenses(actual);
         updateExpensesTotalDisplay(totalExpenses);
@@ -225,7 +241,7 @@
         tbody.innerHTML = '';
 
         if (!projectedMonths.length) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-secondary py-4">No projected months found for this scenario.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-secondary py-4">No projected months found for this scenario.</td></tr>';
             return;
         }
 
@@ -241,6 +257,9 @@
             const cohVariance = varianceCell(actual.closing_coh, projected.closing_coh);
             const elrVariance = varianceCell(actual.closing_elr, projected.closing_elr);
             const epfVariance = varianceCell(actual.closing_epf, projected.closing_epf);
+            const actualTotalAmount = totalAmountFromBalances(actual);
+            const projectedTotalAmount = totalAmountFromBalances(projected);
+            const totalVariance = varianceCell(actualTotalAmount, projectedTotalAmount);
 
             const row = document.createElement('tr');
             const isSelected = projected.month === selectedMonth;
@@ -256,6 +275,8 @@
                 <td class="va-variance-cell ${elrVariance.className}">${elrVariance.text}</td>
                 <td class="va-metric-cell">${metricCellHtml(actual.closing_epf, projected.closing_epf)}</td>
                 <td class="va-variance-cell ${epfVariance.className}">${epfVariance.text}</td>
+                <td class="va-metric-cell">${metricCellHtml(actualTotalAmount, projectedTotalAmount)}</td>
+                <td class="va-variance-cell ${totalVariance.className}">${totalVariance.text}</td>
             `;
 
             row.addEventListener('click', () => {

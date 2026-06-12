@@ -68,19 +68,27 @@
                         <div class="tab-content">
                             <div class="tab-pane fade show active" id="va-pane-balances" role="tabpanel" aria-labelledby="va-tab-balances" tabindex="0">
                                 <div class="input-subcard">
-                                    <h2 class="section-subtitle">COH at Month End</h2>
+                                    <h2 class="section-subtitle mb-3">Month End Values</h2>
+
+                                    <label for="actualTotalAmount" class="form-label form-label-sm">Total Amount</label>
+                                    <div class="input-group input-group-sm mb-3">
+                                        <span class="input-group-text">RM</span>
+                                        <input id="actualTotalAmount" type="text" class="form-control compact-input va-input-control" readonly>
+                                    </div>
+
+                                    <label for="actualClosingCoh" class="form-label form-label-sm">COH</label>
                                     <div class="input-group input-group-sm mb-3">
                                         <span class="input-group-text">RM</span>
                                         <input id="actualClosingCoh" type="text" class="form-control compact-input va-input-control" readonly>
                                     </div>
 
-                                    <h2 class="section-subtitle">ELR at Month End</h2>
+                                    <label for="actualClosingElr" class="form-label form-label-sm">ELR</label>
                                     <div class="input-group input-group-sm mb-3">
                                         <span class="input-group-text">RM</span>
                                         <input id="actualClosingElr" type="text" class="form-control compact-input va-input-control" readonly>
                                     </div>
 
-                                    <h2 class="section-subtitle">EPF at Month End</h2>
+                                    <label for="actualClosingEpf" class="form-label form-label-sm">EPF</label>
                                     <div class="input-group input-group-sm mb-1">
                                         <span class="input-group-text">RM</span>
                                         <input id="actualClosingEpf" type="text" class="form-control compact-input va-input-control" readonly>
@@ -125,24 +133,32 @@
                 <div class="card-body p-0">
                     <div class="results-wrap va-results-wrap">
                         <div class="table-responsive">
-                            <table class="table table-striped table-sm mb-0 projection-table">
+                            <table class="table table-striped table-sm mb-0 projection-table va-comparison-table">
                                 <colgroup>
-                                    <col span="7" style="width:14.2857%">
+                                    <col span="9" style="width:11.1111%">
                                 </colgroup>
                                 <thead class="table-light sticky-top">
-                                <tr>
-                                    <th>Month</th>
-                                    <th>COH</th>
-                                    <th>COH Variance</th>
-                                    <th>ELR</th>
-                                    <th>ELR Variance</th>
-                                    <th>EPF</th>
-                                    <th>EPF Variance</th>
+                                <tr class="text-center">
+                                    <th rowspan="2">Month</th>
+                                    <th colspan="2">COH</th>
+                                    <th colspan="2">ELR</th>
+                                    <th colspan="2">EPF</th>
+                                    <th colspan="2">Total Amount</th>
+                                </tr>
+                                <tr class="text-center">
+                                    <th>Recorded</th>
+                                    <th>Variance</th>
+                                    <th>Recorded</th>
+                                    <th>Variance</th>
+                                    <th>Recorded</th>
+                                    <th>Variance</th>
+                                    <th>Recorded</th>
+                                    <th>Variance</th>
                                 </tr>
                                 </thead>
                                 <tbody id="planActualRows">
                                 <tr>
-                                    <td colspan="7" class="text-center text-secondary py-4">Load a scenario to begin tracking actual values.</td>
+                                    <td colspan="9" class="text-center text-secondary py-4">Load a scenario to begin tracking actual values.</td>
                                 </tr>
                                 </tbody>
                             </table>

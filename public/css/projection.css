@@ -414,6 +414,12 @@
             color: #dc3545;
             font-weight: 600;
         }
+        .va-comparison-table thead th {
+            border: 1px solid #d7dde3;
+        }
+        [data-bs-theme="dark"] .va-comparison-table thead th {
+            border-color: #3f464d;
+        }
         #planActualRows .va-metric-cell .va-value {
             display: block;
             font-weight: 600;
