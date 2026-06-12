@@ -5,12 +5,14 @@ use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\ProjectionController;
 use App\Http\Controllers\TransportationLogController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\TransactionLogPageController;
 use App\Http\Controllers\VarianceAnalysisController;
 use App\Http\Controllers\WorkdayController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/counter');
 Route::get('/counter', [CounterController::class, 'index'])->name('counter');
+Route::get('/transaction-log', [TransactionLogPageController::class, 'index'])->name('transaction-log.index');
 Route::get('/transportation-log', [TransportationLogController::class, 'index'])->name('transportation-log.index');
 Route::get('/transportation-log/snapshot', [TransportationLogController::class, 'snapshot'])->name('transportation-log.snapshot');
 Route::post('/transportation-log/vehicles', [TransportationLogController::class, 'storeVehicle'])->name('transportation-log.vehicles.store');

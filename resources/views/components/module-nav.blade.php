@@ -5,6 +5,11 @@
             'icon' => 'fa-wallet',
             'route' => 'counter',
         ],
+        'transaction-log' => [
+            'label' => 'Transaction Log',
+            'icon' => 'fa-receipt',
+            'route' => 'transaction-log.index',
+        ],
         'projection' => [
             'label' => 'Projection',
             'icon' => 'fa-chart-line',

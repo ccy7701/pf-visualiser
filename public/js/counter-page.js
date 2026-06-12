@@ -12,7 +12,6 @@
     const popupTitle = document.getElementById('popupTitle');
     const btnBack = document.getElementById('btnBack');
     const btnClosePopup = document.getElementById('btnClosePopup');
-    const panelTransactions = document.getElementById('panel-transactions');
     const panelCalendar = document.getElementById('panel-calendar');
     const panelSchedules = document.getElementById('panel-schedules');
     const panelSettings = document.getElementById('panel-settings');
@@ -24,7 +23,6 @@
         popupTitle,
         btnBack,
         btnClosePopup,
-        panelTransactions,
         panelCalendar,
         panelSchedules,
         panelSettings,
@@ -128,16 +126,9 @@
         tabSelector.classList.remove('show');
         contentPopup.classList.add('show');
 
-        panelTransactions.classList.add('d-none');
         panelCalendar.classList.add('d-none');
         panelSchedules.classList.add('d-none');
         panelSettings.classList.add('d-none');
-
-        if (tab === 'transactions') {
-            panelTransactions.classList.remove('d-none');
-            popupTitle.textContent = 'Transaction Log';
-            return;
-        }
 
         if (tab === 'calendar') {
             panelCalendar.classList.remove('d-none');

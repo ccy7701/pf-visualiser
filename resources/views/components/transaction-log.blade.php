@@ -70,7 +70,7 @@ new class extends Component
 
     public function setRecentTransactionPeriod(string $period): void
     {
-        if (! in_array($period, ['today', 'yesterday', 'this_week', 'two_weeks'], true)) {
+        if (! in_array($period, ['today', 'this_week', 'this_month'], true)) {
             return;
         }
 
@@ -82,9 +82,8 @@ new class extends Component
     {
         $now = now('Asia/Kuala_Lumpur');
         $range = match ($this->recentTransactionPeriod) {
-            'yesterday' => [$now->copy()->subDay()->startOfDay(), $now->copy()->subDay()->endOfDay()],
             'this_week' => [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()],
-            'two_weeks' => [$now->copy()->subWeeks(2), $now],
+            'this_month' => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
             default => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
         };
 
@@ -224,99 +223,73 @@ new class extends Component
 };
 ?>
 
-<div>
+<div class="transaction-log-grid">
     {{-- Summary cards --}}
     @php
         $netTransactions = (float) ($snapshot['net_transactions'] ?? 0);
         $netTransactionClass = $netTransactions > 0 ? 'text-success' : 'text-danger';
+        $periodLabel = match ($recentTransactionPeriod) {
+            'this_week' => 'this week',
+            'this_month' => 'this month',
+            default => 'today',
+        };
     @endphp
-    <div class="counter-equation-summary mb-3">
-        <div class="counter-equation-card">
-            <div class="card data-card h-100">
-                <div class="card-body text-center p-2">
-                    <div class="text-secondary" style="font-size:0.7rem;">Starting Amount</div>
-                    <div class="fw-semibold" style="font-size:0.85rem;">RM {{ number_format($snapshot['starting_amount'], 2) }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="counter-equation-operator">+</div>
-        <div class="counter-equation-card">
-            <div class="card data-card h-100">
-                <div class="card-body text-center p-2">
-                    <div class="text-secondary" style="font-size:0.7rem;">Net Transactions</div>
-                    <div class="fw-semibold {{ $netTransactionClass }}" style="font-size:0.85rem;">RM {{ number_format($netTransactions, 2) }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="counter-equation-operator">+</div>
-        <div class="counter-equation-card">
-            <div class="card data-card h-100">
-                <div class="card-body text-center p-2">
-                    <div class="text-secondary" style="font-size:0.7rem;">Unpaid Accrual</div>
-                    <div class="fw-semibold" style="font-size:0.85rem;" id="accruedSalarySummary">RM {{ number_format($snapshot['accrued_salary'], 2) }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="counter-equation-operator">=</div>
-        <div class="counter-equation-card">
-            <div class="card data-card h-100">
-                <div class="card-body text-center p-2">
-                    <div class="text-secondary" style="font-size:0.7rem;">Projected Amount</div>
-                    <div class="fw-semibold" style="font-size:0.85rem;" id="dynamicTotalSummary">RM {{ number_format($snapshot['expected_counter'], 2) }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     {{-- Log form --}}
-    <div class="card data-card mb-3">
-        <div class="card-body p-2">
-            <h2 class="h6 mb-2">{{ $editingTransactionId ? 'Edit Transaction' : 'Log New Transaction' }}</h2>
+    <div class="transaction-log-input-column">
+        <div class="card data-card">
+            <div class="card-header">Inputs</div>
+            <div class="card-body p-3">
+            <h2 class="h6 mb-3">{{ $editingTransactionId ? 'Edit Transaction' : 'Log New Transaction' }}</h2>
+            @if ($statusMessage)
+                <div class="alert alert-success py-2 mb-3">{{ $statusMessage }}</div>
+            @endif
             <form wire:submit="save">
-                <div class="row g-2 mb-2">
-                    <div class="col-6">
-                        <label class="form-label" style="font-size:0.75rem;" for="type">Type</label>
-                        <select wire:model.live="type" class="form-select form-select-sm" id="type" required>
+                <div class="row g-2 mb-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="type">Type</label>
+                        <select wire:model.live="type" class="form-select" id="type" required>
                             <option value="income">Income</option>
                             <option value="expense">Expense</option>
                         </select>
-                        @if (isset($errors['type'])) <div class="text-danger" style="font-size:0.7rem;">{{ implode(' ', $errors['type']) }}</div> @endif
+                        @if (isset($errors['type'])) <div class="text-danger">{{ implode(' ', $errors['type']) }}</div> @endif
                     </div>
-                    <div class="col-6">
-                        <label class="form-label" style="font-size:0.75rem;" for="datetime">Date &amp; Time</label>
-                        <input wire:model="datetime" class="form-control form-control-sm" type="text" id="datetime" placeholder="DD/MM/YYYY HH:MM" required>
-                        @if (isset($errors['datetime'])) <div class="text-danger" style="font-size:0.7rem;">{{ implode(' ', $errors['datetime']) }}</div> @endif
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="datetime">Date &amp; Time</label>
+                        <input wire:model="datetime" class="form-control" type="text" id="datetime" placeholder="DD/MM/YYYY HH:MM" required>
+                        @if (isset($errors['datetime'])) <div class="text-danger">{{ implode(' ', $errors['datetime']) }}</div> @endif
                     </div>
                 </div>
-                <div class="row g-2 mb-2">
-                    <div class="col-6">
-                        <label class="form-label" style="font-size:0.75rem;" for="category_id">Category</label>
-                        <select wire:model="category_id" class="form-select form-select-sm" id="category_id" required>
+                <div class="row g-2 mb-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="category_id">Category</label>
+                        <select wire:model="category_id" class="form-select" id="category_id" required>
                             @foreach ($categories as $category)
                                 <option value="{{ $category['id'] }}">{{ $category['name'] }}</option>
                             @endforeach
                         </select>
-                        @if (isset($errors['category_id'])) <div class="text-danger" style="font-size:0.7rem;">{{ implode(' ', $errors['category_id']) }}</div> @endif
+                        @if (isset($errors['category_id'])) <div class="text-danger">{{ implode(' ', $errors['category_id']) }}</div> @endif
                     </div>
-                    <div class="col-6">
-                        <label class="form-label" style="font-size:0.75rem;" for="amount">Amount</label>
-                        <input wire:model="amount" class="form-control form-control-sm" type="number" min="0.01" step="0.01" id="amount" required>
-                        @if (isset($errors['amount'])) <div class="text-danger" style="font-size:0.7rem;">{{ implode(' ', $errors['amount']) }}</div> @endif
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="amount">Amount</label>
+                        <input wire:model="amount" class="form-control" type="number" min="0.01" step="0.01" id="amount" required>
+                        @if (isset($errors['amount'])) <div class="text-danger">{{ implode(' ', $errors['amount']) }}</div> @endif
                     </div>
                 </div>
-                <div class="mb-2">
-                    <label class="form-label" style="font-size:0.75rem;" for="note">Note</label>
-                    <textarea wire:model="note" class="form-control form-control-sm" id="note" rows="2"></textarea>
+                <div class="mb-3">
+                    <label class="form-label" for="note">Note</label>
+                    <textarea wire:model="note" class="form-control" id="note" rows="4"></textarea>
                 </div>
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-dark btn-sm flex-grow-1" wire:loading.attr="disabled">
+                    <button type="submit" class="btn btn-dark flex-grow-1" wire:loading.attr="disabled">
                         {{ $editingTransactionId ? 'Update Transaction' : 'Save Transaction' }}
                     </button>
                     @if ($editingTransactionId)
-                        <button type="button" class="btn btn-outline-secondary btn-sm" wire:click="cancelEdit">Cancel</button>
+                        <button type="button" class="btn btn-outline-secondary" wire:click="cancelEdit">Cancel</button>
+                        <button type="button" class="btn btn-outline-danger" wire:click="confirmDelete({{ $editingTransactionId }})">Delete</button>
                     @endif
                 </div>
             </form>
+            </div>
         </div>
     </div>
 
@@ -328,8 +301,8 @@ new class extends Component
                     <div class="modal-body text-center p-3">
                         <p class="mb-3">Are you sure you want to delete this transaction?</p>
                         <div class="d-flex justify-content-center gap-2">
-                            <button class="btn btn-danger btn-sm" wire:click="delete">Delete</button>
-                            <button class="btn btn-secondary btn-sm" wire:click="cancelDelete">Cancel</button>
+                            <button class="btn btn-danger" wire:click="delete">Delete</button>
+                            <button class="btn btn-secondary" wire:click="cancelDelete">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -337,18 +310,56 @@ new class extends Component
         </div>
     @endif
 
-    {{-- Recent transactions table --}}
-    <div class="card data-card">
-        <div class="card-body p-2">
-            <div class="recent-transactions-header">
-                <h2 class="h6 mb-0">Recent Transactions</h2>
-                <div class="recent-transaction-filters" role="group" aria-label="Recent transaction period">
-                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'today' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('today')">Today</button>
-                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'yesterday' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('yesterday')">Yesterday</button>
-                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'this_week' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('this_week')">This Week</button>
-                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'two_weeks' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('two_weeks')">Past Two weeks</button>
+    <div class="transaction-log-output-column">
+        <div class="counter-equation-summary mb-3">
+            <div class="counter-equation-card">
+                <div class="card data-card h-100">
+                    <div class="card-body text-center p-2">
+                        <div class="text-secondary">Starting Amount</div>
+                        <div class="fw-semibold">RM {{ number_format($snapshot['starting_amount'], 2) }}</div>
+                    </div>
                 </div>
             </div>
+            <div class="counter-equation-operator">+</div>
+            <div class="counter-equation-card">
+                <div class="card data-card h-100">
+                    <div class="card-body text-center p-2">
+                        <div class="text-secondary">Net Transactions</div>
+                        <div class="fw-semibold {{ $netTransactionClass }}">RM {{ number_format($netTransactions, 2) }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="counter-equation-operator">+</div>
+            <div class="counter-equation-card">
+                <div class="card data-card h-100">
+                    <div class="card-body text-center p-2">
+                        <div class="text-secondary">Unpaid Accrual</div>
+                        <div class="fw-semibold" id="accruedSalarySummary">RM {{ number_format($snapshot['accrued_salary'], 2) }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="counter-equation-operator">=</div>
+            <div class="counter-equation-card">
+                <div class="card data-card h-100">
+                    <div class="card-body text-center p-2">
+                        <div class="text-secondary">Projected Amount</div>
+                        <div class="fw-semibold" id="dynamicTotalSummary">RM {{ number_format($snapshot['expected_counter'], 2) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Recent transactions table --}}
+        <div class="card data-card">
+            <div class="card-header transaction-output-header">
+                <span>Transactions over {{ $periodLabel }}</span>
+                <div class="recent-transaction-filters" role="group" aria-label="Recent transaction period">
+                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'today' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('today')">Today</button>
+                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'this_week' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('this_week')">This Week</button>
+                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'this_month' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('this_month')">This Month</button>
+                </div>
+            </div>
+            <div class="card-body p-3">
             <div class="transaction-log-table-shell">
                 <div class="table-responsive">
                     <table class="table table-striped table-hover table-sm align-middle mb-0 transaction-log-table">
@@ -359,12 +370,14 @@ new class extends Component
                             <th>Note</th>
                             <th class="text-end">Income</th>
                             <th class="text-end">Expense</th>
-                            <th class="text-center">Actions</th>
                         </tr>
                         </thead>
                         <tbody>
                         @forelse ($transactions as $tx)
-                            <tr>
+                            <tr
+                                wire:click="edit({{ $tx['id'] }})"
+                                class="{{ $editingTransactionId === $tx['id'] ? 'table-active' : '' }}"
+                            >
                                 <td>{{ $tx['datetime'] ? \Carbon\Carbon::parse($tx['datetime'])->setTimezone('Asia/Kuala_Lumpur')->format('d/m/Y H:i') : '' }}</td>
                                 <td>{{ $tx['category']['name'] ?? '' }}</td>
                                 <td>{{ $tx['note'] ?? '' }}</td>
@@ -378,23 +391,10 @@ new class extends Component
                                         <span class="text-danger">RM {{ number_format($tx['amount'], 2) }}</span>
                                     @endif
                                 </td>
-                                <td class="text-center" style="white-space: nowrap;">
-                                    <button class="btn btn-sm py-0 px-1 border-0 me-1" wire:click="edit({{ $tx['id'] }})" title="Edit" style="color: #000;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5-.5-.5z"/>
-                                        </svg>
-                                    </button>
-                                    <button class="btn btn-sm py-0 px-1 border-0" wire:click="confirmDelete({{ $tx['id'] }})" title="Delete" style="color: #dc3545;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                                            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                                        </svg>
-                                    </button>
-                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-3">No transactions in this period</td>
+                                <td colspan="5" class="text-center text-muted py-3">No transactions in this period</td>
                             </tr>
                         @endforelse
                         </tbody>
@@ -402,5 +402,6 @@ new class extends Component
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>

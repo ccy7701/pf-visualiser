@@ -53,7 +53,6 @@
 
 {{-- Step 1: tab selector popup ──────── --}}
 <div class="tab-selector-popup" id="tabSelector">
-    <button type="button" data-tab="transactions">Transaction Log</button>
     <button type="button" data-tab="calendar">Workday Calendar</button>
     <button type="button" data-tab="schedules">Salary Schedules</button>
     <button type="button" data-tab="settings">Settings</button>
@@ -65,19 +64,14 @@
         <button class="btn-back" id="btnBack" type="button" aria-label="Back">
             <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
         </button>
-        <span class="title" id="popupTitle">Transaction Log</span>
+        <span class="title" id="popupTitle">Workday Calendar</span>
         <button class="btn-close-popup" id="btnClosePopup" type="button" aria-label="Close">
             <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>
     </div>
     <div class="content-popup-body" id="contentPopupBody">
-        {{-- Transaction Log content ──── --}}
-        <div id="panel-transactions">
-            <livewire:transaction-log />
-        </div>
-
         {{-- Workday Calendar content ──── --}}
-        <div id="panel-calendar" class="d-none">
+        <div id="panel-calendar">
             <livewire:workday-calendar />
         </div>
 
