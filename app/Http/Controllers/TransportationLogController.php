@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Setting;
 use App\Models\TransportationCommuteLog;
 use App\Models\TransportationFuelLog;
+use App\Models\TransportationParkingLog;
 use App\Models\TransportationVehicle;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -160,6 +162,31 @@ class TransportationLogController extends Controller
         return response()->json($this->snapshotData());
     }
 
+    public function storeParkingLog(Request $request): JsonResponse
+    {
+        $validated = $this->validateParkingLog($request);
+
+        TransportationParkingLog::query()->create($validated);
+
+        return response()->json($this->snapshotData());
+    }
+
+    public function updateParkingLog(Request $request, TransportationParkingLog $parkingLog): JsonResponse
+    {
+        $validated = $this->validateParkingLog($request);
+
+        $parkingLog->update($validated);
+
+        return response()->json($this->snapshotData());
+    }
+
+    public function destroyParkingLog(TransportationParkingLog $parkingLog): JsonResponse
+    {
+        $parkingLog->delete();
+
+        return response()->json($this->snapshotData());
+    }
+
     private function snapshotData(): array
     {
         $vehicles = TransportationVehicle::query()
@@ -177,11 +204,50 @@ class TransportationLogController extends Controller
             ->latest('id')
             ->get();
 
+        $parkingLogs = TransportationParkingLog::query()
+            ->latest('parking_date')
+            ->latest('id')
+            ->get();
+
         return [
             'vehicles' => $vehicles,
             'fuelLogs' => $fuelLogs,
             'commuteLogs' => $commuteLogs,
+            'parkingLogs' => $parkingLogs,
         ];
+    }
+
+    private function validateParkingLog(Request $request): array
+    {
+        $validated = $request->validate([
+            'parking_type' => ['required', Rule::in(['casual', 'monthly_pass'])],
+            'location' => ['required', 'string', 'max:255'],
+            'parking_date' => ['required', 'date_format:Y-m-d'],
+            'billing_month' => ['nullable', 'date_format:Y-m-d'],
+            'start_hour' => ['nullable', 'integer', 'min:0', 'max:23', 'required_if:parking_type,casual'],
+            'end_hour' => ['nullable', 'integer', 'min:1', 'max:24', 'required_if:parking_type,casual'],
+            'total_amount' => ['required', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        if ($validated['parking_type'] === 'casual' && (int) $validated['end_hour'] <= (int) $validated['start_hour']) {
+            throw ValidationException::withMessages([
+                'end_hour' => 'Parking end hour must be after start hour.',
+            ]);
+        }
+
+        if ($validated['parking_type'] === 'monthly_pass' && empty($validated['billing_month'])) {
+            $validated['billing_month'] = date('Y-m-01', strtotime($validated['parking_date']));
+        }
+
+        if ($validated['parking_type'] === 'casual') {
+            $validated['billing_month'] = null;
+        } else {
+            $validated['start_hour'] = null;
+            $validated['end_hour'] = null;
+        }
+
+        return $validated;
     }
 
     private function driveTimeMinutes(string $startedAt, string $endedAt): int

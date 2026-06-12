@@ -115,8 +115,11 @@
         #fuelLogRows td:last-child,
         #commuteLogRows td:first-child,
         #commuteLogRows td:last-child,
+        #parkingLogRows td:first-child,
+        #parkingLogRows td:last-child,
         #fuelLogRows tr td[colspan],
-        #commuteLogRows tr td[colspan] {
+        #commuteLogRows tr td[colspan],
+        #parkingLogRows tr td[colspan] {
             padding-left: 0.85rem;
             padding-right: 0.85rem;
         }

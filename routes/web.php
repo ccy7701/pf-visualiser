@@ -22,6 +22,9 @@ Route::delete('/transportation-log/fuel-logs/{fuelLog}', [TransportationLogContr
 Route::post('/transportation-log/commute-logs', [TransportationLogController::class, 'storeCommuteLog'])->name('transportation-log.commute-logs.store');
 Route::put('/transportation-log/commute-logs/{commuteLog}', [TransportationLogController::class, 'updateCommuteLog'])->name('transportation-log.commute-logs.update');
 Route::delete('/transportation-log/commute-logs/{commuteLog}', [TransportationLogController::class, 'destroyCommuteLog'])->name('transportation-log.commute-logs.destroy');
+Route::post('/transportation-log/parking-logs', [TransportationLogController::class, 'storeParkingLog'])->name('transportation-log.parking-logs.store');
+Route::put('/transportation-log/parking-logs/{parkingLog}', [TransportationLogController::class, 'updateParkingLog'])->name('transportation-log.parking-logs.update');
+Route::delete('/transportation-log/parking-logs/{parkingLog}', [TransportationLogController::class, 'destroyParkingLog'])->name('transportation-log.parking-logs.destroy');
 Route::redirect('/fuel-log', '/transportation-log');
 Route::get('/projection', [ProjectionController::class, 'index'])->name('projection.index');
 Route::post('/projection/run', [ProjectionController::class, 'run'])->name('projection.run');

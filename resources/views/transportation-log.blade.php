@@ -37,6 +37,7 @@
                         <button class="projection-input-tab active" id="tab-vehicle" data-bs-toggle="tab" data-bs-target="#pane-vehicle" type="button" role="tab" aria-controls="pane-vehicle" aria-selected="true" aria-label="Vehicle Profile" data-bs-title="Vehicle Profile"><i class="fa-solid fa-car"></i></button>
                         <button class="projection-input-tab" id="tab-fuel-entry" data-bs-toggle="tab" data-bs-target="#pane-fuel-entry" type="button" role="tab" aria-controls="pane-fuel-entry" aria-selected="false" aria-label="Refuel Log" data-bs-title="Refuel Log"><i class="fa-solid fa-gas-pump"></i></button>
                         <button class="projection-input-tab" id="tab-drive-entry" data-bs-toggle="tab" data-bs-target="#pane-drive-entry" type="button" role="tab" aria-controls="pane-drive-entry" aria-selected="false" aria-label="Drive Log" data-bs-title="Drive Log"><i class="fa-solid fa-road"></i></button>
+                        <button class="projection-input-tab" id="tab-parking-entry" data-bs-toggle="tab" data-bs-target="#pane-parking-entry" type="button" role="tab" aria-controls="pane-parking-entry" aria-selected="false" aria-label="Parking Log" data-bs-title="Parking Log"><i class="fa-solid fa-square-parking"></i></button>
                     </div>
 
                     <div class="tab-content">
@@ -229,6 +230,66 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="tab-pane fade" id="pane-parking-entry" role="tabpanel" aria-labelledby="tab-parking-entry" tabindex="0">
+                            <div class="input-subcard mb-0">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-12">
+                                        <label for="parkingType" class="form-label form-label-sm">Parking Type</label>
+                                        <select id="parkingType" class="form-select compact-input">
+                                            <option value="casual">Casual Parking</option>
+                                            <option value="monthly_pass">Monthly Pass</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label for="parkingLocation" class="form-label form-label-sm">Location</label>
+                                    <input id="parkingLocation" type="text" class="form-control compact-input" placeholder="e.g. Mall">
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label for="parkingDate" class="form-label form-label-sm">Date</label>
+                                        <input id="parkingDate" type="text" class="form-control compact-input date-picker" placeholder="DD/MM/YYYY">
+                                    </div>
+                                    <div class="col-6" id="parkingBillingMonthWrap">
+                                        <label for="parkingBillingMonth" class="form-label form-label-sm">Pass Month</label>
+                                        <input id="parkingBillingMonth" type="month" class="form-control compact-input">
+                                    </div>
+                                </div>
+                                <div class="row g-2 mb-2" id="parkingHourWrap">
+                                    <div class="col-6">
+                                        <label for="parkingStartHour" class="form-label form-label-sm">Start Hour</label>
+                                        <select id="parkingStartHour" class="form-select compact-input"></select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="parkingEndHour" class="form-label form-label-sm">End Hour</label>
+                                        <select id="parkingEndHour" class="form-select compact-input"></select>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label for="parkingTotalAmount" class="form-label form-label-sm">Cost</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">RM</span>
+                                        <input id="parkingTotalAmount" type="number" min="0" step="0.01" class="form-control compact-input" value="0">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="parkingNote" class="form-label form-label-sm">Notes</label>
+                                    <input id="parkingNote" type="text" class="form-control compact-input" placeholder="Optional">
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-12" id="parkingAddButtonWrap">
+                                        <button id="addParkingLogBtn" type="button" class="btn btn-dark w-100">Add</button>
+                                    </div>
+                                    <div class="col-6 d-none" id="parkingEditButtonWrap">
+                                        <button id="editParkingLogBtn" type="button" class="btn btn-dark w-100">Edit</button>
+                                    </div>
+                                    <div class="col-6 d-none" id="parkingDeleteButtonWrap">
+                                        <button id="deleteParkingLogBtn" type="button" class="btn btn-outline-danger w-100">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -290,6 +351,27 @@
                             </table>
                         </div>
                     </div>
+
+                    <h2 class="section-subtitle my-3">Parking Logs</h2>
+                    <div class="results-wrap transportation-section-table">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-sm mb-0 projection-table">
+                                <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Type</th>
+                                    <th>Location</th>
+                                    <th class="text-end">Cost (RM)</th>
+                                </tr>
+                                </thead>
+                                <tbody id="parkingLogRows">
+                                <tr>
+                                    <td colspan="4" class="text-center text-secondary py-4">No parking logs yet.</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -306,6 +388,8 @@
         fuelLogsBaseUrl: '{{ url('/transportation-log/fuel-logs') }}',
         commuteLogsEndpoint: '{{ route('transportation-log.commute-logs.store') }}',
         commuteLogsBaseUrl: '{{ url('/transportation-log/commute-logs') }}',
+        parkingLogsEndpoint: '{{ route('transportation-log.parking-logs.store') }}',
+        parkingLogsBaseUrl: '{{ url('/transportation-log/parking-logs') }}',
         vehiclesBaseUrl: '{{ url('/transportation-log/vehicles') }}',
     };
 </script>

@@ -10,11 +10,13 @@
     let editingVehicleId = null;
     let editingFuelLogId = null;
     let editingCommuteLogId = null;
+    let editingParkingLogId = null;
 
     const state = {
         vehicles: [],
         fuelLogs: [],
         commuteLogs: [],
+        parkingLogs: [],
         summaryPeriod: 'monthly',
     };
 
@@ -25,6 +27,7 @@
             driveCostLabel: "This Month's Estimated Drive Cost",
             emptyFuelMessage: 'No refuel logs this month.',
             emptyDriveMessage: 'No drive logs this month.',
+            emptyParkingMessage: 'No parking logs this month.',
         },
         weekly: {
             title: 'Weekly Summary',
@@ -32,6 +35,7 @@
             driveCostLabel: "This Week's Estimated Drive Cost",
             emptyFuelMessage: 'No refuel logs this week.',
             emptyDriveMessage: 'No drive logs this week.',
+            emptyParkingMessage: 'No parking logs this week.',
         },
         since_refuel: {
             title: 'Summary Since Last Refuel',
@@ -39,6 +43,7 @@
             driveCostLabel: 'Estimated Drive Cost Since Last Refuel',
             emptyFuelMessage: 'No refuel logs found.',
             emptyDriveMessage: 'No drive logs since the last refuel.',
+            emptyParkingMessage: 'No parking logs since the last refuel.',
         },
     };
 
@@ -81,16 +86,27 @@
         };
     }
 
+    function normalizeParkingLog(log) {
+        return {
+            ...log,
+            id: String(log.id),
+        };
+    }
+
     function applySnapshot(snapshot) {
         state.vehicles = Array.isArray(snapshot?.vehicles) ? snapshot.vehicles.map(normalizeVehicle) : [];
         state.fuelLogs = Array.isArray(snapshot?.fuelLogs) ? snapshot.fuelLogs.map(normalizeFuelLog) : [];
         state.commuteLogs = Array.isArray(snapshot?.commuteLogs) ? snapshot.commuteLogs.map(normalizeCommuteLog) : [];
+        state.parkingLogs = Array.isArray(snapshot?.parkingLogs) ? snapshot.parkingLogs.map(normalizeParkingLog) : [];
 
         if (editingFuelLogId && !state.fuelLogs.some((log) => log.id === editingFuelLogId)) {
             editingFuelLogId = null;
         }
         if (editingCommuteLogId && !state.commuteLogs.some((log) => log.id === editingCommuteLogId)) {
             editingCommuteLogId = null;
+        }
+        if (editingParkingLogId && !state.parkingLogs.some((log) => log.id === editingParkingLogId)) {
+            editingParkingLogId = null;
         }
 
         renderAll();
@@ -174,11 +190,18 @@
         return monthKeyFromDate(date) === thisMonthKey();
     }
 
+    function parkingScopeDate(row) {
+        return row.parking_type === 'monthly_pass' && row.billing_month ? row.billing_month : row.parking_date;
+    }
+
     function scopedTransportationRows() {
         const fuelRows = deriveFuelRows();
         const driveRows = state.commuteLogs
             .map(deriveDriveRow)
             .sort((a, b) => new Date(b.driven_at).getTime() - new Date(a.driven_at).getTime());
+        const parkingRows = state.parkingLogs
+            .slice()
+            .sort((a, b) => new Date(parkingScopeDate(b)).getTime() - new Date(parkingScopeDate(a)).getTime());
 
         const periodStart = state.summaryPeriod === 'weekly'
             ? startOfCurrentWeek()
@@ -189,6 +212,7 @@
         return {
             fuelRows: fuelRows.filter((row) => rowDateInSelectedPeriod(row, 'fuelled_at', periodStart)),
             driveRows: driveRows.filter((row) => rowDateInSelectedPeriod(row, 'driven_at', periodStart)),
+            parkingRows: parkingRows.filter((row) => rowDateInSelectedPeriod({ ...row, _scopeDate: parkingScopeDate(row) }, '_scopeDate', periodStart)),
             periodStart,
         };
     }
@@ -223,12 +247,24 @@
         return `${day}/${month}/${year}`;
     }
 
+    function formatMonthOnly(dateLike) {
+        const d = new Date(dateLike);
+        if (Number.isNaN(d.getTime())) return '-';
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        return `${month}/${d.getFullYear()}`;
+    }
+
     function formatTimeOnly(dateLike) {
         const d = new Date(dateLike);
         if (Number.isNaN(d.getTime())) return '-';
         const hours = String(d.getHours()).padStart(2, '0');
         const minutes = String(d.getMinutes()).padStart(2, '0');
         return `${hours}:${minutes}`;
+    }
+
+    function formatHour(hour) {
+        const normalized = Math.max(0, Math.min(24, toNumber(hour, 0)));
+        return `${String(normalized).padStart(2, '0')}:00`;
     }
 
     function minutesBetween(startIso, endIso) {
@@ -360,7 +396,7 @@
     }
 
     function selectedPeriodSummary() {
-        const { fuelRows, driveRows } = scopedTransportationRows();
+        const { fuelRows, driveRows, parkingRows } = scopedTransportationRows();
 
         const actualFuelSpending = fuelRows.reduce((carry, row) => carry + toNumber(row.total_amount, 0), 0);
         const totalFuelLitres = fuelRows.reduce((carry, row) => carry + toNumber(row.fuel_litres, 0), 0);
@@ -377,6 +413,7 @@
         })();
         const estimatedCommuteCost = driveRows.reduce((carry, row) => carry + toNumber(row.estimated_fuel_cost, 0), 0);
         const estimatedCommuteDistance = driveRows.reduce((carry, row) => carry + toNumber(row.distance_km, 0), 0);
+        const parkingCost = parkingRows.reduce((carry, row) => carry + toNumber(row.total_amount, 0), 0);
 
         return {
             actualFuelSpending,
@@ -384,6 +421,7 @@
             totalFuelLitres,
             avgLPer100,
             estimatedCommuteDistance,
+            parkingCost,
         };
     }
 
@@ -548,6 +586,39 @@
         });
     }
 
+    function renderParkingRows() {
+        const tbody = document.getElementById('parkingLogRows');
+        if (!tbody) return;
+        const rows = scopedTransportationRows().parkingRows;
+        const period = summaryPeriods[state.summaryPeriod] || summaryPeriods.monthly;
+
+        tbody.innerHTML = '';
+        if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-secondary py-4">${period.emptyParkingMessage}</td></tr>`;
+            return;
+        }
+
+        rows.forEach((row) => {
+            const isMonthlyPass = row.parking_type === 'monthly_pass';
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-parking-log-id', row.id);
+            tr.style.cursor = 'pointer';
+            if (editingParkingLogId && row.id === editingParkingLogId) {
+                tr.classList.add('table-active');
+            }
+            tr.innerHTML = `
+                <td>
+                    <div class="log-cell-main">${isMonthlyPass ? formatMonthOnly(row.billing_month || row.parking_date) : formatDateOnly(row.parking_date)}</div>
+                    <div class="log-cell-sub">${isMonthlyPass ? `Purchased ${formatDateOnly(row.parking_date)}` : `${formatHour(row.start_hour)} - ${formatHour(row.end_hour)}`}</div>
+                </td>
+                <td>${isMonthlyPass ? 'Monthly Pass' : 'Casual Parking'}</td>
+                <td>${row.location || '-'}</td>
+                <td class="text-end">${money.format(toNumber(row.total_amount, 0))}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
     function renderDashboard() {
         const period = summaryPeriods[state.summaryPeriod] || summaryPeriods.monthly;
         const summary = selectedPeriodSummary();
@@ -562,6 +633,7 @@
             { label: 'Total Fuel Litres Logged', value: `${money.format(summary.totalFuelLitres)} L` },
             { label: 'Average Mileage', value: `${summary.avgLPer100 === null ? '-' : money.format(summary.avgLPer100)} L/100KM` },
             { label: 'Commute Distance', value: `${money.format(summary.estimatedCommuteDistance)} KM` },
+            { label: 'Cost of Parking', value: `RM ${money.format(summary.parkingCost)}` },
         ];
 
         wrap.innerHTML = '';
@@ -583,9 +655,11 @@
         renderVehicleSelects();
         renderFuelRows();
         renderDriveRows();
+        renderParkingRows();
         renderDashboard();
         renderFuelFormMode();
         renderDriveFormMode();
+        renderParkingFormMode();
     }
 
     function wireSummaryPeriodSelect() {
@@ -608,6 +682,7 @@
             renderActivePeriod();
             renderFuelRows();
             renderDriveRows();
+            renderParkingRows();
             renderDashboard();
         });
     }
@@ -738,6 +813,97 @@
         if (!addWrap || !editWrap || !deleteWrap) return;
 
         if (editingCommuteLogId) {
+            addWrap.classList.add('d-none');
+            editWrap.classList.remove('d-none');
+            deleteWrap.classList.remove('d-none');
+            return;
+        }
+
+        addWrap.classList.remove('d-none');
+        editWrap.classList.add('d-none');
+        deleteWrap.classList.add('d-none');
+    }
+
+    function monthValueFrom(dateLike) {
+        const d = dateLike ? new Date(dateLike) : new Date();
+        if (Number.isNaN(d.getTime())) return monthValueFrom(new Date());
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}`;
+    }
+
+    function monthStartFromValue(monthValue) {
+        return monthValue ? `${monthValue}-01` : '';
+    }
+
+    function setParkingTypeUI() {
+        const type = document.getElementById('parkingType')?.value || 'casual';
+        const hourWrap = document.getElementById('parkingHourWrap');
+        const billingMonthWrap = document.getElementById('parkingBillingMonthWrap');
+        if (hourWrap) hourWrap.classList.toggle('d-none', type === 'monthly_pass');
+        if (billingMonthWrap) billingMonthWrap.classList.toggle('d-none', type !== 'monthly_pass');
+    }
+
+    function populateParkingHourOptions() {
+        const start = document.getElementById('parkingStartHour');
+        const end = document.getElementById('parkingEndHour');
+        if (!start || !end || start.options.length || end.options.length) return;
+
+        for (let hour = 0; hour <= 23; hour += 1) {
+            const option = document.createElement('option');
+            option.value = String(hour);
+            option.textContent = formatHour(hour);
+            start.appendChild(option);
+        }
+
+        for (let hour = 1; hour <= 24; hour += 1) {
+            const option = document.createElement('option');
+            option.value = String(hour);
+            option.textContent = formatHour(hour);
+            end.appendChild(option);
+        }
+    }
+
+    function setParkingFormValues(log) {
+        const date = document.getElementById('parkingDate');
+        const type = document.getElementById('parkingType');
+        const location = document.getElementById('parkingLocation');
+        const billingMonth = document.getElementById('parkingBillingMonth');
+        const startHour = document.getElementById('parkingStartHour');
+        const endHour = document.getElementById('parkingEndHour');
+        const total = document.getElementById('parkingTotalAmount');
+        const note = document.getElementById('parkingNote');
+        const parkingDate = log?.parking_date || defaultDateValue();
+        const billingMonthValue = monthValueFrom(log?.billing_month || parkingDate);
+
+        if (type) type.value = log?.parking_type || 'casual';
+        if (location) location.value = log?.location || '';
+        if (date) date.value = parkingDate;
+        if (billingMonth) billingMonth.value = billingMonthValue;
+        if (startHour) startHour.value = String(toNumber(log?.start_hour, 9));
+        if (endHour) endHour.value = String(toNumber(log?.end_hour, 10));
+        if (total) total.value = String(toNumber(log?.total_amount, 0));
+        if (note) note.value = log?.notes || '';
+
+        if (date?._flatpickr) {
+            date._flatpickr.setDate(parkingDate, true, 'Y-m-d');
+        }
+
+        setParkingTypeUI();
+    }
+
+    function clearParkingForm() {
+        editingParkingLogId = null;
+        setParkingFormValues(null);
+    }
+
+    function renderParkingFormMode() {
+        const addWrap = document.getElementById('parkingAddButtonWrap');
+        const editWrap = document.getElementById('parkingEditButtonWrap');
+        const deleteWrap = document.getElementById('parkingDeleteButtonWrap');
+        if (!addWrap || !editWrap || !deleteWrap) return;
+
+        if (editingParkingLogId) {
             addWrap.classList.add('d-none');
             editWrap.classList.remove('d-none');
             deleteWrap.classList.remove('d-none');
@@ -1052,6 +1218,78 @@
         });
     }
 
+    function wireParkingSave() {
+        const btn = document.getElementById('addParkingLogBtn');
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+            try {
+                const payload = buildParkingPayload();
+                const snapshot = await apiRequest('POST', config.parkingLogsEndpoint, payload);
+                applySnapshot(snapshot);
+                setStatus('Parking log added.');
+            } catch (error) {
+                setStatus(error.message || 'Failed to add parking log.', true);
+            }
+        });
+    }
+
+    function wireParkingRowSelection() {
+        const tbody = document.getElementById('parkingLogRows');
+        if (!tbody) return;
+
+        tbody.addEventListener('click', (event) => {
+            const row = event.target.closest('tr[data-parking-log-id]');
+            if (!row) return;
+
+            const parkingLogId = row.getAttribute('data-parking-log-id');
+            const log = state.parkingLogs.find((item) => item.id === parkingLogId);
+            if (!log) return;
+
+            activateInputTab('tab-parking-entry');
+            editingParkingLogId = parkingLogId;
+            setParkingFormValues(log);
+            renderAll();
+            setStatus('Editing parking log.');
+        });
+    }
+
+    function wireParkingEditActions() {
+        const editBtn = document.getElementById('editParkingLogBtn');
+        const deleteBtn = document.getElementById('deleteParkingLogBtn');
+        if (!editBtn || !deleteBtn) return;
+
+        editBtn.addEventListener('click', async () => {
+            if (!editingParkingLogId) return;
+
+            try {
+                const payload = buildParkingPayload();
+                const endpoint = `${config.parkingLogsBaseUrl}/${encodeURIComponent(editingParkingLogId)}`;
+                const snapshot = await apiRequest('PUT', endpoint, payload);
+                applySnapshot(snapshot);
+                clearParkingForm();
+                renderAll();
+                setStatus('Parking log updated.');
+            } catch (error) {
+                setStatus(error.message || 'Failed to update parking log.', true);
+            }
+        });
+
+        deleteBtn.addEventListener('click', async () => {
+            if (!editingParkingLogId) return;
+
+            try {
+                const endpoint = `${config.parkingLogsBaseUrl}/${encodeURIComponent(editingParkingLogId)}`;
+                const snapshot = await apiRequest('DELETE', endpoint);
+                applySnapshot(snapshot);
+                clearParkingForm();
+                renderAll();
+                setStatus('Parking log deleted.');
+            } catch (error) {
+                setStatus(error.message || 'Failed to delete parking log.', true);
+            }
+        });
+    }
+
     function buildDrivePayload() {
         const vehicleId = String(document.getElementById('commuteVehicleId')?.value || '');
         if (!vehicleId) {
@@ -1097,6 +1335,50 @@
             top_speed_kmh: topSpeed,
             notes: String(document.getElementById('commuteNote')?.value || '').trim(),
         };
+    }
+
+    function buildParkingPayload() {
+        const type = String(document.getElementById('parkingType')?.value || 'casual');
+        const location = String(document.getElementById('parkingLocation')?.value || '').trim();
+        const parkingDate = String(document.getElementById('parkingDate')?.value || '');
+        const total = toNumber(document.getElementById('parkingTotalAmount')?.value, -1);
+        const startHour = toNumber(document.getElementById('parkingStartHour')?.value, -1);
+        const endHour = toNumber(document.getElementById('parkingEndHour')?.value, -1);
+        const billingMonth = monthStartFromValue(String(document.getElementById('parkingBillingMonth')?.value || ''));
+
+        if (!location) {
+            throw new Error('Parking location is required.');
+        }
+        if (!parkingDate) {
+            throw new Error('Parking date is required.');
+        }
+        if (total < 0) {
+            throw new Error('Parking cost must be zero or more.');
+        }
+        if (type === 'casual' && (startHour < 0 || endHour <= startHour)) {
+            throw new Error('Parking end hour must be after start hour.');
+        }
+        if (type === 'monthly_pass' && !billingMonth) {
+            throw new Error('Pass month is required.');
+        }
+
+        return {
+            parking_type: type,
+            location,
+            parking_date: parkingDate,
+            billing_month: type === 'monthly_pass' ? billingMonth : null,
+            start_hour: type === 'casual' ? startHour : null,
+            end_hour: type === 'casual' ? endHour : null,
+            total_amount: total,
+            notes: String(document.getElementById('parkingNote')?.value || '').trim(),
+        };
+    }
+
+    function wireParkingTypeToggle() {
+        const type = document.getElementById('parkingType');
+        if (!type) return;
+        type.addEventListener('change', setParkingTypeUI);
+        setParkingTypeUI();
     }
 
     function wireFuelPriceModeHelpers() {
@@ -1149,10 +1431,16 @@
         const driveTime = document.getElementById('commuteTime');
         const driveEndDate = document.getElementById('commuteEndDate');
         const driveEndTime = document.getElementById('commuteEndTime');
+        const parkingDate = document.getElementById('parkingDate');
+        const parkingBillingMonth = document.getElementById('parkingBillingMonth');
+        const parkingStartHour = document.getElementById('parkingStartHour');
+        const parkingEndHour = document.getElementById('parkingEndHour');
         const fuelMode = document.getElementById('fuelPriceMode');
         const fuelPrice = document.getElementById('fuelPricePerLitre');
         const now = new Date();
         const defaultDriveEnd = new Date(now.getTime() + 30 * 60000);
+
+        populateParkingHourOptions();
 
         if (fuelDate && !fuelDate.value) fuelDate.value = defaultDateValue();
         if (fuelTime && !fuelTime.value) fuelTime.value = defaultTimeValue();
@@ -1160,6 +1448,10 @@
         if (driveTime && !driveTime.value) driveTime.value = timeValueFrom(now);
         if (driveEndDate && !driveEndDate.value) driveEndDate.value = dateValueFrom(defaultDriveEnd);
         if (driveEndTime && !driveEndTime.value) driveEndTime.value = timeValueFrom(defaultDriveEnd);
+        if (parkingDate && !parkingDate.value) parkingDate.value = dateValueFrom(now);
+        if (parkingBillingMonth && !parkingBillingMonth.value) parkingBillingMonth.value = monthValueFrom(now);
+        if (parkingStartHour && !parkingStartHour.value) parkingStartHour.value = '9';
+        if (parkingEndHour && !parkingEndHour.value) parkingEndHour.value = '10';
 
         if (fuelTime) fuelTime.setAttribute('placeholder', 'HH:MM');
         if (driveTime) driveTime.setAttribute('placeholder', 'HH:MM');
@@ -1225,6 +1517,10 @@
         wireDriveSave();
         wireDriveRowSelection();
         wireDriveEditActions();
+        wireParkingSave();
+        wireParkingRowSelection();
+        wireParkingEditActions();
+        wireParkingTypeToggle();
         wireFuelPriceModeHelpers();
         wireFuelTotalAutoCalculation();
         wireSummaryPeriodSelect();
