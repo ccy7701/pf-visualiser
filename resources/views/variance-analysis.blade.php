@@ -68,7 +68,7 @@
                         <div class="tab-content">
                             <div class="tab-pane fade show active" id="va-pane-balances" role="tabpanel" aria-labelledby="va-tab-balances" tabindex="0">
                                 <div class="input-subcard">
-                                    <h2 class="section-subtitle mb-3">Month End Values</h2>
+                                    <h2 class="section-subtitle mb-3">Month-End Values</h2>
 
                                     <label for="actualTfp" class="form-label form-label-sm">TFP</label>
                                     <div class="input-group input-group-sm mb-3">

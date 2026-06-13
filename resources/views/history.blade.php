@@ -64,7 +64,7 @@
                                         <input id="historyMonth" class="form-control compact-input month-input" type="text" value="{{ $latestMonth }}" autocomplete="off">
                                     </div>
                                     <div class="col-12">
-                                        <label for="monthEndTotalInput" class="form-label form-label-sm">Total at Month End</label>
+                                        <label for="monthEndTotalInput" class="form-label form-label-sm">TFP at Month End</label>
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text">RM</span>
                                             <input id="monthEndTotalInput" class="form-control compact-input" type="number" step="0.01" min="0" placeholder="0.00" readonly>
@@ -138,7 +138,7 @@
                             </div>
                             <div class="history-visualisation-switcher">
                                 <select id="historyVisualisationSelect" class="form-select form-select-sm history-visualisation-select" aria-label="History visualisation">
-                                    <option value="coh" selected>Total Balance Trend</option>
+                                    <option value="coh" selected>TFP Trend</option>
                                     <option value="coh-breakdown">COH, ELR and EPF</option>
                                     <option value="income-expense">Income and Expenses</option>
                                     <option value="expense-category">Expenses by Category</option>
