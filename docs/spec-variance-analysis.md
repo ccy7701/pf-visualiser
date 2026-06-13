@@ -15,6 +15,7 @@ The system compares saved projection outputs against History-sourced month-end a
 * Cash on Hand (COH)
 * Emergency Liquidity Reserve (ELR)
 * Employees Provident Fund (EPF)
+* Total financial position (TFP), where `TFP = COH + ELR + EPF`
 
 ---
 
@@ -101,6 +102,8 @@ The system shall present month-by-month comparison rows:
 * ELR variance
 * EPF (actual vs projected)
 * EPF variance
+* TFP (actual vs projected)
+* TFP variance
 
 ### 3.6 Read-Only Actuals
 
@@ -109,6 +112,7 @@ The Variance Analysis UI shall not provide manual actual-value inputs or a save-
 Read-only actual panes include:
 
 * COH / ELR / EPF values from History for the selected month
+* TFP derived from History COH, ELR, and EPF values for the selected month
 * expense category values from History for the selected month
 * a source label indicating whether a History record exists for the selected month
 
@@ -129,6 +133,7 @@ Applied independently for:
 * COH variance: `actual.closing_coh - projected.closing_coh`
 * ELR variance: `actual.closing_elr - projected.closing_elr`
 * EPF variance: `actual.closing_epf - projected.closing_epf`
+* TFP variance: `actual TFP - projected TFP`, where `TFP = closing_coh + closing_elr + closing_epf`
 
 ### 4.2 Variance Display Rule
 

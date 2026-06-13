@@ -70,10 +70,10 @@
                                 <div class="input-subcard">
                                     <h2 class="section-subtitle mb-3">Month End Values</h2>
 
-                                    <label for="actualTotalAmount" class="form-label form-label-sm">Total Amount</label>
+                                    <label for="actualTfp" class="form-label form-label-sm">TFP</label>
                                     <div class="input-group input-group-sm mb-3">
                                         <span class="input-group-text">RM</span>
-                                        <input id="actualTotalAmount" type="text" class="form-control compact-input va-input-control" readonly>
+                                        <input id="actualTfp" type="text" class="form-control compact-input va-input-control" readonly>
                                     </div>
 
                                     <label for="actualClosingCoh" class="form-label form-label-sm">COH</label>
@@ -143,7 +143,7 @@
                                     <th colspan="2">COH</th>
                                     <th colspan="2">ELR</th>
                                     <th colspan="2">EPF</th>
-                                    <th colspan="2">Total Amount</th>
+                                    <th colspan="2">TFP</th>
                                 </tr>
                                 <tr class="text-center">
                                     <th>Recorded</th>

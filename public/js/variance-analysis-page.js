@@ -39,7 +39,7 @@
             && [row.closing_coh, row.closing_elr, row.closing_epf].some((value) => value !== null && value !== undefined);
     }
 
-    function totalAmountFromBalances(row) {
+    function tfpFromBalances(row) {
         if (!hasAnyBalanceValue(row)) return null;
 
         return toNumber(row.closing_coh, 0)
@@ -180,9 +180,9 @@
         const closingCohInput = document.getElementById('actualClosingCoh');
         const closingElrInput = document.getElementById('actualClosingElr');
         const closingEpfInput = document.getElementById('actualClosingEpf');
-        const totalAmountInput = document.getElementById('actualTotalAmount');
+        const tfpInput = document.getElementById('actualTfp');
 
-        if (!fieldset || !monthDisplay || !closingCohInput || !closingElrInput || !closingEpfInput || !totalAmountInput) {
+        if (!fieldset || !monthDisplay || !closingCohInput || !closingElrInput || !closingEpfInput || !tfpInput) {
             return;
         }
 
@@ -195,7 +195,7 @@
             closingCohInput.value = '';
             closingElrInput.value = '';
             closingEpfInput.value = '';
-            totalAmountInput.value = '';
+            tfpInput.value = '';
             monthDisplay.textContent = '-';
             updateExpensesTotalDisplay(0);
             document.getElementById('actualExpenseCategoryRows').innerHTML = '';
@@ -209,7 +209,7 @@
         closingCohInput.value = actual.closing_coh === null ? '' : money.format(actual.closing_coh);
         closingElrInput.value = actual.closing_elr === null ? '' : money.format(actual.closing_elr);
         closingEpfInput.value = actual.closing_epf === null ? '' : money.format(actual.closing_epf);
-        totalAmountInput.value = formatAmountOrDash(totalAmountFromBalances(actual));
+        tfpInput.value = formatAmountOrDash(tfpFromBalances(actual));
 
         const totalExpenses = recalculateActualExpenses(actual);
         updateExpensesTotalDisplay(totalExpenses);
@@ -257,9 +257,9 @@
             const cohVariance = varianceCell(actual.closing_coh, projected.closing_coh);
             const elrVariance = varianceCell(actual.closing_elr, projected.closing_elr);
             const epfVariance = varianceCell(actual.closing_epf, projected.closing_epf);
-            const actualTotalAmount = totalAmountFromBalances(actual);
-            const projectedTotalAmount = totalAmountFromBalances(projected);
-            const totalVariance = varianceCell(actualTotalAmount, projectedTotalAmount);
+            const actualTfp = tfpFromBalances(actual);
+            const projectedTfp = tfpFromBalances(projected);
+            const tfpVariance = varianceCell(actualTfp, projectedTfp);
 
             const row = document.createElement('tr');
             const isSelected = projected.month === selectedMonth;
@@ -275,8 +275,8 @@
                 <td class="va-variance-cell ${elrVariance.className}">${elrVariance.text}</td>
                 <td class="va-metric-cell">${metricCellHtml(actual.closing_epf, projected.closing_epf)}</td>
                 <td class="va-variance-cell ${epfVariance.className}">${epfVariance.text}</td>
-                <td class="va-metric-cell">${metricCellHtml(actualTotalAmount, projectedTotalAmount)}</td>
-                <td class="va-variance-cell ${totalVariance.className}">${totalVariance.text}</td>
+                <td class="va-metric-cell">${metricCellHtml(actualTfp, projectedTfp)}</td>
+                <td class="va-variance-cell ${tfpVariance.className}">${tfpVariance.text}</td>
             `;
 
             row.addEventListener('click', () => {
