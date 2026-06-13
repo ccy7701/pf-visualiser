@@ -85,7 +85,25 @@ Income increases Actual COH.
 
 Income transactions categorized as `Salary` also reconcile against scheduled salary accrual for the transaction month so salary is not double-counted in Expected COH.
 
-### 3.4 Salary Accrual
+### 3.4 Transaction Log Period Navigation
+
+The Transaction Log transaction table shall support period filters:
+
+* Daily
+* Weekly
+* Monthly
+* Annually
+
+The table header shall describe the active range:
+
+* Daily: `Transactions over {date}`
+* Weekly: `Transactions over x/x - x/x`
+* Monthly: `Transactions over MonthName YYYY`
+* Annually: `Transactions over the year YYYY`
+
+Previous (`<`) and next (`>`) controls shall shift the active range backward or forward by one selected unit.
+
+### 3.5 Salary Accrual
 
 The system shall apply workday-based salary accrual:
 
