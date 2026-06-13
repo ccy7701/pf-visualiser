@@ -983,8 +983,8 @@
             const button = event.target.closest('button[data-vehicle-action]');
             if (!button) return;
 
-            const action = button.getAttribute('data-vehicle-action');
-            const vehicleId = button.getAttribute('data-vehicle-id');
+            const action = button.dataset.vehicleAction;
+            const vehicleId = button.dataset.vehicleId;
             if (!vehicleId) return;
 
             if (action === 'edit') {
@@ -1072,7 +1072,7 @@
             const row = event.target.closest('tr[data-fuel-log-id]');
             if (!row) return;
 
-            const fuelLogId = row.getAttribute('data-fuel-log-id');
+            const fuelLogId = row.dataset.fuelLogId;
             const log = state.fuelLogs.find((item) => item.id === fuelLogId);
             if (!log) return;
 
@@ -1169,7 +1169,7 @@
             const row = event.target.closest('tr[data-commute-log-id]');
             if (!row) return;
 
-            const commuteLogId = row.getAttribute('data-commute-log-id');
+            const commuteLogId = row.dataset.commuteLogId;
             const log = state.commuteLogs.find((item) => item.id === commuteLogId);
             if (!log) return;
 
@@ -1241,7 +1241,7 @@
             const row = event.target.closest('tr[data-parking-log-id]');
             if (!row) return;
 
-            const parkingLogId = row.getAttribute('data-parking-log-id');
+            const parkingLogId = row.dataset.parkingLogId;
             const log = state.parkingLogs.find((item) => item.id === parkingLogId);
             if (!log) return;
 

@@ -1349,8 +1349,8 @@
         const button = event.target.closest('button[data-salary-schedule-action]');
         if (!button) return;
 
-        const action = button.getAttribute('data-salary-schedule-action');
-        const scheduleId = button.getAttribute('data-salary-schedule-id');
+        const action = button.dataset.salaryScheduleAction;
+        const scheduleId = button.dataset.salaryScheduleId;
         const schedule = salarySchedules.find((item) => item.id === scheduleId);
         if (!schedule) return;
 
@@ -1380,8 +1380,8 @@
         const button = event.target.closest('button[data-budget-plan-action]');
         if (!button) return;
 
-        const action = button.getAttribute('data-budget-plan-action');
-        const profileId = button.getAttribute('data-budget-plan-id');
+        const action = button.dataset.budgetPlanAction;
+        const profileId = button.dataset.budgetPlanId;
         const profile = budgetProfiles.find((item) => item.id === profileId);
         if (!profile) return;
 
@@ -1476,8 +1476,8 @@
         const btn = event.target.closest('button[data-action]');
         if (!btn) return;
 
-        const action = btn.getAttribute('data-action');
-        const scenarioId = btn.getAttribute('data-scenario-id');
+        const action = btn.dataset.action;
+        const scenarioId = btn.dataset.scenarioId;
         const scenario = initialScenarios.find((s) => String(s.id) === String(scenarioId));
         if (!scenario) return;
 

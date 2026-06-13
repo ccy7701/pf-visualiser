@@ -139,21 +139,21 @@
                                 </colgroup>
                                 <thead class="table-light sticky-top">
                                 <tr class="text-center">
-                                    <th rowspan="2">Month</th>
-                                    <th colspan="2">COH</th>
-                                    <th colspan="2">ELR</th>
-                                    <th colspan="2">EPF</th>
-                                    <th colspan="2">TFP</th>
+                                    <th id="th-mth" rowspan="2">Month</th>
+                                    <th id="th-coh" colspan="2">COH</th>
+                                    <th id="th-elr" colspan="2">ELR</th>
+                                    <th id="th-epf" colspan="2">EPF</th>
+                                    <th id="th-tfp" colspan="2">TFP</th>
                                 </tr>
                                 <tr class="text-center">
-                                    <th>Recorded</th>
-                                    <th>Variance</th>
-                                    <th>Recorded</th>
-                                    <th>Variance</th>
-                                    <th>Recorded</th>
-                                    <th>Variance</th>
-                                    <th>Recorded</th>
-                                    <th>Variance</th>
+                                    <th scope="col">Recorded</th>
+                                    <th scope="col">Variance</th>
+                                    <th scope="col">Recorded</th>
+                                    <th scope="col">Variance</th>
+                                    <th scope="col">Recorded</th>
+                                    <th scope="col">Variance</th>
+                                    <th scope="col">Recorded</th>
+                                    <th scope="col">Variance</th>
                                 </tr>
                                 </thead>
                                 <tbody id="planActualRows">
