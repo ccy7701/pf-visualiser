@@ -338,6 +338,29 @@
             padding-right: 1rem;
             overflow-y: auto;
         }
+        #savedScenariosModal .table-responsive {
+            overflow-x: hidden;
+        }
+        .saved-scenarios-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        .saved-scenarios-table th:nth-child(1) {
+            width: 20%;
+        }
+        .saved-scenarios-notes-col {
+            width: 40%;
+        }
+        .saved-scenarios-table th:nth-child(3) {
+            width: 20%;
+        }
+        .saved-scenarios-table th:nth-child(4) {
+            width: 20%;
+        }
+        .saved-scenarios-notes-cell {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
         #scenarioComparisonModal .modal-dialog {
             max-width: 980px;
         }

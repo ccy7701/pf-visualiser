@@ -557,21 +557,26 @@
             return;
         }
 
-        tbody.innerHTML = initialScenarios.map((s) => `
-            <tr>
-                <td>${s.name}</td>
-                <td>${s.notes || '-'}</td>
-                <td>${formatDateTime(s.updated_at)}</td>
-                <td class="text-end">
-                    <button type="button" class="btn btn-sm btn-outline-secondary me-1" data-action="load" data-scenario-id="${s.id}" title="Load">
-                        <i class="fa-solid fa-folder-open"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete" data-scenario-id="${s.id}" title="Delete">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = initialScenarios.map((s) => {
+            const notes = s.notes || '-';
+            const notesTitle = s.notes ? ` title="${escapeHtml(s.notes)}"` : '';
+
+            return `
+                <tr>
+                    <td>${escapeHtml(s.name)}</td>
+                    <td class="saved-scenarios-notes-cell"${notesTitle}>${escapeHtml(notes)}</td>
+                    <td>${formatDateTime(s.updated_at)}</td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-outline-secondary me-1" data-action="load" data-scenario-id="${s.id}" title="Load">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete" data-scenario-id="${s.id}" title="Delete">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     function snapshotForLoadedScenarioComparison() {

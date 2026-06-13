@@ -450,11 +450,11 @@
             </div>
             <div class="modal-body">
                 <div class="table-responsive">
-                    <table class="table table-sm mb-0">
+                    <table class="table table-sm mb-0 saved-scenarios-table">
                         <thead class="table-light">
                         <tr>
                             <th>Scenario Name</th>
-                            <th>Notes</th>
+                            <th class="saved-scenarios-notes-col">Notes</th>
                             <th>Last Updated</th>
                             <th class="text-end">Actions</th>
                         </tr>
