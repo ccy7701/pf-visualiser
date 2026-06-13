@@ -26,6 +26,17 @@ class CounterService
 
         $salary = $this->salaryAccrualService->computeAccruedSalary($asOf, $this->realizedSalaryByMonth());
         $expectedCounter = $actualCounter + $salary['accrued_salary'];
+        $currentMonthIncome = (float) Transaction::query()
+            ->where('type', 'income')
+            ->whereBetween('datetime', [$asOf->copy()->startOfMonth(), $asOf->copy()->endOfMonth()])
+            ->sum('amount');
+        $currentMonthExpense = (float) Transaction::query()
+            ->where('type', 'expense')
+            ->whereBetween('datetime', [$asOf->copy()->startOfMonth(), $asOf->copy()->endOfMonth()])
+            ->sum('amount');
+        $currentMonthNetTransactions = $currentMonthIncome - $currentMonthExpense;
+        $currentMonthUnpaidAccrual = (float) ($salary['current_month_accrued_salary'] ?? 0);
+        $projectedEotmTfp = $startingAmount + $currentMonthNetTransactions + $currentMonthUnpaidAccrual;
 
         return [
             'as_of' => $asOf->toDateTimeString(),
@@ -34,6 +45,11 @@ class CounterService
             'expense_total' => round($expense, 2),
             'net_transactions' => round($netTransactions, 2),
             'accrued_salary' => round($salary['accrued_salary'], 2),
+            'current_month_income_total' => round($currentMonthIncome, 2),
+            'current_month_expense_total' => round($currentMonthExpense, 2),
+            'current_month_net_transactions' => round($currentMonthNetTransactions, 2),
+            'current_month_unpaid_accrual' => round($currentMonthUnpaidAccrual, 2),
+            'projected_eotm_tfp' => round($projectedEotmTfp, 2),
             'scheduled_accrued_salary' => round($salary['scheduled_accrued_salary'], 2),
             'realized_salary' => round($salary['realized_salary'], 2),
             'actual_counter' => round($actualCounter, 2),

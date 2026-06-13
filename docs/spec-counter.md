@@ -281,6 +281,11 @@ Current response fields:
 * `income_total`
 * `expense_total`
 * `net_transactions`
+* `current_month_income_total`
+* `current_month_expense_total`
+* `current_month_net_transactions`
+* `current_month_unpaid_accrual`
+* `projected_eotm_tfp`
 * `accrued_salary`
 * `scheduled_accrued_salary`
 * `realized_salary`
@@ -295,7 +300,9 @@ Field meanings:
 * `actual_counter`: Starting Amount + Net Transactions
 * `expected_counter`: Actual COH + unpaid salary accrual
 * `counter`: alias of `actual_counter`
+* `projected_eotm_tfp`: Starting Amount + current-month Net Transactions + current-month Unpaid Accrual
 * `accrued_salary`: unpaid scheduled salary accrual after salary transaction reconciliation
+* `current_month_unpaid_accrual`: unpaid scheduled salary accrual for the `as_of` month only
 * `scheduled_accrued_salary`: raw schedule-derived accrual before salary transaction reconciliation
 * `realized_salary`: schedule accrual amount covered by salary transactions
 

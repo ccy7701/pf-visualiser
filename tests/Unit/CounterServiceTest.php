@@ -52,6 +52,9 @@ class CounterServiceTest extends TestCase
         $this->assertSame(2637.96, $afterSalaryReceipt['actual_counter']);
         $this->assertSame(2637.96, $afterSalaryReceipt['counter']);
         $this->assertEqualsWithDelta(0.0, $afterSalaryReceipt['accrued_salary'], 0.01);
+        $this->assertSame(1766.35, $afterSalaryReceipt['current_month_net_transactions']);
+        $this->assertEqualsWithDelta(0.0, $afterSalaryReceipt['current_month_unpaid_accrual'], 0.01);
+        $this->assertSame(2637.96, $afterSalaryReceipt['projected_eotm_tfp']);
         $this->assertSame(2637.96, $afterSalaryReceipt['expected_counter']);
         $this->assertSame(0.0, $afterSalaryReceipt['increment_per_second']);
 
@@ -60,6 +63,9 @@ class CounterServiceTest extends TestCase
 
         $this->assertSame(2637.96, $oneMonthAhead['actual_counter']);
         $this->assertEqualsWithDelta(1766.35, $oneMonthAhead['accrued_salary'], 0.01);
+        $this->assertSame(0.0, $oneMonthAhead['current_month_net_transactions']);
+        $this->assertEqualsWithDelta(1766.35, $oneMonthAhead['current_month_unpaid_accrual'], 0.01);
+        $this->assertEqualsWithDelta(2637.96, $oneMonthAhead['projected_eotm_tfp'], 0.01);
         $this->assertEqualsWithDelta(4404.31, $oneMonthAhead['expected_counter'], 0.01);
     }
 }

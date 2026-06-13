@@ -26,6 +26,7 @@ class SalaryAccrualService
         if (! $firstSchedule) {
             return [
                 'accrued_salary' => 0.0,
+                'current_month_accrued_salary' => 0.0,
                 'scheduled_accrued_salary' => 0.0,
                 'realized_salary' => 0.0,
                 'increment_per_second' => 0.0,
@@ -37,6 +38,7 @@ class SalaryAccrualService
         if ($asOf->lte($accrualStart)) {
             return [
                 'accrued_salary' => 0.0,
+                'current_month_accrued_salary' => 0.0,
                 'scheduled_accrued_salary' => 0.0,
                 'realized_salary' => 0.0,
                 'increment_per_second' => 0.0,
@@ -85,6 +87,7 @@ class SalaryAccrualService
 
         return [
             'accrued_salary' => $unpaidAccrued,
+            'current_month_accrued_salary' => $currentMonthUnpaid,
             'scheduled_accrued_salary' => $totalAccrued,
             'realized_salary' => $realizedTotal,
             'increment_per_second' => $currentMonthUnpaid > 0 || empty($realizedSalaryByMonth[$currentMonth])

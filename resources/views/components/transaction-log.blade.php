@@ -14,6 +14,9 @@ new class extends Component
         'net_transactions' => 0,
         'accrued_salary' => 0,
         'expected_counter' => 0,
+        'current_month_net_transactions' => 0,
+        'current_month_unpaid_accrual' => 0,
+        'projected_eotm_tfp' => 0,
     ];
 
     public array $transactions = [];
@@ -226,7 +229,7 @@ new class extends Component
 <div class="transaction-log-grid">
     {{-- Summary cards --}}
     @php
-        $netTransactions = (float) ($snapshot['net_transactions'] ?? 0);
+        $netTransactions = (float) ($snapshot['current_month_net_transactions'] ?? 0);
         $netTransactionClass = $netTransactions > 0 ? 'text-success' : 'text-danger';
         $periodLabel = match ($recentTransactionPeriod) {
             'this_week' => 'this week',
@@ -237,7 +240,7 @@ new class extends Component
     {{-- Log form --}}
     <div class="transaction-log-input-column">
         <div class="card data-card">
-            <div class="card-header">Inputs</div>
+            <div class="card-header py-2">Inputs</div>
             <div class="card-body p-3">
             <h2 class="h6 mb-3">{{ $editingTransactionId ? 'Edit Transaction' : 'Log New Transaction' }}</h2>
             @if ($statusMessage)
@@ -311,39 +314,36 @@ new class extends Component
     @endif
 
     <div class="transaction-log-output-column">
-        <div class="counter-equation-summary mb-3">
-            <div class="counter-equation-card">
-                <div class="card data-card h-100">
-                    <div class="card-body text-center p-2">
-                        <div class="text-secondary">Starting Amount</div>
-                        <div class="fw-semibold">RM {{ number_format($snapshot['starting_amount'], 2) }}</div>
+        <div class="card data-card counter-equation-panel mb-3">
+            <div class="card-header py-2">Values for this month</div>
+            <div class="card-body p-3">
+                <div class="counter-equation-summary">
+                    <div class="counter-equation-card">
+                        <div class="counter-equation-item">
+                            <div class="text-secondary">Starting Amount</div>
+                            <div class="fw-semibold" id="startingAmountSummary">RM {{ number_format($snapshot['starting_amount'], 2) }}</div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div class="counter-equation-operator">+</div>
-            <div class="counter-equation-card">
-                <div class="card data-card h-100">
-                    <div class="card-body text-center p-2">
-                        <div class="text-secondary">Net Transactions</div>
-                        <div class="fw-semibold {{ $netTransactionClass }}">RM {{ number_format($netTransactions, 2) }}</div>
+                    <div class="counter-equation-operator">+</div>
+                    <div class="counter-equation-card">
+                        <div class="counter-equation-item">
+                            <div class="text-secondary">Net Transactions</div>
+                            <div class="fw-semibold {{ $netTransactionClass }}" id="netTransactionsSummary">RM {{ number_format($netTransactions, 2) }}</div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div class="counter-equation-operator">+</div>
-            <div class="counter-equation-card">
-                <div class="card data-card h-100">
-                    <div class="card-body text-center p-2">
-                        <div class="text-secondary">Unpaid Accrual</div>
-                        <div class="fw-semibold" id="accruedSalarySummary">RM {{ number_format($snapshot['accrued_salary'], 2) }}</div>
+                    <div class="counter-equation-operator">+</div>
+                    <div class="counter-equation-card">
+                        <div class="counter-equation-item">
+                            <div class="text-secondary">Unpaid Accrual</div>
+                            <div class="fw-semibold" id="unpaidAccrualSummary">RM {{ number_format($snapshot['current_month_unpaid_accrual'], 2) }}</div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div class="counter-equation-operator">=</div>
-            <div class="counter-equation-card">
-                <div class="card data-card h-100">
-                    <div class="card-body text-center p-2">
-                        <div class="text-secondary">Projected Amount</div>
-                        <div class="fw-semibold" id="dynamicTotalSummary">RM {{ number_format($snapshot['expected_counter'], 2) }}</div>
+                    <div class="counter-equation-operator">=</div>
+                    <div class="counter-equation-card">
+                        <div class="counter-equation-item">
+                            <div class="text-secondary">Projected EOTM TFP</div>
+                            <div class="fw-semibold" id="projectedEotmTfpSummary">RM {{ number_format($snapshot['projected_eotm_tfp'], 2) }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -351,7 +351,7 @@ new class extends Component
 
         {{-- Recent transactions table --}}
         <div class="card data-card">
-            <div class="card-header transaction-output-header">
+            <div class="card-header transaction-output-header py-2">
                 <span>Transactions over {{ $periodLabel }}</span>
                 <div class="recent-transaction-filters" role="group" aria-label="Recent transaction period">
                     <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'today' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('today')">Today</button>
