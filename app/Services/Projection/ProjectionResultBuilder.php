@@ -20,6 +20,7 @@ class ProjectionResultBuilder
                 'final_coh' => 0.0,
                 'final_elr' => 0.0,
                 'final_epf' => 0.0,
+                'final_tfp' => 0.0,
                 'lowest_coh' => 0.0,
                 'highest_coh' => 0.0,
             ];
@@ -32,6 +33,7 @@ class ProjectionResultBuilder
             'final_coh' => (float) $final['closing_coh'],
             'final_elr' => (float) $final['closing_elr'],
             'final_epf' => (float) $final['closing_epf'],
+            'final_tfp' => (float) $final['closing_coh'] + (float) $final['closing_elr'] + (float) $final['closing_epf'],
             'lowest_coh' => min($cohValues),
             'highest_coh' => max($cohValues),
         ];

@@ -31,6 +31,10 @@ class ProjectionModuleTest extends TestCase
         $runResponse = $this->postJson(route('projection.run'), $payload);
         $runResponse->assertOk();
         $runResponse->assertJsonPath('months.0.month', '2026-06');
+        $runResponse->assertJsonPath(
+            'summary.final_tfp',
+            $runResponse->json('summary.final_coh') + $runResponse->json('summary.final_elr') + $runResponse->json('summary.final_epf')
+        );
 
         $saveResponse = $this->postJson(route('projection.scenarios.save'), array_merge([
             'name' => 'Scenario A',

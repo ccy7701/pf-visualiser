@@ -947,21 +947,21 @@
         const finalCoh = toNumber(summary.final_coh, 0);
         const finalElr = toNumber(summary.final_elr, 0);
         const finalEpf = toNumber(summary.final_epf, 0);
-        const lowestCoh = toNumber(summary.lowest_coh, 0);
+        const finalTfp = toNumber(summary.final_tfp, finalCoh + finalElr + finalEpf);
         document.getElementById('summaryFinalCoh').textContent = `RM ${money.format(finalCoh)}`;
         document.getElementById('summaryFinalElr').textContent = `RM ${money.format(finalElr)}`;
         document.getElementById('summaryFinalEpf').textContent = `RM ${money.format(finalEpf)}`;
-        document.getElementById('summaryLowestCoh').textContent = `RM ${money.format(lowestCoh)}`;
+        document.getElementById('summaryFinalTfp').textContent = `RM ${money.format(finalTfp)}`;
         document.getElementById('summaryFinalCoh').classList.toggle('negative-value', finalCoh < 0);
         document.getElementById('summaryFinalElr').classList.toggle('negative-value', finalElr < 0);
         document.getElementById('summaryFinalEpf').classList.toggle('negative-value', finalEpf < 0);
-        document.getElementById('summaryLowestCoh').classList.toggle('negative-value', lowestCoh < 0);
+        document.getElementById('summaryFinalTfp').classList.toggle('negative-value', finalTfp < 0);
 
         const tbody = document.getElementById('projectionRows');
         tbody.innerHTML = '';
 
         if (!months.length) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-secondary py-4">No projection rows returned.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-secondary py-4">No projection rows returned.</td></tr>';
             return;
         }
 
@@ -974,6 +974,7 @@
             const closingCoh = toNumber(row.closing_coh, 0);
             const closingElr = toNumber(row.closing_elr, 0);
             const closingEpf = toNumber(row.closing_epf, 0);
+            const tfp = closingCoh + closingElr + closingEpf;
             tr.innerHTML = `
                 <td>${formatMonthLabel(row.month)}</td>
                 <td class="text-end ${openingCoh < 0 ? 'negative-value' : ''}">${money.format(openingCoh)}</td>
@@ -983,6 +984,7 @@
                 <td class="text-end ${closingCoh < 0 ? 'negative-value' : ''}">${money.format(closingCoh)}</td>
                 <td class="text-end ${closingElr < 0 ? 'negative-value' : ''}">${money.format(closingElr)}</td>
                 <td class="text-end ${closingEpf < 0 ? 'negative-value' : ''}">${money.format(closingEpf)}</td>
+                <td class="text-end ${tfp < 0 ? 'negative-value' : ''}">${money.format(tfp)}</td>
             `;
             tbody.appendChild(tr);
         }
@@ -993,57 +995,78 @@
     function renderProjectionChart(months) {
         const ctx = document.getElementById('projectionStackedChart');
         if (!ctx) return;
-        const selectedType = document.getElementById('chartType')?.value || 'line';
-        const isStackedBar = selectedType === 'stacked_bar';
+        const selectedType = document.getElementById('chartType')?.value || 'balance_lines';
+        const isStackedBar = selectedType === 'balance_stack';
+        const isTfpLine = selectedType === 'tfp_line';
 
         const labels = months.map((row) => formatMonthLabel(row.month));
         const coh = months.map((row) => toNumber(row.closing_coh, 0));
         const elr = months.map((row) => toNumber(row.closing_elr, 0));
         const epf = months.map((row) => toNumber(row.closing_epf, 0));
+        const tfp = months.map((row) => (
+            toNumber(row.closing_coh, 0)
+            + toNumber(row.closing_elr, 0)
+            + toNumber(row.closing_epf, 0)
+        ));
 
         if (projectionChart) {
             projectionChart.destroy();
         }
 
+        const balanceDatasets = [
+            {
+                label: 'Closing COH',
+                data: coh,
+                borderColor: '#495057',
+                backgroundColor: isStackedBar ? '#495057' : 'rgba(73,80,87,0.15)',
+                pointRadius: isStackedBar ? 0 : 2,
+                pointHoverRadius: isStackedBar ? 0 : 4,
+                borderWidth: 2,
+                tension: 0.25,
+                fill: false,
+            },
+            {
+                label: 'ELR',
+                data: elr,
+                borderColor: '#198754',
+                backgroundColor: isStackedBar ? '#198754' : 'rgba(25,135,84,0.15)',
+                pointRadius: isStackedBar ? 0 : 2,
+                pointHoverRadius: isStackedBar ? 0 : 4,
+                borderWidth: 2,
+                tension: 0.25,
+                fill: false,
+            },
+            {
+                label: 'EPF',
+                data: epf,
+                borderColor: '#0d6efd',
+                backgroundColor: isStackedBar ? '#0d6efd' : 'rgba(13,110,253,0.15)',
+                pointRadius: isStackedBar ? 0 : 2,
+                pointHoverRadius: isStackedBar ? 0 : 4,
+                borderWidth: 2,
+                tension: 0.25,
+                fill: false,
+            },
+        ];
+        const tfpDatasets = [
+            {
+                label: 'TFP',
+                data: tfp,
+                borderColor: '#6f42c1',
+                backgroundColor: 'rgba(111,66,193,0.12)',
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                borderWidth: 2,
+                tension: 0.25,
+                fill: false,
+            },
+        ];
+
         projectionChart = new Chart(ctx, {
             type: isStackedBar ? 'bar' : 'line',
             data: {
                 labels,
-                datasets: [
-                    {
-                        label: 'Closing COH',
-                        data: coh,
-                        borderColor: '#495057',
-                        backgroundColor: isStackedBar ? '#495057' : 'rgba(73,80,87,0.15)',
-                        pointRadius: isStackedBar ? 0 : 2,
-                        pointHoverRadius: isStackedBar ? 0 : 4,
-                        borderWidth: 2,
-                        tension: 0.25,
-                        fill: false,
-                    },
-                    {
-                        label: 'ELR',
-                        data: elr,
-                        borderColor: '#198754',
-                        backgroundColor: isStackedBar ? '#198754' : 'rgba(25,135,84,0.15)',
-                        pointRadius: isStackedBar ? 0 : 2,
-                        pointHoverRadius: isStackedBar ? 0 : 4,
-                        borderWidth: 2,
-                        tension: 0.25,
-                        fill: false,
-                    },
-                    {
-                        label: 'EPF',
-                        data: epf,
-                        borderColor: '#0d6efd',
-                        backgroundColor: isStackedBar ? '#0d6efd' : 'rgba(13,110,253,0.15)',
-                        pointRadius: isStackedBar ? 0 : 2,
-                        pointHoverRadius: isStackedBar ? 0 : 4,
-                        borderWidth: 2,
-                        tension: 0.25,
-                        fill: false,
-                    },
-                ],
+                datasets: isTfpLine ? tfpDatasets : balanceDatasets,
             },
             options: {
                 responsive: true,
@@ -1206,12 +1229,12 @@
         document.getElementById('summaryFinalCoh').textContent = 'RM 0.00';
         document.getElementById('summaryFinalElr').textContent = 'RM 0.00';
         document.getElementById('summaryFinalEpf').textContent = 'RM 0.00';
-        document.getElementById('summaryLowestCoh').textContent = 'RM 0.00';
+        document.getElementById('summaryFinalTfp').textContent = 'RM 0.00';
         document.getElementById('summaryFinalCoh').classList.remove('negative-value');
         document.getElementById('summaryFinalElr').classList.remove('negative-value');
         document.getElementById('summaryFinalEpf').classList.remove('negative-value');
-        document.getElementById('summaryLowestCoh').classList.remove('negative-value');
-        document.getElementById('projectionRows').innerHTML = '<tr><td colspan="8" class="text-center text-secondary py-4">Run a projection to view results.</td></tr>';
+        document.getElementById('summaryFinalTfp').classList.remove('negative-value');
+        document.getElementById('projectionRows').innerHTML = '<tr><td colspan="9" class="text-center text-secondary py-4">Run a projection to view results.</td></tr>';
         currentProjectionMonths = [];
         if (projectionChart) {
             projectionChart.destroy();

@@ -395,6 +395,7 @@ Cache is written on save/load/compare paths when needed.
     "final_coh": 0,
     "final_elr": 0,
     "final_epf": 0,
+    "final_tfp": 0,
     "lowest_coh": 0,
     "highest_coh": 0
   },

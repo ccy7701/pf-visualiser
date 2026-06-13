@@ -85,11 +85,16 @@ class ProjectionServiceTest extends TestCase
             ],
         ];
 
-        $month = $service->project($payload)['months'][0];
+        $result = $service->project($payload);
+        $month = $result['months'][0];
 
         $this->assertSame(50.0, $month['employee_epf']);
         $this->assertSame(70.0, $month['employer_epf']);
         $this->assertSame(120.0, $month['closing_epf']);
+        $this->assertSame(
+            $month['closing_coh'] + $month['closing_elr'] + $month['closing_epf'],
+            $result['summary']['final_tfp']
+        );
     }
 
     public function test_projection_respects_locked_rules(): void

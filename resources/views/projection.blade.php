@@ -376,8 +376,8 @@
                         </div>
                         <div class="col-md-3 col-6">
                             <div class="border rounded p-2 h-100">
-                                <div class="small text-secondary">Lowest COH</div>
-                                <div id="summaryLowestCoh" class="fw-semibold">RM 0.00</div>
+                                <div class="small text-secondary">Final TFP</div>
+                                <div id="summaryFinalTfp" class="fw-semibold">RM 0.00</div>
                             </div>
                         </div>
                     </div>
@@ -385,15 +385,18 @@
             </div>
 
             <div class="card panel-card mb-3">
-                <div class="card-header">Projection Chart</div>
-                <div class="card-body">
-                    <div class="mb-2" style="max-width: 260px;">
-                        <label for="chartType" class="form-label form-label-sm">Chart Type</label>
-                        <select id="chartType" class="form-select form-select-sm">
-                            <option value="line">Multi-line</option>
-                            <option value="stacked_bar">Stacked Bar</option>
+                <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div>Projection Chart</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="chartType" class="form-label form-label-sm mb-0 fs-normal">Chart Type</label>
+                        <select id="chartType" class="form-select form-select-sm" style="width: 20rem;">
+                            <option value="balance_lines">COH / ELR / EPF Lines</option>
+                            <option value="balance_stack">COH / ELR / EPF Stacked Bars</option>
+                            <option value="tfp_line">TFP</option>
                         </select>
                     </div>
+                </div>
+                <div class="card-body">
                     <div class="chart-wrap">
                         <canvas id="projectionStackedChart"></canvas>
                     </div>
@@ -407,7 +410,7 @@
                         <div class="table-responsive">
                             <table class="table table-striped table-sm mb-0 projection-table">
                                 <colgroup>
-                                    <col span="8" style="width:12.5%">
+                                    <col span="9" style="width:11.1111%">
                                 </colgroup>
                                 <thead class="table-light sticky-top">
                                 <tr>
@@ -419,11 +422,12 @@
                                     <th class="text-end">Closing COH</th>
                                     <th class="text-end">ELR</th>
                                     <th class="text-end">EPF</th>
+                                    <th class="text-end">TFP</th>
                                 </tr>
                                 </thead>
                                 <tbody id="projectionRows">
                                 <tr>
-                                    <td colspan="8" class="text-center text-secondary py-4">Run a projection to view results.</td>
+                                    <td colspan="9" class="text-center text-secondary py-4">Run a projection to view results.</td>
                                 </tr>
                                 </tbody>
                             </table>
