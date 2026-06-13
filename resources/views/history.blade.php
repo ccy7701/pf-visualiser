@@ -128,7 +128,7 @@
                         <div class="history-visualisation-actions">
                             <div id="currentAccrualControls" class="form-check history-current-accrual-toggle d-none">
                                 <input id="showCurrentAccrualOverlay" class="form-check-input" type="checkbox">
-                                <label class="form-check-label" for="showCurrentAccrualOverlay">Current accrual</label>
+                                <label class="form-check-label" for="showCurrentAccrualOverlay">Unpaid accrual</label>
                             </div>
                             <div id="expensePieValueControls" class="btn-group btn-group-sm history-pie-value-toggle d-none" role="group" aria-label="Expense category value display">
                                 <input class="btn-check" type="radio" name="expensePieValueMode" id="expensePieModeSen" value="sen" checked>
