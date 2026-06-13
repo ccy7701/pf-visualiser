@@ -25,7 +25,9 @@ new class extends Component
 
     public array $allCategories = [];
 
-    public string $recentTransactionPeriod = 'today';
+    public string $recentTransactionPeriod = 'daily';
+
+    public string $referenceDate = '';
 
     public string $type = 'income';
 
@@ -47,6 +49,7 @@ new class extends Component
 
     public function mount(CounterService $counterService): void
     {
+        $this->referenceDate = now('Asia/Kuala_Lumpur')->toDateString();
         $this->loadData($counterService);
     }
 
@@ -73,7 +76,7 @@ new class extends Component
 
     public function setRecentTransactionPeriod(string $period): void
     {
-        if (! in_array($period, ['today', 'this_week', 'this_month'], true)) {
+        if (! in_array($period, ['daily', 'weekly', 'monthly', 'annually'], true)) {
             return;
         }
 
@@ -81,13 +84,29 @@ new class extends Component
         $this->loadTransactions();
     }
 
+    public function shiftRecentTransactionPeriod(int $direction): void
+    {
+        $referenceDate = $this->selectedReferenceDate();
+
+        match ($this->recentTransactionPeriod) {
+            'weekly' => $referenceDate->addWeeks($direction),
+            'monthly' => $referenceDate->addMonthsNoOverflow($direction),
+            'annually' => $referenceDate->addYearsNoOverflow($direction),
+            default => $referenceDate->addDays($direction),
+        };
+
+        $this->referenceDate = $referenceDate->toDateString();
+        $this->loadTransactions();
+    }
+
     public function loadTransactions(): void
     {
-        $now = now('Asia/Kuala_Lumpur');
+        $referenceDate = $this->selectedReferenceDate();
         $range = match ($this->recentTransactionPeriod) {
-            'this_week' => [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()],
-            'this_month' => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
-            default => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
+            'weekly' => [$referenceDate->copy()->startOfWeek(), $referenceDate->copy()->endOfWeek()],
+            'monthly' => [$referenceDate->copy()->startOfMonth(), $referenceDate->copy()->endOfMonth()],
+            'annually' => [$referenceDate->copy()->startOfYear(), $referenceDate->copy()->endOfYear()],
+            default => [$referenceDate->copy()->startOfDay(), $referenceDate->copy()->endOfDay()],
         };
 
         $this->transactions = Transaction::query()
@@ -96,6 +115,13 @@ new class extends Component
             ->latest('datetime')
             ->get()
             ->toArray();
+    }
+
+    private function selectedReferenceDate(): Carbon
+    {
+        return $this->referenceDate
+            ? Carbon::parse($this->referenceDate, 'Asia/Kuala_Lumpur')
+            : now('Asia/Kuala_Lumpur');
     }
 
     public function updatedType(): void
@@ -231,10 +257,14 @@ new class extends Component
     @php
         $netTransactions = (float) ($snapshot['current_month_net_transactions'] ?? 0);
         $netTransactionClass = $netTransactions > 0 ? 'text-success' : 'text-danger';
+        $periodReferenceDate = $referenceDate
+            ? \Carbon\Carbon::parse($referenceDate, 'Asia/Kuala_Lumpur')
+            : now('Asia/Kuala_Lumpur');
         $periodLabel = match ($recentTransactionPeriod) {
-            'this_week' => 'this week',
-            'this_month' => 'this month',
-            default => 'today',
+            'weekly' => $periodReferenceDate->copy()->startOfWeek()->format('j/n').' - '.$periodReferenceDate->copy()->endOfWeek()->format('j/n'),
+            'monthly' => $periodReferenceDate->format('F Y'),
+            'annually' => 'the year '.$periodReferenceDate->format('Y'),
+            default => $periodReferenceDate->format('j/n/Y'),
         };
     @endphp
     {{-- Log form --}}
@@ -353,10 +383,17 @@ new class extends Component
         <div class="card data-card">
             <div class="card-header transaction-output-header py-2">
                 <span>Transactions over {{ $periodLabel }}</span>
-                <div class="recent-transaction-filters" role="group" aria-label="Recent transaction period">
-                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'today' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('today')">Today</button>
-                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'this_week' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('this_week')">This Week</button>
-                    <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'this_month' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('this_month')">This Month</button>
+                <div class="recent-transaction-controls">
+                    <div class="recent-transaction-filters" role="group" aria-label="Recent transaction period">
+                        <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'daily' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('daily')">Daily</button>
+                        <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'weekly' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('weekly')">Weekly</button>
+                        <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'monthly' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('monthly')">Monthly</button>
+                        <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'annually' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('annually')">Annually</button>
+                    </div>
+                    <div class="recent-transaction-shift" role="group" aria-label="Navigate transaction period">
+                        <button type="button" class="recent-transaction-shift-btn" wire:click="shiftRecentTransactionPeriod(-1)" aria-label="Previous period">&lt;</button>
+                        <button type="button" class="recent-transaction-shift-btn" wire:click="shiftRecentTransactionPeriod(1)" aria-label="Next period">&gt;</button>
+                    </div>
                 </div>
             </div>
             <div class="card-body p-3">

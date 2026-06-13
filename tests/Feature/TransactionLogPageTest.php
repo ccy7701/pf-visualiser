@@ -21,6 +21,10 @@ class TransactionLogPageTest extends TestCase
         $response->assertSee('Net Transactions');
         $response->assertSee('Unpaid Accrual');
         $response->assertSee('Projected EOTM TFP');
+        $response->assertSee('Daily');
+        $response->assertSee('Weekly');
+        $response->assertSee('Monthly');
+        $response->assertSee('Annually');
     }
 
     public function test_counter_popup_no_longer_contains_transaction_tab(): void
