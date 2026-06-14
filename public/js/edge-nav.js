@@ -14,6 +14,11 @@
         document.body.classList.remove('edge-nav-right-active');
     }
 
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        localStorage.setItem('theme', theme);
+    }
+
     function blurPointerFocusedDockElement() {
         if (!lastInteractionWasPointer) {
             return;
@@ -69,5 +74,9 @@
         }
 
         document.body.classList.add('edge-nav-right-active');
+    });
+
+    window.addEventListener('theme-changed', (event) => {
+        applyTheme(event.detail.theme);
     });
 })();

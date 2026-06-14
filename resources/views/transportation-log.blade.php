@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Transportation Log</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+    @livewireStyles
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script>
         (function () {
@@ -395,5 +396,6 @@
 </script>
 <script type="module" src="{{ asset('js/edge-nav.js') }}"></script>
 <script type="module" src="{{ asset('js/transportation-log-page.js') }}"></script>
+@livewireScripts
 </body>
 </html>

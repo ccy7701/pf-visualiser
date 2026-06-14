@@ -1,7 +1,14 @@
 html,
 body {
-    min-height: 100%;
     background: #f8f9fa;
+}
+
+html {
+    min-height: 100%;
+}
+
+body {
+    min-height: 100vh;
 }
 
 .transaction-log-shell {
@@ -264,6 +271,7 @@ body {
     }
 }
 
+[data-bs-theme="dark"],
 [data-bs-theme="dark"] body {
     background: #121212 !important;
 }

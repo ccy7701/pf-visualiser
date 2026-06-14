@@ -1,5 +1,5 @@
 @php
-    $showThemeToggle = $showThemeToggle ?? false;
+    $showThemeToggle = $showThemeToggle ?? true;
 
     $pages = [
         'counter' => [
