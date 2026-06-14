@@ -71,6 +71,10 @@ body {
     min-width: 0.75rem;
 }
 
+.counter-live-incrementing {
+    color: #0059b3;
+}
+
 .recent-transactions-header {
     display: flex;
     align-items: center;
@@ -284,6 +288,10 @@ body {
 
 [data-bs-theme="dark"] .counter-equation-item {
     border-color: #333;
+}
+
+[data-bs-theme="dark"] .counter-live-incrementing {
+    color: #7fb0ff;
 }
 
 [data-bs-theme="dark"] .recent-transaction-filters {

@@ -22,6 +22,14 @@
         if (el) {
             el.textContent = formatRm(value);
         }
+
+        return el;
+    }
+
+    function setIncrementingState(el) {
+        if (el) {
+            el.classList.toggle('counter-live-incrementing', incrementPerSecond > 0);
+        }
     }
 
     function renderNetTransactions() {
@@ -34,11 +42,11 @@
     }
 
     function renderUnpaidAccrual() {
-        setMoneyText('unpaidAccrualSummary', unpaidAccrualValue);
+        setIncrementingState(setMoneyText('unpaidAccrualSummary', unpaidAccrualValue));
     }
 
     function renderProjectedEotmTfp() {
-        setMoneyText('projectedEotmTfpSummary', projectedEotmTfpValue);
+        setIncrementingState(setMoneyText('projectedEotmTfpSummary', projectedEotmTfpValue));
     }
 
     function renderStartingAmount() {
