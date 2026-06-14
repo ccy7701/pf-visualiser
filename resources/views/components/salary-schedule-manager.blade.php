@@ -173,26 +173,26 @@ new class extends Component
 
                 <div class="row g-2 mb-2">
                     <div class="col-6">
-                        <label class="form-label" style="font-size:0.75rem;">Effective From</label>
-                        <input wire:model="editEffectiveFrom" class="form-control form-control-sm datepicker" placeholder="DD/MM/YYYY" type="text" data-target="editEffectiveFrom" autocomplete="off">
+                        <label for="editEffectiveFrom" class="form-label" style="font-size:0.75rem;">Effective From</label>
+                        <input id="editEffectiveFrom" wire:model="editEffectiveFrom" class="form-control form-control-sm datepicker" placeholder="DD/MM/YYYY" type="text" data-target="editEffectiveFrom" autocomplete="off">
                         @error('editEffectiveFrom') <div class="text-danger" style="font-size:0.7rem;">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-6">
-                        <label class="form-label" style="font-size:0.75rem;">Effective Until</label>
-                        <input wire:model="editEffectiveUntil" class="form-control form-control-sm datepicker" placeholder="DD/MM/YYYY" type="text" data-target="editEffectiveUntil" autocomplete="off">
+                        <label for="editEffectiveUntil" class="form-label" style="font-size:0.75rem;">Effective Until</label>
+                        <input id="editEffectiveUntil" wire:model="editEffectiveUntil" class="form-control form-control-sm datepicker" placeholder="DD/MM/YYYY" type="text" data-target="editEffectiveUntil" autocomplete="off">
                         @error('editEffectiveUntil') <div class="text-danger" style="font-size:0.7rem;">{{ $message }}</div> @enderror
                     </div>
                 </div>
 
                 <div class="row g-2 mb-2">
                     <div class="col-6">
-                        <label class="form-label" style="font-size:0.75rem;">Monthly Net Salary</label>
-                        <input wire:model="editMonthlyNetSalary" class="form-control form-control-sm" min="0.01" step="0.01" type="number">
+                        <label for="editMonthlyNetSalary" class="form-label" style="font-size:0.75rem;">Monthly Net Salary</label>
+                        <input id="editMonthlyNetSalary" wire:model="editMonthlyNetSalary" class="form-control form-control-sm" min="0.01" step="0.01" type="number">
                         @error('editMonthlyNetSalary') <div class="text-danger" style="font-size:0.7rem;">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-6">
-                        <label class="form-label" style="font-size:0.75rem;">Notes</label>
-                        <input wire:model="editNotes" class="form-control form-control-sm" type="text">
+                        <label for="editNotes" class="form-label" style="font-size:0.75rem;">Notes</label>
+                        <input id="editNotes" wire:model="editNotes" class="form-control form-control-sm" type="text">
                     </div>
                 </div>
 
@@ -208,26 +208,26 @@ new class extends Component
         <div class="card-body p-2">
             <div class="row g-2 mb-2">
                 <div class="col-6">
-                    <label class="form-label" style="font-size:0.75rem;">Effective From</label>
-                    <input wire:model="newEffectiveFrom" class="form-control form-control-sm" placeholder="DD/MM/YYYY" type="text">
+                    <label for="newEffectiveFrom" class="form-label" style="font-size:0.75rem;">Effective From</label>
+                    <input id="newEffectiveFrom" wire:model="newEffectiveFrom" class="form-control form-control-sm" placeholder="DD/MM/YYYY" type="text">
                     @error('newEffectiveFrom') <div class="text-danger" style="font-size:0.7rem;">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-6">
-                    <label class="form-label" style="font-size:0.75rem;">Effective Until</label>
-                    <input wire:model="newEffectiveUntil" class="form-control form-control-sm datepicker" placeholder="DD/MM/YYYY" type="text" data-target="newEffectiveUntil" autocomplete="off">
+                    <label for="newEffectiveUntil" class="form-label" style="font-size:0.75rem;">Effective Until</label>
+                    <input id="newEffectiveUntil" wire:model="newEffectiveUntil" class="form-control form-control-sm datepicker" placeholder="DD/MM/YYYY" type="text" data-target="newEffectiveUntil" autocomplete="off">
                     @error('newEffectiveUntil') <div class="text-danger" style="font-size:0.7rem;">{{ $message }}</div> @enderror
                 </div>
             </div>
 
             <div class="row g-2 mb-2">
                 <div class="col-6">
-                    <label class="form-label" style="font-size:0.75rem;">Monthly Net Salary</label>
-                    <input wire:model="newMonthlyNetSalary" class="form-control form-control-sm" min="0.01" step="0.01" type="number">
+                    <label for="newMonthlyNetSalary" class="form-label" style="font-size:0.75rem;">Monthly Net Salary</label>
+                    <input id="newMonthlyNetSalary" wire:model="newMonthlyNetSalary" class="form-control form-control-sm" min="0.01" step="0.01" type="number">
                     @error('newMonthlyNetSalary') <div class="text-danger" style="font-size:0.7rem;">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-6">
-                    <label class="form-label" style="font-size:0.75rem;">Notes</label>
-                    <input wire:model="newNotes" class="form-control form-control-sm" type="text">
+                    <label for="newNotes" class="form-label" style="font-size:0.75rem;">Notes</label>
+                    <input id="newNotes" wire:model="newNotes" class="form-control form-control-sm" type="text">
                 </div>
             </div>
 

@@ -39,10 +39,10 @@ new class extends Component
             {{-- Starting Amount row --}}
             <div class="row align-items-center g-2 mb-2">
                 <div class="col-8">
-                    <label class="form-label" style="font-size:0.85rem; margin-bottom:0;">Starting Amount (RM)</label>
+                    <label for="startingAmount" class="form-label" style="font-size:0.85rem; margin-bottom:0;">Starting Amount (RM)</label>
                 </div>
                 <div class="col-4">
-                    <input wire:model="startingAmount" class="form-control form-control-sm text-start" min="0" step="0.01" type="number">
+                    <input id="startingAmount" wire:model="startingAmount" class="form-control form-control-sm text-start" min="0" step="0.01" type="number">
                     @error('startingAmount')
                         <div class="text-danger" style="font-size:0.7rem;">{{ $message }}</div>
                     @enderror

@@ -57,12 +57,12 @@
 
                     <div class="input-subcard mb-0">
                         <div class="mb-0">
-                            <label class="form-label form-label-sm">Load Scenario</label>
+                            <label for="openScenariosBtn" class="form-label form-label-sm">Load Scenario</label>
                             <button id="openScenariosBtn" class="btn btn-outline-secondary w-100" type="button">Open Saved Scenarios</button>
                         </div>
                         <hr class="section-divider my-3">
                         <div class="mb-0">
-                            <label class="form-label form-label-sm">Scenario Comparison</label>
+                            <label id="scenarioComparisonLabel" class="form-label form-label-sm">Scenario Comparison</label>
                             <div class="row g-2 mb-2">
                                 <div class="col-6">
                                     <select id="compareScenarioA" class="form-select compact-input"></select>
@@ -97,29 +97,29 @@
                             <div class="input-subcard mb-0">
                                 <div class="row g-2">
                                     <div class="col-6">
-                                        <label class="form-label form-label-sm">Start Month</label>
+                                        <label for="startMonth" class="form-label form-label-sm">Start Month</label>
                                         <input id="startMonth" type="text" class="form-control compact-input month-input" value="{{ now('Asia/Kuala_Lumpur')->startOfMonth()->format('Y-m') }}">
                                     </div>
                                     <div class="col-6">
-                                        <label class="form-label form-label-sm">End Month</label>
+                                        <label for="endMonth" class="form-label form-label-sm">End Month</label>
                                         <input id="endMonth" type="text" class="form-control compact-input month-input" value="{{ now('Asia/Kuala_Lumpur')->addMonths(11)->startOfMonth()->format('Y-m') }}">
                                     </div>
                                     <div class="col-4">
-                                        <label class="form-label form-label-sm">Starting COH</label>
+                                        <label for="startingCoh" class="form-label form-label-sm">Starting COH</label>
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text">RM</span>
                                             <input id="startingCoh" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
                                         </div>
                                     </div>
                                     <div class="col-4">
-                                        <label class="form-label form-label-sm">Starting ELR</label>
+                                        <label for="startingElr" class="form-label form-label-sm">Starting ELR</label>
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text">RM</span>
                                             <input id="startingElr" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
                                         </div>
                                     </div>
                                     <div class="col-4">
-                                        <label class="form-label form-label-sm">Starting EPF</label>
+                                        <label for="startingEpf" class="form-label form-label-sm">Starting EPF</label>
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text">RM</span>
                                             <input id="startingEpf" type="text" inputmode="decimal" class="form-control compact-input money-input" value="0.00">
@@ -158,11 +158,11 @@
                                 </div>
                                 <div class="row g-2">
                                     <div class="col-6">
-                                        <label class="form-label form-label-sm">Employee EPF (%)</label>
+                                        <label for="employeeEpfRatePercent" class="form-label form-label-sm">Employee EPF (%)</label>
                                         <input id="employeeEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="11.00">
                                     </div>
                                     <div class="col-6">
-                                        <label class="form-label form-label-sm">Employer EPF (%)</label>
+                                        <label for="employerEpfRatePercent" class="form-label form-label-sm">Employer EPF (%)</label>
                                         <input id="employerEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="13.00">
                                     </div>
                                 </div>
@@ -192,7 +192,7 @@
                                 <hr class="section-divider">
                                 <div class="row g-2 align-items-end mb-3">
                                     <div class="col-md-8">
-                                        <label class="form-label form-label-sm">Profile Name</label>
+                                        <label for="budgetProfileName" class="form-label form-label-sm">Profile Name</label>
                                         <input id="budgetProfileName" type="text" class="form-control form-control-sm" maxlength="120">
                                     </div>
                                     <div class="col-md-2 d-grid">
@@ -244,14 +244,14 @@
                             <div class="input-subcard mb-0">
                                 <div class="row g-2 mb-0">
                                     <div class="col-6">
-                                        <label class="form-label form-label-sm">Monthly Repayment</label>
+                                        <label for="ptptnMonthlyRepayment" class="form-label form-label-sm">Monthly Repayment</label>
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text">RM</span>
                                             <input id="ptptnMonthlyRepayment" type="number" step="0.01" class="form-control compact-input" value="120.00">
                                         </div>
                                     </div>
                                     <div class="col-6">
-                                        <label class="form-label form-label-sm">Repayment Start Month</label>
+                                        <label for="ptptnRepaymentStartMonth" class="form-label form-label-sm">Repayment Start Month</label>
                                         <input id="ptptnRepaymentStartMonth" type="text" class="form-control compact-input month-input">
                                     </div>
                                     <div class="col-12">
@@ -314,11 +314,11 @@
                                 <h3 class="section-subtitle">Plan Details</h3>
                                 <div class="row g-2 mb-3">
                                     <div class="col-12">
-                                        <label class="form-label form-label-sm">Note</label>
+                                        <label for="elrNote" class="form-label form-label-sm">Note</label>
                                         <textarea id="elrNote" class="form-control compact-input" rows="2" placeholder=""></textarea>
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label form-label-sm">Annual Interest Rate (%)</label>
+                                        <label for="elrAnnualInterestRatePercent" class="form-label form-label-sm">Annual Interest Rate (%)</label>
                                         <input id="elrAnnualInterestRatePercent" type="number" step="0.01" min="0" max="100" class="form-control compact-input" value="0.00">
                                     </div>
                                     <div class="col-12">
