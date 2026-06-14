@@ -247,12 +247,14 @@
         if (endDate < startDate) return [];
 
         const months = [];
-        const cursor = new Date(startDate.getTime());
-        while (cursor <= endDate) {
+        for (
+            let cursor = new Date(startDate.getTime());
+            cursor <= endDate;
+            cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)
+        ) {
             const y = cursor.getFullYear();
             const m = String(cursor.getMonth() + 1).padStart(2, '0');
             months.push(`${y}-${m}`);
-            cursor.setMonth(cursor.getMonth() + 1);
         }
 
         return months;
