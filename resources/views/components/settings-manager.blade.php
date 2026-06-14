@@ -6,20 +6,11 @@ use Livewire\Component;
 new class extends Component
 {
     public string $startingAmount = '0.00';
-    public string $theme = 'light';
     public string $statusMessage = '';
 
     public function mount(): void
     {
         $this->startingAmount = (string) Setting::getValue('starting_amount', '0.00');
-        $this->theme = Setting::getValue('theme', 'light');
-    }
-
-    public function toggleTheme(): void
-    {
-        $this->theme = $this->theme === 'light' ? 'dark' : 'light';
-        Setting::setValue('theme', $this->theme);
-        $this->dispatch('theme-changed', theme: $this->theme);
     }
 
     public function save(): void
@@ -37,7 +28,6 @@ new class extends Component
 ?>
 
 <div>
-    {{-- Theme toggle --}}
     @if ($statusMessage)
         <div class="alert alert-success py-2 px-2 mb-3" style="font-size:0.75rem;">
             {{ $statusMessage }}
@@ -46,20 +36,6 @@ new class extends Component
 
     <div class="card data-card mb-3">
         <div class="card-body p-2">
-            {{-- Dark Mode toggle row --}}
-            <div class="row align-items-center g-2 mb-2">
-                <div class="col-8">
-                    <span style="font-size:0.85rem;">Dark Mode</span>
-                </div>
-                <div class="col-4 text-end">
-                    <div class="form-check form-switch mb-0 d-inline-block">
-                        <input class="form-check-input" type="checkbox" role="switch" id="themeSwitch"
-                               wire:click="toggleTheme"
-                               {{ $theme === 'dark' ? 'checked' : '' }}>
-                    </div>
-                </div>
-            </div>
-
             {{-- Starting Amount row --}}
             <div class="row align-items-center g-2 mb-2">
                 <div class="col-8">

@@ -41,7 +41,7 @@
     </div>
 </div>
 
-@include('components.module-nav', ['current' => 'counter'])
+@include('components.module-nav', ['current' => 'counter', 'showThemeToggle' => true])
 
 {{-- Backdrop ────────────────────────── --}}
 <div class="popup-backdrop" id="popupBackdrop"></div>

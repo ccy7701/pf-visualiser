@@ -1,4 +1,6 @@
 @php
+    $showThemeToggle = $showThemeToggle ?? false;
+
     $pages = [
         'counter' => [
             'label' => 'Counter',
@@ -48,4 +50,8 @@
             </span>
         </a>
     @endforeach
+
+    @if ($showThemeToggle)
+        <livewire:theme-nav-toggle />
+    @endif
 </nav>

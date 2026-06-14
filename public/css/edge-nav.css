@@ -62,6 +62,19 @@ body.edge-nav-right-active::after {
     text-decoration: none;
 }
 
+button.module-nav-row {
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-align: inherit;
+}
+
+.module-nav-theme-row {
+    margin-top: 0.35rem;
+}
+
 .module-nav-btn {
     width: var(--nav-button-size);
     height: var(--nav-button-size);
@@ -74,7 +87,7 @@ body.edge-nav-right-active::after {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
 }
 
 .module-nav-label {
@@ -121,4 +134,9 @@ body.edge-nav-right-active::after {
     background: rgba(30, 30, 30, 0.96);
     color: #e0e0e0;
     border-color: #3c3c3c;
+}
+
+[data-bs-theme="dark"] .module-nav-theme-row .module-nav-btn {
+    background: #fff;
+    color: #212529;
 }
