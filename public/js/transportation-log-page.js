@@ -709,15 +709,23 @@
     }
 
     function renderSelectedSummaryPeriod() {
+        renderRefuelLogsSectionVisibility();
         renderFuelRows();
         renderDriveRows();
         renderParkingRows();
         renderDashboard();
     }
 
+    function renderRefuelLogsSectionVisibility() {
+        const section = document.getElementById('refuelLogsSection');
+        if (!section) return;
+        section.classList.toggle('d-none', state.summaryPeriod === 'since_refuel');
+    }
+
     function renderAll() {
         renderVehicleListRows();
         renderVehicleSelects();
+        renderRefuelLogsSectionVisibility();
         renderFuelRows();
         renderDriveRows();
         renderParkingRows();

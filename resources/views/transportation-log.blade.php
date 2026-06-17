@@ -315,24 +315,26 @@
                 <div class="card-body">
                     <div class="row g-2" id="fuelDashboardCards"></div>
 
-                    <h2 class="section-subtitle my-3">Refuel Logs</h2>
-                    <div class="results-wrap transportation-section-table">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-sm mb-0 projection-table">
-                                <thead class="table-light sticky-top">
-                                <tr>
-                                    <th>Date &amp; Time</th>
-                                    <th>Vehicle</th>
-                                    <th class="text-end">Litres</th>
-                                    <th class="text-end">Total (RM)</th>
-                                </tr>
-                                </thead>
-                                <tbody id="fuelLogRows">
-                                <tr>
-                                    <td colspan="4" class="text-center text-secondary py-4">No refuel logs yet.</td>
-                                </tr>
-                                </tbody>
-                            </table>
+                    <div id="refuelLogsSection">
+                        <h2 class="section-subtitle my-3">Refuel Logs</h2>
+                        <div class="results-wrap transportation-section-table">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-sm mb-0 projection-table">
+                                    <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>Date &amp; Time</th>
+                                        <th>Vehicle</th>
+                                        <th class="text-end">Litres</th>
+                                        <th class="text-end">Total (RM)</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="fuelLogRows">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-secondary py-4">No refuel logs yet.</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
