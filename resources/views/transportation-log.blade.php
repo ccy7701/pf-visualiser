@@ -299,11 +299,17 @@
         <div class="col-xl-8">
             <div class="card panel-card">
                 <div class="card-header transportation-summary-shell-header">
-                    <div id="transportationSummaryTitle">Monthly Summary</div>
-                    <div class="summary-period-segmented" id="transportationSummaryPeriod" role="group" aria-label="Summary period">
-                        <button type="button" class="summary-period-option active" data-summary-period="monthly">Monthly</button>
-                        <button type="button" class="summary-period-option" data-summary-period="weekly">Weekly</button>
-                        <button type="button" class="summary-period-option" data-summary-period="since_refuel">Since Last Refuel</button>
+                    <div id="transportationSummaryTitle">Summary for {{ now()->format('F Y') }}</div>
+                    <div class="summary-period-controls">
+                        <div class="summary-period-segmented" id="transportationSummaryPeriod" role="group" aria-label="Summary period">
+                            <button type="button" class="summary-period-option active" data-summary-period="monthly">Monthly</button>
+                            <button type="button" class="summary-period-option" data-summary-period="weekly">Weekly</button>
+                            <button type="button" class="summary-period-option" data-summary-period="since_refuel">Since Last Refuel</button>
+                        </div>
+                        <div class="summary-period-shift" id="transportationSummaryShift" role="group" aria-label="Navigate summary period">
+                            <button type="button" class="summary-period-shift-btn" data-summary-shift="-1" aria-label="Previous summary period">&lt;</button>
+                            <button type="button" class="summary-period-shift-btn" data-summary-shift="1" aria-label="Next summary period">&gt;</button>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body">

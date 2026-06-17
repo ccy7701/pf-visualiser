@@ -18,11 +18,13 @@
         commuteLogs: [],
         parkingLogs: [],
         summaryPeriod: 'monthly',
+        summaryMonthDate: new Date(),
+        summaryWeekDate: new Date(),
+        summaryRefuelOffset: 0,
     };
 
     const summaryPeriods = {
         monthly: {
-            title: 'Monthly Summary',
             spendingLabel: "This Month's Fuel Spending",
             driveCostLabel: "This Month's Estimated Drive Cost",
             emptyFuelMessage: 'No refuel logs this month.',
@@ -30,7 +32,6 @@
             emptyParkingMessage: 'No parking logs this month.',
         },
         weekly: {
-            title: 'Weekly Summary',
             spendingLabel: "This Week's Fuel Spending",
             driveCostLabel: "This Week's Estimated Drive Cost",
             emptyFuelMessage: 'No refuel logs this week.',
@@ -38,7 +39,6 @@
             emptyParkingMessage: 'No parking logs this week.',
         },
         since_refuel: {
-            title: 'Summary Since Last Refuel',
             spendingLabel: 'Fuel Spending Since Last Refuel',
             driveCostLabel: 'Estimated Drive Cost Since Last Refuel',
             emptyFuelMessage: 'No refuel logs found.',
@@ -152,42 +152,104 @@
         applySnapshot(data);
     }
 
-    function monthKeyFromDate(dateLike) {
-        const d = new Date(dateLike);
-        if (Number.isNaN(d.getTime())) return '';
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    function cloneDate(date) {
+        return new Date(date.getTime());
     }
 
-    function startOfCurrentWeek() {
-        const now = new Date();
-        const start = new Date(now);
+    function startOfMonth(date) {
+        const start = new Date(date);
+        start.setDate(1);
+        start.setHours(0, 0, 0, 0);
+        return start;
+    }
+
+    function addMonths(date, months) {
+        const next = startOfMonth(date);
+        next.setMonth(next.getMonth() + months);
+        return next;
+    }
+
+    function addDays(date, days) {
+        const next = cloneDate(date);
+        next.setDate(next.getDate() + days);
+        return next;
+    }
+
+    function startOfWeek(date) {
+        const start = new Date(date);
         const daysSinceMonday = (start.getDay() + 6) % 7;
         start.setDate(start.getDate() - daysSinceMonday);
         start.setHours(0, 0, 0, 0);
         return start;
     }
 
-    function latestRefuelDate(fuelRows) {
-        return fuelRows.reduce((latest, row) => {
-            const timestamp = new Date(row.fuelled_at).getTime();
-            if (Number.isNaN(timestamp)) return latest;
-            return latest === null || timestamp > latest.getTime() ? new Date(timestamp) : latest;
-        }, null);
+    function formatDayMonth(dateLike) {
+        const d = new Date(dateLike);
+        if (Number.isNaN(d.getTime())) return '-';
+        return `${String(d.getDate()).padStart(2, '0')}/${d.getMonth() + 1}`;
     }
 
-    function rowDateInSelectedPeriod(row, dateKey, periodStart) {
-        const date = new Date(row[dateKey]);
-        if (Number.isNaN(date.getTime())) return false;
+    function formatMonthYear(dateLike) {
+        const d = new Date(dateLike);
+        if (Number.isNaN(d.getTime())) return '-';
+        return d.toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
+    }
 
+    function clampRefuelOffset(fuelRows) {
+        if (!fuelRows.length) {
+            state.summaryRefuelOffset = 0;
+            return 0;
+        }
+
+        state.summaryRefuelOffset = Math.max(0, Math.min(state.summaryRefuelOffset, fuelRows.length - 1));
+        return state.summaryRefuelOffset;
+    }
+
+    function selectedPeriodScope(fuelRows) {
         if (state.summaryPeriod === 'weekly') {
-            return date >= periodStart;
+            const start = startOfWeek(state.summaryWeekDate);
+            return {
+                start,
+                end: addDays(start, 7),
+                title: `Summary for ${formatDayMonth(start)} - ${formatDayMonth(addDays(start, 6))}`,
+            };
         }
 
         if (state.summaryPeriod === 'since_refuel') {
-            return periodStart !== null && date >= periodStart;
+            const offset = clampRefuelOffset(fuelRows);
+            const selectedRefuel = fuelRows[offset] || null;
+            if (!selectedRefuel) {
+                return {
+                    start: null,
+                    end: null,
+                    title: 'Summary since last refuel',
+                };
+            }
+
+            const start = new Date(selectedRefuel.fuelled_at);
+            const nextRefuel = offset > 0 ? fuelRows[offset - 1] : null;
+            const end = nextRefuel ? new Date(nextRefuel.fuelled_at) : null;
+            return {
+                start,
+                end,
+                title: `Summary since last refuel on ${formatDateOnly(start)}`,
+            };
         }
 
-        return monthKeyFromDate(date) === thisMonthKey();
+        const start = startOfMonth(state.summaryMonthDate);
+        return {
+            start,
+            end: addMonths(start, 1),
+            title: `Summary for ${formatMonthYear(start)}`,
+        };
+    }
+
+    function rowDateInSelectedPeriod(row, dateKey, scope) {
+        const date = new Date(row[dateKey]);
+        if (Number.isNaN(date.getTime())) return false;
+        if (!scope.start) return false;
+        if (date < scope.start) return false;
+        return !scope.end || date < scope.end;
     }
 
     function parkingScopeDate(row) {
@@ -203,17 +265,13 @@
             .slice()
             .sort((a, b) => new Date(parkingScopeDate(b)).getTime() - new Date(parkingScopeDate(a)).getTime());
 
-        const periodStart = state.summaryPeriod === 'weekly'
-            ? startOfCurrentWeek()
-            : state.summaryPeriod === 'since_refuel'
-                ? latestRefuelDate(fuelRows)
-                : null;
+        const periodScope = selectedPeriodScope(fuelRows);
 
         return {
-            fuelRows: fuelRows.filter((row) => rowDateInSelectedPeriod(row, 'fuelled_at', periodStart)),
-            driveRows: driveRows.filter((row) => rowDateInSelectedPeriod(row, 'driven_at', periodStart)),
-            parkingRows: parkingRows.filter((row) => rowDateInSelectedPeriod({ ...row, _scopeDate: parkingScopeDate(row) }, '_scopeDate', periodStart)),
-            periodStart,
+            fuelRows: fuelRows.filter((row) => rowDateInSelectedPeriod(row, 'fuelled_at', periodScope)),
+            driveRows: driveRows.filter((row) => rowDateInSelectedPeriod(row, 'driven_at', periodScope)),
+            parkingRows: parkingRows.filter((row) => rowDateInSelectedPeriod({ ...row, _scopeDate: parkingScopeDate(row) }, '_scopeDate', periodScope)),
+            periodScope,
         };
     }
 
@@ -388,11 +446,6 @@
             estimated_fuel_cost: estimatedCost,
             estimated_cost_per_km: estimatedCostPerKm,
         };
-    }
-
-    function thisMonthKey() {
-        const now = new Date();
-        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     }
 
     function selectedPeriodSummary() {
@@ -621,10 +674,11 @@
 
     function renderDashboard() {
         const period = summaryPeriods[state.summaryPeriod] || summaryPeriods.monthly;
+        const scope = selectedPeriodScope(deriveFuelRows());
         const summary = selectedPeriodSummary();
         const wrap = document.getElementById('fuelDashboardCards');
         const title = document.getElementById('transportationSummaryTitle');
-        if (title) title.textContent = period.title;
+        if (title) title.textContent = scope.title;
         if (!wrap) return;
 
         const items = [
@@ -650,6 +704,13 @@
         });
     }
 
+    function renderSelectedSummaryPeriod() {
+        renderFuelRows();
+        renderDriveRows();
+        renderParkingRows();
+        renderDashboard();
+    }
+
     function renderAll() {
         renderVehicleListRows();
         renderVehicleSelects();
@@ -664,9 +725,9 @@
 
     function wireSummaryPeriodSelect() {
         const group = document.getElementById('transportationSummaryPeriod');
-        if (!group) return;
+        const shiftGroup = document.getElementById('transportationSummaryShift');
 
-        const buttons = Array.from(group.querySelectorAll('[data-summary-period]'));
+        const buttons = group ? Array.from(group.querySelectorAll('[data-summary-period]')) : [];
         const renderActivePeriod = () => {
             buttons.forEach((button) => {
                 button.classList.toggle('active', button.dataset.summaryPeriod === state.summaryPeriod);
@@ -674,17 +735,39 @@
         };
 
         renderActivePeriod();
-        group.addEventListener('click', (event) => {
-            const button = event.target.closest('[data-summary-period]');
-            if (!button || !group.contains(button)) return;
+        if (group) {
+            group.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-summary-period]');
+                if (!button || !group.contains(button)) return;
 
-            state.summaryPeriod = summaryPeriods[button.dataset.summaryPeriod] ? button.dataset.summaryPeriod : 'monthly';
-            renderActivePeriod();
-            renderFuelRows();
-            renderDriveRows();
-            renderParkingRows();
-            renderDashboard();
-        });
+                state.summaryPeriod = summaryPeriods[button.dataset.summaryPeriod] ? button.dataset.summaryPeriod : 'monthly';
+                if (state.summaryPeriod === 'since_refuel') {
+                    state.summaryRefuelOffset = 0;
+                }
+                renderActivePeriod();
+                renderSelectedSummaryPeriod();
+            });
+        }
+
+        if (shiftGroup) {
+            shiftGroup.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-summary-shift]');
+                if (!button || !shiftGroup.contains(button)) return;
+
+                const direction = Number(button.dataset.summaryShift || 0);
+                if (!Number.isFinite(direction) || direction === 0) return;
+
+                if (state.summaryPeriod === 'weekly') {
+                    state.summaryWeekDate = addDays(state.summaryWeekDate, direction * 7);
+                } else if (state.summaryPeriod === 'since_refuel') {
+                    state.summaryRefuelOffset = Math.max(0, state.summaryRefuelOffset - direction);
+                } else {
+                    state.summaryMonthDate = addMonths(state.summaryMonthDate, direction);
+                }
+
+                renderSelectedSummaryPeriod();
+            });
+        }
     }
 
     function activateInputTab(tabButtonId) {
