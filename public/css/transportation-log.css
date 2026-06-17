@@ -142,6 +142,33 @@
             font-size: 1.1rem;
             font-weight: 700;
         }
+        .dashboard-card .k-value-row {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        .dashboard-card .k-delta {
+            color: #6c757d;
+            font-size: 0.78rem;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+        .dashboard-card .k-delta.is-up {
+            color: #dc3545;
+        }
+        .dashboard-card .k-delta.is-down {
+            color: #198754;
+        }
+        [data-bs-theme="dark"] .dashboard-card .k-delta {
+            color: #adb5bd;
+        }
+        [data-bs-theme="dark"] .dashboard-card .k-delta.is-up {
+            color: #ff8a98;
+        }
+        [data-bs-theme="dark"] .dashboard-card .k-delta.is-down {
+            color: #75d69c;
+        }
         .log-cell-main {
             font-weight: 600;
             line-height: 1.2;

@@ -39,7 +39,7 @@
             emptyParkingMessage: 'No parking logs this week.',
         },
         since_refuel: {
-            spendingLabel: 'Fuel Spending This Interval',
+            spendingLabel: 'Refuel Cost for This Interval',
             driveCostLabel: 'Estimated Drive Cost This Interval',
             emptyFuelMessage: 'No refuel logs found.',
             emptyDriveMessage: 'No drive logs in this interval.',
@@ -217,22 +217,10 @@
 
         if (state.summaryPeriod === 'since_refuel') {
             const offset = clampRefuelOffset(fuelRows);
-            const selectedRefuel = fuelRows[offset] || null;
-            if (!selectedRefuel) {
-                return {
-                    start: null,
-                    end: null,
-                    title: 'Summary since last refuel',
-                };
-            }
-
-            const start = new Date(selectedRefuel.fuelled_at);
-            const nextRefuel = offset > 0 ? fuelRows[offset - 1] : null;
-            const end = nextRefuel ? new Date(nextRefuel.fuelled_at) : null;
-            return {
-                start,
-                end,
-                title: `Summary since last refuel on ${formatDateOnly(start)}`,
+            return refuelPeriodScope(fuelRows, offset) || {
+                start: null,
+                end: null,
+                title: 'Summary since last refuel',
             };
         }
 
@@ -241,6 +229,40 @@
             start,
             end: addMonths(start, 1),
             title: `Summary for ${formatMonthYear(start)}`,
+        };
+    }
+
+    function refuelPeriodScope(fuelRows, offset) {
+        const selectedRefuel = fuelRows[offset] || null;
+        if (!selectedRefuel) return null;
+
+        const start = new Date(selectedRefuel.fuelled_at);
+        const nextRefuel = offset > 0 ? fuelRows[offset - 1] : null;
+        const end = nextRefuel ? new Date(nextRefuel.fuelled_at) : null;
+        return {
+            start,
+            end,
+            title: `Summary since last refuel on ${formatDateOnly(start)}`,
+        };
+    }
+
+    function previousPeriodScope(fuelRows, currentScope) {
+        if (state.summaryPeriod === 'weekly') {
+            const start = addDays(currentScope.start, -7);
+            return {
+                start,
+                end: addDays(start, 7),
+            };
+        }
+
+        if (state.summaryPeriod === 'since_refuel') {
+            return refuelPeriodScope(fuelRows, state.summaryRefuelOffset + 1);
+        }
+
+        const start = addMonths(currentScope.start, -1);
+        return {
+            start,
+            end: addMonths(start, 1),
         };
     }
 
@@ -261,6 +283,10 @@
     }
 
     function scopedTransportationRows() {
+        return transportationRowsForScope(selectedPeriodScope(deriveFuelRows()));
+    }
+
+    function transportationRowsForScope(periodScope) {
         const fuelRows = deriveFuelRows();
         const driveRows = state.commuteLogs
             .map(deriveDriveRow)
@@ -268,8 +294,6 @@
         const parkingRows = state.parkingLogs
             .slice()
             .sort((a, b) => new Date(parkingScopeDate(b)).getTime() - new Date(parkingScopeDate(a)).getTime());
-
-        const periodScope = selectedPeriodScope(fuelRows);
 
         return {
             fuelRows: fuelRows.filter((row) => rowDateInSelectedPeriod(row, 'fuelled_at', periodScope)),
@@ -452,9 +476,7 @@
         };
     }
 
-    function selectedPeriodSummary() {
-        const { fuelRows, driveRows, parkingRows } = scopedTransportationRows();
-
+    function summarizeTransportationRows(fuelRows, driveRows, parkingRows) {
         const actualFuelSpending = fuelRows.reduce((carry, row) => carry + toNumber(row.total_amount, 0), 0);
         const totalFuelLitres = fuelRows.reduce((carry, row) => carry + toNumber(row.fuel_litres, 0), 0);
         const avgLPer100 = (() => {
@@ -480,6 +502,45 @@
             estimatedCommuteDistance,
             parkingCost,
         };
+    }
+
+    function selectedPeriodSummary() {
+        const { fuelRows, driveRows, parkingRows } = scopedTransportationRows();
+        return summarizeTransportationRows(fuelRows, driveRows, parkingRows);
+    }
+
+    function summaryForScope(scope) {
+        if (!scope?.start) return null;
+        const { fuelRows, driveRows, parkingRows } = transportationRowsForScope(scope);
+        return summarizeTransportationRows(fuelRows, driveRows, parkingRows);
+    }
+
+    function comparisonPeriodPhrase() {
+        if (state.summaryPeriod === 'weekly') return 'last week';
+        if (state.summaryPeriod === 'since_refuel') return 'last interval';
+        return 'last month';
+    }
+
+    function formatSignedNumber(value) {
+        const sign = value >= 0 ? '+' : '-';
+        return `${sign}${money.format(Math.abs(value))}`;
+    }
+
+    function formatDeltaValue(delta, unit) {
+        if (unit === 'RM') {
+            const sign = delta >= 0 ? '+' : '-';
+            return `${sign}RM ${money.format(Math.abs(delta))}`;
+        }
+        if (!unit) return formatSignedNumber(delta);
+        return `${formatSignedNumber(delta)} ${unit}`;
+    }
+
+    function renderDelta(current, previous, unit) {
+        if (current === null || previous === null || previous === undefined) return '';
+
+        const delta = current - previous;
+        const deltaClass = delta > 0 ? 'is-up' : delta < 0 ? 'is-down' : '';
+        return `<span class="k-delta ${deltaClass}">(${formatDeltaValue(delta, unit)} vs. ${comparisonPeriodPhrase()})</span>`;
     }
 
     function renderVehicleSelects() {
@@ -678,7 +739,9 @@
 
     function renderDashboard() {
         const period = summaryPeriods[state.summaryPeriod] || summaryPeriods.monthly;
-        const scope = selectedPeriodScope(deriveFuelRows());
+        const fuelRows = deriveFuelRows();
+        const scope = selectedPeriodScope(fuelRows);
+        const previousSummary = summaryForScope(previousPeriodScope(fuelRows, scope));
         const summary = selectedPeriodSummary();
         const wrap = document.getElementById('fuelDashboardCards');
         const title = document.getElementById('transportationSummaryTitle');
@@ -686,12 +749,36 @@
         if (!wrap) return;
 
         const items = [
-            { label: period.spendingLabel, value: `RM ${money.format(summary.actualFuelSpending)}` },
-            { label: period.driveCostLabel, value: `RM ${money.format(summary.estimatedCommuteCost)}` },
-            { label: 'Total Fuel Litres Logged', value: `${money.format(summary.totalFuelLitres)} L` },
-            { label: 'Average Mileage', value: `${summary.avgLPer100 === null ? '-' : money.format(summary.avgLPer100)} L/100KM` },
-            { label: 'Commute Distance', value: `${money.format(summary.estimatedCommuteDistance)} KM` },
-            { label: 'Cost of Parking', value: `RM ${money.format(summary.parkingCost)}` },
+            {
+                label: period.spendingLabel,
+                value: `RM ${money.format(summary.actualFuelSpending)}`,
+                delta: renderDelta(summary.actualFuelSpending, previousSummary?.actualFuelSpending, 'RM'),
+            },
+            {
+                label: period.driveCostLabel,
+                value: `RM ${money.format(summary.estimatedCommuteCost)}`,
+                delta: renderDelta(summary.estimatedCommuteCost, previousSummary?.estimatedCommuteCost, 'RM'),
+            },
+            {
+                label: state.summaryPeriod === 'since_refuel' ? 'Refuel Litres for This Interval' : 'Fuel Litres Refilled',
+                value: `${money.format(summary.totalFuelLitres)} L`,
+                delta: renderDelta(summary.totalFuelLitres, previousSummary?.totalFuelLitres, 'L'),
+            },
+            {
+                label: 'Average Mileage',
+                value: `${summary.avgLPer100 === null ? '-' : money.format(summary.avgLPer100)} L/100KM`,
+                delta: renderDelta(summary.avgLPer100, previousSummary?.avgLPer100, 'L/100KM'),
+            },
+            {
+                label: 'Commute Distance',
+                value: `${money.format(summary.estimatedCommuteDistance)} KM`,
+                delta: renderDelta(summary.estimatedCommuteDistance, previousSummary?.estimatedCommuteDistance, 'KM'),
+            },
+            {
+                label: 'Cost of Parking',
+                value: `RM ${money.format(summary.parkingCost)}`,
+                delta: renderDelta(summary.parkingCost, previousSummary?.parkingCost, 'RM'),
+            },
         ];
 
         wrap.innerHTML = '';
@@ -701,7 +788,10 @@
             col.innerHTML = `
                 <div class="dashboard-card">
                     <div class="k-label">${item.label}</div>
-                    <div class="k-value">${item.value}</div>
+                    <div class="k-value-row">
+                        <span class="k-value">${item.value}</span>
+                        ${item.delta}
+                    </div>
                 </div>
             `;
             wrap.appendChild(col);
