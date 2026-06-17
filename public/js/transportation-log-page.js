@@ -39,11 +39,11 @@
             emptyParkingMessage: 'No parking logs this week.',
         },
         since_refuel: {
-            spendingLabel: 'Fuel Spending Since Last Refuel',
-            driveCostLabel: 'Estimated Drive Cost Since Last Refuel',
+            spendingLabel: 'Fuel Spending This Interval',
+            driveCostLabel: 'Estimated Drive Cost This Interval',
             emptyFuelMessage: 'No refuel logs found.',
-            emptyDriveMessage: 'No drive logs since the last refuel.',
-            emptyParkingMessage: 'No parking logs since the last refuel.',
+            emptyDriveMessage: 'No drive logs in this interval.',
+            emptyParkingMessage: 'No parking logs in this interval.',
         },
     };
 
@@ -253,7 +253,11 @@
     }
 
     function parkingScopeDate(row) {
-        return row.parking_type === 'monthly_pass' && row.billing_month ? row.billing_month : row.parking_date;
+        if (state.summaryPeriod === 'monthly' && row.parking_type === 'monthly_pass' && row.billing_month) {
+            return row.billing_month;
+        }
+
+        return row.parking_date;
     }
 
     function scopedTransportationRows() {
