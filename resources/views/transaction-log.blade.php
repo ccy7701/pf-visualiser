@@ -19,6 +19,8 @@
 <body>
 @include('components.module-nav', ['current' => 'transaction-log'])
 
+<div id="statusMessage" class="small" role="status" aria-live="polite"></div>
+
 <div class="container-fluid py-4 px-3 px-lg-5 transaction-log-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>

@@ -109,6 +109,20 @@
         localStorage.setItem('theme', theme);
     }
 
+    const statusEl = document.getElementById('statusMessage');
+    let statusTimer;
+
+    window.addEventListener('transaction-toast', (event) => {
+        if (!statusEl) return;
+
+        statusEl.textContent = event.detail.message;
+        statusEl.classList.add('is-visible');
+        if (statusTimer) clearTimeout(statusTimer);
+        statusTimer = setTimeout(() => {
+            statusEl.classList.remove('is-visible');
+        }, 3200);
+    });
+
     renderSummary();
     setInterval(tick, 1000);
     setInterval(syncSnapshot, 60000);

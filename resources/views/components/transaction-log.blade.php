@@ -39,8 +39,6 @@ new class extends Component
 
     public string $note = '';
 
-    public string $statusMessage = '';
-
     public array $errors = [];
 
     public ?int $editingTransactionId = null;
@@ -155,13 +153,13 @@ new class extends Component
         $this->note = $transaction->note ?? '';
 
         $this->filterCategoriesByType();
-        $this->reset('statusMessage', 'errors');
+        $this->reset('errors');
     }
 
     public function cancelEdit(): void
     {
         $this->editingTransactionId = null;
-        $this->reset(['amount', 'note', 'statusMessage', 'errors']);
+        $this->reset(['amount', 'note', 'errors']);
         $this->setInitialDatetime();
         $this->type = 'income';
         $this->filterCategoriesByType();
@@ -186,7 +184,7 @@ new class extends Component
         Transaction::query()->findOrFail($this->deletingTransactionId)->delete();
 
         $this->deletingTransactionId = null;
-        $this->statusMessage = 'Transaction deleted successfully.';
+        $this->dispatch('transaction-toast', message: 'Transaction deleted successfully.');
 
         $counterService = app(CounterService::class);
         $this->loadData($counterService);
@@ -195,7 +193,6 @@ new class extends Component
 
     public function save(): void
     {
-        $this->reset('statusMessage');
         $this->errors = [];
 
         // Validate
@@ -232,12 +229,14 @@ new class extends Component
         if ($this->editingTransactionId) {
             $transaction = Transaction::query()->findOrFail($this->editingTransactionId);
             $transaction->update($validated);
-            $this->statusMessage = 'Transaction updated successfully.';
+            $successMessage = 'Transaction updated successfully.';
             $this->editingTransactionId = null;
         } else {
             Transaction::query()->create($validated);
-            $this->statusMessage = 'Transaction recorded successfully.';
+            $successMessage = 'Transaction recorded successfully.';
         }
+
+        $this->dispatch('transaction-toast', message: $successMessage);
 
         $this->reset(['amount', 'note']);
         $this->setInitialDatetime();
@@ -273,9 +272,6 @@ new class extends Component
             <div class="card-header py-2">Inputs</div>
             <div class="card-body p-3">
             <h2 class="h6 mb-3">{{ $editingTransactionId ? 'Edit Transaction' : 'Log New Transaction' }}</h2>
-            @if ($statusMessage)
-                <div class="alert alert-success py-2 mb-3">{{ $statusMessage }}</div>
-            @endif
             <form wire:submit="save">
                 <div class="row g-2 mb-3">
                     <div class="col-12 col-md-6">
