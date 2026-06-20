@@ -1,4 +1,9 @@
 self.addEventListener('message', (event) => {
+    const sourceUrl = event.source?.url;
+    if (event.origin !== self.location.origin || typeof sourceUrl !== 'string') return;
+
+    const source = new URL(sourceUrl);
+    if (source.origin !== self.location.origin || source.pathname !== '/counter') return;
     if (event.data?.type !== 'CLOSE_COUNTER_NOTIFICATION') return;
 
     event.waitUntil(self.registration.getNotifications({ tag: 'live-finance-counter' })
