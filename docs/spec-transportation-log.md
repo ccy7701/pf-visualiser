@@ -99,9 +99,13 @@ The system shall support commute-focused entry with:
 * origin
 * destination
 * distance (km)
+* optional final odometer reading at the end of the drive (km)
 * consumption input value
 * consumption input unit (`L/100km` or `km/L`)
-* date
+* start date and time
+* end date and time
+* average speed (km/h)
+* top speed (km/h)
 * notes
 
 The system shall support row-based edit workflow:
@@ -267,9 +271,14 @@ Derived fields may be materialized later for query performance but are not requi
 | origin                   | string        |
 | destination              | string        |
 | distance_km              | decimal(10,2) |
+| final_odometer_km        | nullable decimal(10,2) |
 | consumption_value        | decimal(10,4) |
 | consumption_unit         | string(16)    |
 | driven_at                | datetime      |
+| ended_at                 | datetime      |
+| average_speed_kmh        | decimal(10,2) |
+| top_speed_kmh            | decimal(10,2) |
+| drive_time_minutes       | unsigned integer |
 | notes                    | nullable text |
 | created_at               | timestamp     |
 | updated_at               | timestamp     |
@@ -294,12 +303,15 @@ Derived fields may be materialized later for query performance but are not requi
 
 ### 6.2 Validation Baseline
 
-* odometer and distance values must be positive
+* refuel odometer values must be non-negative and drive distance must be positive
+* final drive odometer is optional and must be non-negative when provided
 * fuel litres must be positive
 * price per litre and total amount must be non-negative
 * datetime/date fields must be valid
 * vehicle relation must exist
 * consumption unit must be one of `L/100km`, `km/L`
+* drive end datetime must be after drive start datetime
+* top speed must be greater than or equal to average speed
 
 ### 6.3 Response Baseline
 

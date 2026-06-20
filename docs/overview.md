@@ -80,6 +80,8 @@ Key characteristics:
 * default workday fallback: weekdays are workdays, weekends are holidays
 * workday status model supports `workday`, `absence`, `holiday`
 * snapshot API returns `counter`, `increment_per_second`, and related breakdown fields
+* optional system notification displays the incrementing Expected COH and refreshes every 60 seconds while the Counter page remains open
+* shared Workday Calendar, Salary Schedules, and Settings popup uses 50% viewport width on desktop
 
 ### Module B: COH Projection (`coh-projection`)
 
@@ -124,6 +126,7 @@ Key characteristics:
 * backend-connected snapshot + CRUD endpoints for vehicle/refuel/drive logs
 * monthly dashboard for fuel spend, commute estimate, weighted average mileage, and commute distance
 * row-click edit workflow for refuel and drive logs (populate input tab + edit/delete actions)
+* drive logs support an optional final odometer reading for the end of each trip
 * 24-hour datetime input/display consistency for refuel and drive records
 * transport-cost tracking aligned with projection budget profile planning assumptions
 

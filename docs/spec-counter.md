@@ -61,7 +61,22 @@ Hover/focus state:
 
 The hover/focus transition is presentation only; it does not change computation semantics.
 
-### 3.2 Expense Logging
+### 3.2 Counter System Notification
+
+The Counter Settings panel shall provide an opt-in browser system notification.
+
+When enabled and `increment_per_second > 0`:
+
+* the notification title uses `RM{expected_counter} | Incrementing (GET TO WORK!)`
+* the displayed Expected COH is refreshed every 60 seconds
+* updates replace the existing notification silently rather than creating a notification stack
+* the notification remains available only while the Counter page is open
+
+When incrementing is paused, notifications are disabled, or the user leaves the Counter page, the active Counter notification shall close.
+
+Notification behavior requires browser support, explicit user permission, and a secure context (HTTPS or localhost). The enabled preference is browser-local and does not add a database setting.
+
+### 3.3 Expense Logging
 
 The system shall support expense logging with:
 
@@ -72,7 +87,7 @@ The system shall support expense logging with:
 
 Expenses decrease Actual COH.
 
-### 3.3 Income Logging
+### 3.4 Income Logging
 
 The system shall support income logging with:
 
@@ -85,7 +100,9 @@ Income increases Actual COH.
 
 Income transactions categorized as `Salary` also reconcile against scheduled salary accrual for the transaction month so salary is not double-counted in Expected COH.
 
-### 3.4 Transaction Log Period Navigation
+Successful transaction create, update, and delete actions shall use the page-level bottom-right status toast rather than an inline form success alert.
+
+### 3.5 Transaction Log Period Navigation
 
 The Transaction Log transaction table shall support period filters:
 
@@ -103,7 +120,19 @@ The table header shall describe the active range:
 
 Previous (`<`) and next (`>`) controls shall shift the active range backward or forward by one selected unit.
 
-### 3.5 Salary Accrual
+### 3.6 Counter Management Popup
+
+Workday Calendar, Salary Schedules, and Settings share the Counter management popup. At desktop widths (`>= 992px`), this popup shall use 50% of the viewport width. Existing responsive sizing remains in effect below the desktop breakpoint.
+
+The Settings panel shall:
+
+* describe Starting Amount as the base cash amount used to calculate the Counter
+* expose the Counter notification enable/disable control
+* render Save Settings as a centered four-column button with top spacing
+
+The Salary Schedules panel shall render Add Schedule as a centered four-column button with top spacing.
+
+### 3.7 Salary Accrual
 
 The system shall apply workday-based salary accrual:
 
@@ -287,6 +316,8 @@ Instead:
 * backend returns computed Actual COH, Expected COH, unpaid accrual, and increment rate
 * frontend increments the Expected COH value locally while Actual COH remains static
 * full recomputation occurs on refresh, transaction mutation, config change, or manual sync
+* the browser notification service worker (`/counter-notification-sw.js`) owns the persistent system notification surface
+* while opted in and incrementing, the page replaces that notification every 60 seconds using a stable notification tag
 
 Current snapshot endpoint:
 
