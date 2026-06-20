@@ -5,31 +5,6 @@
     /* DOM refs */
     const actualCounterElement = document.getElementById('actualCounterValue');
     const expectedCounterElement = document.getElementById('expectedCounterValue');
-    const fabBtn = document.getElementById('fabBtn');
-    const backdrop = document.getElementById('popupBackdrop');
-    const tabSelector = document.getElementById('tabSelector');
-    const contentPopup = document.getElementById('contentPopup');
-    const popupTitle = document.getElementById('popupTitle');
-    const btnBack = document.getElementById('btnBack');
-    const btnClosePopup = document.getElementById('btnClosePopup');
-    const panelCalendar = document.getElementById('panel-calendar');
-    const panelSchedules = document.getElementById('panel-schedules');
-    const panelSettings = document.getElementById('panel-settings');
-    const requiredElements = [
-        fabBtn,
-        backdrop,
-        tabSelector,
-        contentPopup,
-        popupTitle,
-        btnBack,
-        btnClosePopup,
-        panelCalendar,
-        panelSchedules,
-        panelSettings,
-    ];
-
-    let currentTab = null;
-
     /* state */
     let actualValue = Number(snapshot.actual_counter ?? snapshot.counter ?? 0);
     let expectedValue = Number(snapshot.expected_counter ?? snapshot.counter ?? 0);
@@ -115,56 +90,6 @@
         renderAccruedSalary();
         renderDynamicTotal();
         updateIncrementStatus();
-    }
-
-    function openSelector() {
-        tabSelector.classList.add('show');
-        contentPopup.classList.remove('show');
-        backdrop.classList.add('show');
-        fabBtn.classList.add('open');
-        currentTab = null;
-    }
-
-    function openTab(tab) {
-        currentTab = tab;
-        tabSelector.classList.remove('show');
-        contentPopup.classList.add('show');
-
-        panelCalendar.classList.add('d-none');
-        panelSchedules.classList.add('d-none');
-        panelSettings.classList.add('d-none');
-
-        if (tab === 'calendar') {
-            panelCalendar.classList.remove('d-none');
-            popupTitle.textContent = 'Workday Calendar';
-            window.dispatchEvent(new Event('resize'));
-            return;
-        }
-
-        if (tab === 'schedules') {
-            panelSchedules.classList.remove('d-none');
-            popupTitle.textContent = 'Salary Schedules';
-            return;
-        }
-
-        if (tab === 'settings') {
-            panelSettings.classList.remove('d-none');
-            popupTitle.textContent = 'Settings';
-        }
-    }
-
-    function closePopup() {
-        tabSelector.classList.remove('show');
-        contentPopup.classList.remove('show');
-        backdrop.classList.remove('show');
-        fabBtn.classList.remove('open');
-        currentTab = null;
-    }
-
-    function backToSelector() {
-        contentPopup.classList.remove('show');
-        tabSelector.classList.add('show');
-        currentTab = null;
     }
 
     function applyTheme(theme) {
@@ -281,37 +206,7 @@
         await updateCounterNotification();
     }
 
-    if (requiredElements.some((el) => !el)) {
-        const storedTheme = localStorage.getItem('theme') || config.theme || 'light';
-        applyTheme(storedTheme);
-        return;
-    }
-
     /* event listeners */
-    fabBtn.addEventListener('click', () => {
-        if (currentTab !== null || tabSelector.classList.contains('show') || contentPopup.classList.contains('show')) {
-            closePopup();
-        } else {
-            openSelector();
-        }
-    });
-
-    backdrop.addEventListener('click', closePopup);
-    btnClosePopup.addEventListener('click', closePopup);
-    btnBack.addEventListener('click', backToSelector);
-
-    tabSelector.querySelectorAll('button[data-tab]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            openTab(btn.dataset.tab);
-        });
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closePopup();
-        }
-    });
-
     document.addEventListener('click', (event) => {
         if (event.target.closest('#counterNotificationToggle')) {
             toggleCounterNotification().catch(() => {

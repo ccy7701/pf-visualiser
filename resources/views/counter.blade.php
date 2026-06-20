@@ -43,50 +43,6 @@
 
 @include('components.module-nav', ['current' => 'counter'])
 
-{{-- Backdrop ────────────────────────── --}}
-<div class="popup-backdrop" id="popupBackdrop"></div>
-
-{{-- FAB button ──────────────────────── --}}
-<button class="fab-btn" id="fabBtn" type="button" aria-label="Open menu">
-    <i class="fa-solid fa-bars" aria-hidden="true"></i>
-</button>
-
-{{-- Step 1: tab selector popup ──────── --}}
-<div class="tab-selector-popup" id="tabSelector">
-    <button type="button" data-tab="calendar">Workday Calendar</button>
-    <button type="button" data-tab="schedules">Salary Schedules</button>
-    <button type="button" data-tab="settings">Settings</button>
-</div>
-
-{{-- Step 2: content popup ────────────── --}}
-<div class="content-popup" id="contentPopup">
-    <div class="content-popup-header">
-        <button class="btn-back" id="btnBack" type="button" aria-label="Back">
-            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-        </button>
-        <span class="title" id="popupTitle">Workday Calendar</span>
-        <button class="btn-close-popup" id="btnClosePopup" type="button" aria-label="Close">
-            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-        </button>
-    </div>
-    <div class="content-popup-body" id="contentPopupBody">
-        {{-- Workday Calendar content ──── --}}
-        <div id="panel-calendar">
-            <livewire:workday-calendar />
-        </div>
-
-        {{-- Salary Schedule content ──── --}}
-        <div id="panel-schedules" class="d-none">
-            <livewire:salary-schedule-manager />
-        </div>
-
-        {{-- Settings content ──── --}}
-        <div id="panel-settings" class="d-none">
-            <livewire:settings-manager />
-        </div>
-    </div>
-</div>
-
 {{-- Scripts ──────────────────────────── --}}
 <script>
     window.counterPageConfig = {

@@ -54,4 +54,17 @@
     @if ($showThemeToggle)
         <livewire:theme-nav-toggle />
     @endif
+
+    @php($isSettings = $current === 'settings')
+    <a
+        href="{{ route('settings.index') }}"
+        class="module-nav-row module-nav-settings-row {{ $isSettings ? 'is-current' : '' }}"
+        aria-label="Go to settings"
+        @if($isSettings) aria-current="page" @endif
+    >
+        <span class="module-nav-label">Settings</span>
+        <span class="module-nav-btn">
+            <i class="fa-solid fa-cog" aria-hidden="true"></i>
+        </span>
+    </a>
 </nav>

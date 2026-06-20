@@ -27,13 +27,14 @@ class TransactionLogPageTest extends TestCase
         $response->assertSee('Annually');
     }
 
-    public function test_counter_popup_no_longer_contains_transaction_tab(): void
+    public function test_counter_no_longer_contains_the_settings_popup(): void
     {
         $response = $this->get(route('counter'));
 
         $response->assertOk();
-        $response->assertDontSee('data-tab="transactions"', false);
-        $response->assertSee('id="counterNotificationToggle"', false);
-        $response->assertSee('Refreshes every 60 seconds while this page is open.');
+        $response->assertDontSee('id="fabBtn"', false);
+        $response->assertDontSee('Workday Calendar');
+        $response->assertDontSee('Salary Schedules');
+        $response->assertDontSee('id="counterNotificationToggle"', false);
     }
 }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\ProjectionController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TransportationLogController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TransactionLogPageController;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/counter');
 Route::get('/counter', [CounterController::class, 'index'])->name('counter');
+Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::get('/transaction-log', [TransactionLogPageController::class, 'index'])->name('transaction-log.index');
 Route::get('/transportation-log', [TransportationLogController::class, 'index'])->name('transportation-log.index');
 Route::get('/transportation-log/snapshot', [TransportationLogController::class, 'snapshot'])->name('transportation-log.snapshot');

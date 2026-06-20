@@ -71,10 +71,6 @@ button.module-nav-row {
     text-align: inherit;
 }
 
-.module-nav-theme-row {
-    margin-top: 0.35rem;
-}
-
 .module-nav-btn {
     width: var(--nav-button-size);
     height: var(--nav-button-size);

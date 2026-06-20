@@ -53,7 +53,7 @@ new class extends Component
             <div class="row align-items-center g-2 mb-2">
                 <div class="col-8">
                     <div class="form-label" style="font-size:0.85rem; margin-bottom:0;">Counter Notification</div>
-                    <div id="counterNotificationStatus" class="text-secondary" style="font-size:0.7rem;">Refreshes every 60 seconds while this page is open.</div>
+                    <div id="counterNotificationStatus" class="text-secondary" style="font-size:0.7rem;">Shows the live counter while salary is accruing.</div>
                 </div>
                 <div class="col-4">
                     <button id="counterNotificationToggle" class="btn btn-outline-secondary btn-sm w-100" type="button">Enable</button>
