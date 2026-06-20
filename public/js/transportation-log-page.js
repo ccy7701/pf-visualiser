@@ -949,6 +949,7 @@
         const origin = document.getElementById('commuteOrigin');
         const destination = document.getElementById('commuteDestination');
         const distance = document.getElementById('commuteDistanceKm');
+        const finalOdometer = document.getElementById('commuteFinalOdometerKm');
         const consumption = document.getElementById('commuteConsumptionValue');
         const date = document.getElementById('commuteDate');
         const time = document.getElementById('commuteTime');
@@ -963,6 +964,7 @@
         if (origin) origin.value = log?.origin || 'Home';
         if (destination) destination.value = log?.destination || 'Work';
         if (distance) distance.value = String(toNumber(log?.distance_km, 0));
+        if (finalOdometer) finalOdometer.value = log?.final_odometer_km ?? '';
         if (consumption) consumption.value = String(toNumber(log?.consumption_value, 0));
         if (date) date.value = dateTime.date;
         if (time) time.value = dateTime.time;
@@ -1488,6 +1490,8 @@
         const startedAt = composeDateTime(driveDate, driveTime);
         const endedAt = composeDateTime(endDate, endTime);
         const distance = toNumber(document.getElementById('commuteDistanceKm')?.value, 0);
+        const finalOdometerInput = String(document.getElementById('commuteFinalOdometerKm')?.value || '').trim();
+        const finalOdometer = finalOdometerInput === '' ? null : toNumber(finalOdometerInput, -1);
         const mileage = toNumber(document.getElementById('commuteConsumptionValue')?.value, 0);
         const averageSpeed = toNumber(document.getElementById('commuteAverageSpeedKmh')?.value, -1);
         const topSpeed = toNumber(document.getElementById('commuteTopSpeedKmh')?.value, -1);
@@ -1502,6 +1506,9 @@
         if (distance <= 0 || mileage <= 0 || averageSpeed < 0 || topSpeed < 0) {
             throw new Error('Please provide valid drive inputs.');
         }
+        if (finalOdometer !== null && finalOdometer < 0) {
+            throw new Error('Please provide a valid final odometer reading.');
+        }
         if (topSpeed < averageSpeed) {
             throw new Error('Top speed must be at least the average speed.');
         }
@@ -1512,6 +1519,7 @@
             origin: String(document.getElementById('commuteOrigin')?.value || '').trim() || 'Origin',
             destination: String(document.getElementById('commuteDestination')?.value || '').trim() || 'Destination',
             distance_km: distance,
+            final_odometer_km: finalOdometer,
             consumption_value: mileage,
             consumption_unit: 'L_PER_100KM',
             driven_at: startedAt,

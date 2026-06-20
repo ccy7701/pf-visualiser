@@ -16,6 +16,7 @@ class TransportationCommuteLog extends Model
         'origin',
         'destination',
         'distance_km',
+        'final_odometer_km',
         'consumption_value',
         'consumption_unit',
         'driven_at',

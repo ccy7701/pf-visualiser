@@ -186,6 +186,12 @@
                                 </div>
                                 <div class="row g-2 mb-2">
                                     <div class="col-6">
+                                        <label for="commuteFinalOdometerKm" class="form-label form-label-sm">Final Odometer Reading (km)</label>
+                                        <input id="commuteFinalOdometerKm" type="number" min="0" class="form-control compact-input" value="0">
+                                    </div>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
                                         <label for="commuteDate" class="form-label form-label-sm">Start Date</label>
                                         <input id="commuteDate" type="text" class="form-control compact-input date-picker" placeholder="DD/MM/YYYY">
                                     </div>
