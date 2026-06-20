@@ -231,7 +231,11 @@ new class extends Component
                 </div>
             </div>
 
-            <button wire:click="addSchedule" class="btn btn-dark btn-sm w-100" type="button" wire:loading.attr="disabled">Add Schedule</button>
+            <div class="row justify-content-center mt-3">
+                <div class="col-4">
+                    <button wire:click="addSchedule" class="btn btn-dark btn-sm w-100" type="button" wire:loading.attr="disabled">Add Schedule</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>

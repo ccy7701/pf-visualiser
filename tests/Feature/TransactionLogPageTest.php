@@ -33,5 +33,7 @@ class TransactionLogPageTest extends TestCase
 
         $response->assertOk();
         $response->assertDontSee('data-tab="transactions"', false);
+        $response->assertSee('id="counterNotificationToggle"', false);
+        $response->assertSee('Refreshes every 60 seconds while this page is open.');
     }
 }

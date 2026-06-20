@@ -641,6 +641,12 @@
                 font-size: 1.4rem;
             }
         }
+        @media (min-width: 992px) {
+            .content-popup {
+                width: 50vw;
+                max-width: 50vw;
+            }
+        }
         @media (max-width: 576px) {
             .content-popup {
                 width: 85vw;
