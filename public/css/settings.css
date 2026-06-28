@@ -1,27 +1,16 @@
-body {
-    min-height: 100vh;
-    background: #f8f9fa;
-}
-
-.settings-card {
-    border: 0;
-    box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.08);
-}
-
 .settings-layout {
-    min-height: 620px;
+    align-items: flex-start;
 }
 
-.settings-nav-column {
-    background: #fff;
-    border-right: 1px solid #e9ecef;
+.settings-nav-card {
+    position: sticky;
+    top: 1rem;
 }
 
 .settings-tabs {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    padding: 1rem;
 }
 
 .settings-tab {
@@ -54,8 +43,11 @@ body {
 
 .settings-content {
     min-width: 0;
-    padding: 1rem;
     font-size: 0.9rem;
+}
+
+.settings-content-card {
+    min-height: 620px;
 }
 
 .settings-section-heading {
@@ -94,16 +86,13 @@ body {
     background: #121212;
 }
 
-[data-bs-theme="dark"] .settings-card,
 [data-bs-theme="dark"] .settings-content .data-card {
     background: #1e1e1e;
     border-color: #333;
     box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.4);
 }
 
-[data-bs-theme="dark"] .settings-nav-column,
 [data-bs-theme="dark"] .settings-section-heading {
-    background: #1e1e1e;
     border-color: #333;
 }
 

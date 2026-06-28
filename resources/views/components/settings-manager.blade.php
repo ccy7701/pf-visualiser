@@ -40,7 +40,7 @@ new class extends Component
             <div class="row align-items-center g-2 mb-2">
                 <div class="col-8">
                     <label for="startingAmount" class="form-label" style="font-size:0.85rem; margin-bottom:0;">Starting Amount (RM)</label>
-                    <div class="text-secondary" style="font-size:0.7rem;">The base cash amount used to calculate the counter.</div>
+                    <div class="text-secondary" style="font-size:0.7rem;">The base cash amount used as the starting point of the counter.</div>
                 </div>
                 <div class="col-4">
                     <input id="startingAmount" wire:model="startingAmount" class="form-control form-control-sm text-start" min="0" step="0.01" type="number">
@@ -53,7 +53,7 @@ new class extends Component
             <div class="row align-items-center g-2 mb-2">
                 <div class="col-8">
                     <div class="form-label" style="font-size:0.85rem; margin-bottom:0;">Counter Notification</div>
-                    <div id="counterNotificationStatus" class="text-secondary" style="font-size:0.7rem;">Shows the live counter while salary is accruing.</div>
+                    <div id="counterNotificationStatus" class="text-secondary" style="font-size:0.7rem;">Show the live counter while salary is accruing.</div>
                 </div>
                 <div class="col-4">
                     <button id="counterNotificationToggle" class="btn btn-outline-secondary btn-sm w-100" type="button">Enable</button>
@@ -62,7 +62,7 @@ new class extends Component
 
             <div class="row justify-content-center mt-4">
                 <div class="col-4">
-                    <button wire:click="save" class="btn btn-dark btn-sm w-100" type="button" wire:loading.attr="disabled">Save Settings</button>
+                    <button wire:click="save" class="btn btn-dark btn-sm w-100" type="button" wire:loading.attr="disabled">Save</button>
                 </div>
             </div>
         </div>
