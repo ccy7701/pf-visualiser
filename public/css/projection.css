@@ -177,10 +177,30 @@
             border-radius: 0.65rem;
             padding: 0.7rem 0.8rem;
             background: #fff;
+            color: inherit;
+            text-align: left;
+            width: 100%;
+        }
+        .salary-schedule-list-card.is-clickable {
+            cursor: pointer;
+            display: block;
+        }
+        .salary-schedule-list-card.is-clickable:hover,
+        .salary-schedule-list-card.is-clickable:focus-visible,
+        .salary-schedule-list-card.is-clickable.is-active {
+            border-color: #212529;
+            box-shadow: 0 0 0 0.12rem rgba(33, 37, 41, 0.12);
+            outline: 0;
         }
         [data-bs-theme="dark"] .salary-schedule-list-card {
             background: #1e1e1e;
             border-color: #333;
+        }
+        [data-bs-theme="dark"] .salary-schedule-list-card.is-clickable:hover,
+        [data-bs-theme="dark"] .salary-schedule-list-card.is-clickable:focus-visible,
+        [data-bs-theme="dark"] .salary-schedule-list-card.is-clickable.is-active {
+            border-color: #f8f9fa;
+            box-shadow: 0 0 0 0.12rem rgba(248, 249, 250, 0.14);
         }
         .salary-schedule-list-row {
             display: flex;
@@ -206,7 +226,7 @@
         }
         .salary-schedule-deduction-grid {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 0.45rem;
             margin-top: 0.65rem;
             color: #6c757d;
@@ -234,6 +254,13 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+        }
+        .salary-schedule-form-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .salary-schedule-form-actions .btn {
+            flex: 1 1 0;
         }
         @media (max-width: 575.98px) {
             .salary-schedule-list-row,

@@ -57,8 +57,9 @@ class ProjectionService
             $employerEpf = $this->epfCalculator->employerContribution($grossIncome, $monthEpf);
             $statutory = $this->statutoryDeductionResolver->resolve($grossIncome);
             $socso = (float) ($statutory['socso'] ?? 0);
+            $socsoL24 = (float) ($statutory['socso_l24'] ?? 0);
             $eis = (float) ($statutory['eis'] ?? 0);
-            $netIncome = $grossIncome - $employeeEpf - $socso - $eis;
+            $netIncome = $grossIncome - $employeeEpf - $socso - $socsoL24 - $eis;
 
             $allowances = $this->sumEventsByType($monthEvents, 'allowance');
             $household = $this->sumEventsByType($monthEvents, 'household');
@@ -108,6 +109,7 @@ class ProjectionService
                 'employee_epf' => round($employeeEpf, 2),
                 'employer_epf' => round($employerEpf, 2),
                 'socso' => round($socso, 2),
+                'socso_l24' => round($socsoL24, 2),
                 'eis' => round($eis, 2),
             ];
 

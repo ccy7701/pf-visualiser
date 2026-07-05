@@ -174,7 +174,10 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button id="saveSalaryScheduleBtn" type="button" class="btn btn-dark w-100">Add</button>
+                                <div class="salary-schedule-form-actions">
+                                    <button id="saveSalaryScheduleBtn" type="button" class="btn btn-dark">Add</button>
+                                    <button id="deleteSalaryScheduleBtn" type="button" class="btn btn-outline-danger d-none">Delete</button>
+                                </div>
                             </div>
 
                             <div class="input-subcard mt-3 mb-0">

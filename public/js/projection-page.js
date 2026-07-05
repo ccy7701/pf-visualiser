@@ -503,14 +503,16 @@
 
     function resolveStatutoryDeductions(grossSalary) {
         if (grossSalary <= 0) {
-            return { socso: 0, eis: 0 };
+            return { employerSocso: 0, socso: 0, socsoL24: 0, eis: 0 };
         }
 
         const socsoBracket = findStatutoryBracket(statutoryBrackets.socso, grossSalary);
         const eisBracket = findStatutoryBracket(statutoryBrackets.eis, grossSalary);
 
         return {
-            socso: toNumber(socsoBracket?.employee_cat1 ?? 0, 0),
+            employerSocso: toNumber(socsoBracket?.employer_share ?? 0, 0),
+            socso: toNumber(socsoBracket?.employee_INV ?? 0, 0),
+            socsoL24: toNumber(socsoBracket?.employee_NEI ?? 0, 0),
             eis: toNumber(eisBracket?.employee ?? 0, 0),
         };
     }
@@ -660,9 +662,11 @@
             grossSalary,
             employeeEpf,
             employerEpf,
+            employerSocso: statutory.employerSocso,
             socso: statutory.socso,
+            socsoL24: statutory.socsoL24,
             eis: statutory.eis,
-            net: grossSalary - employeeEpf - statutory.socso - statutory.eis,
+            net: grossSalary - employeeEpf - statutory.socso - statutory.socsoL24 - statutory.eis,
         };
     }
 
@@ -680,7 +684,10 @@
 
     function setSalaryScheduleFormMode(isEdit) {
         const btn = document.getElementById('saveSalaryScheduleBtn');
+        const deleteBtn = document.getElementById('deleteSalaryScheduleBtn');
         if (btn) btn.textContent = isEdit ? 'Update' : 'Add';
+        if (btn) btn.classList.toggle('w-100', !isEdit);
+        if (deleteBtn) deleteBtn.classList.toggle('d-none', !isEdit);
     }
 
     function fillSalaryScheduleForm(schedule = null) {
@@ -715,7 +722,7 @@
                 const note = schedule.note || '&nbsp;';
 
                 item.innerHTML = `
-                    <div class="salary-schedule-list-card">
+                    <button type="button" class="salary-schedule-list-card is-clickable ${editingSalaryScheduleId === schedule.id ? 'is-active' : ''}" data-salary-schedule-id="${schedule.id}" aria-label="Edit salary schedule from ${startLabel} to ${endLabel}">
                         <div class="salary-schedule-list-row">
                             <div>
                                 <div class="salary-schedule-list-name">${startLabel} to ${endLabel}</div>
@@ -727,29 +734,16 @@
                             </div>
                         </div>
                         <div class="salary-schedule-deduction-grid">
-                            <div>Employee EPF (${money.format(schedule.employee_epf_rate_percent)}%)<br><strong>RM ${money.format(deductions.employeeEpf)}</strong></div>
-                            <div>Employer EPF (${money.format(schedule.employer_epf_rate_percent)}%)<br><strong>RM ${money.format(deductions.employerEpf)}</strong></div>
+                            <div>Employee EPF<br><strong>RM ${money.format(deductions.employeeEpf)}</strong></div>
+                            <div>Employer EPF<br><strong>RM ${money.format(deductions.employerEpf)}</strong></div>
                             <div>SOCSO<br><strong>RM ${money.format(deductions.socso)}</strong></div>
+                            <div>SOCSO L24<br><strong>RM ${money.format(deductions.socsoL24)}</strong></div>
                             <div>EIS<br><strong>RM ${money.format(deductions.eis)}</strong></div>
                         </div>
-                    </div>
-                    <div class="salary-schedule-list-actions">
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-salary-schedule-action="edit" data-salary-schedule-id="${schedule.id}" aria-label="Edit salary schedule" title="Edit" data-bs-title="Edit" data-bs-placement="top">
-                            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-                        </button>
-                        <button type="button" class="btn btn-outline-danger btn-sm" data-salary-schedule-action="delete" data-salary-schedule-id="${schedule.id}" aria-label="Delete salary schedule" title="Delete" data-bs-title="Delete" data-bs-placement="top">
-                            <i class="fa-solid fa-trash" aria-hidden="true"></i>
-                        </button>
-                    </div>
+                    </button>
                 `;
                 container.appendChild(item);
             });
-
-        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-            container.querySelectorAll('[data-salary-schedule-action]').forEach((btn) => {
-                bootstrap.Tooltip.getOrCreateInstance(btn, { trigger: 'hover focus' });
-            });
-        }
     }
 
     function createBnplRow(data = {}) {
@@ -1364,33 +1358,30 @@
         renderSalaryScheduleCards();
     });
 
-    document.getElementById('salaryScheduleListCards').addEventListener('click', (event) => {
-        const button = event.target.closest('button[data-salary-schedule-action]');
-        if (!button) return;
+    document.getElementById('deleteSalaryScheduleBtn').addEventListener('click', () => {
+        if (!editingSalaryScheduleId) return;
 
-        const action = button.dataset.salaryScheduleAction;
-        const scheduleId = button.dataset.salaryScheduleId;
+        salarySchedules = salarySchedules.filter((item) => item.id !== editingSalaryScheduleId);
+        editingSalaryScheduleId = null;
+        setSalaryScheduleFormMode(false);
+        fillSalaryScheduleForm(null);
+        renderSalaryScheduleCards();
+        setStatus('Salary schedule deleted.');
+    });
+
+    document.getElementById('salaryScheduleListCards').addEventListener('click', (event) => {
+        const card = event.target.closest('.salary-schedule-list-card[data-salary-schedule-id]');
+        if (!card) return;
+
+        const scheduleId = card.dataset.salaryScheduleId;
         const schedule = salarySchedules.find((item) => item.id === scheduleId);
         if (!schedule) return;
 
-        if (action === 'edit') {
-            editingSalaryScheduleId = scheduleId;
-            fillSalaryScheduleForm(schedule);
-            setSalaryScheduleFormMode(true);
-            setStatus('Editing salary schedule.');
-            return;
-        }
-
-        if (action === 'delete') {
-            salarySchedules = salarySchedules.filter((item) => item.id !== scheduleId);
-            if (editingSalaryScheduleId === scheduleId) {
-                editingSalaryScheduleId = null;
-                setSalaryScheduleFormMode(false);
-                fillSalaryScheduleForm(null);
-            }
-            renderSalaryScheduleCards();
-            setStatus('Salary schedule deleted.');
-        }
+        editingSalaryScheduleId = scheduleId;
+        fillSalaryScheduleForm(schedule);
+        setSalaryScheduleFormMode(true);
+        renderSalaryScheduleCards();
+        setStatus('Editing salary schedule.');
     });
 
     document.getElementById('saveBudgetProfileBtn').addEventListener('click', saveBudgetProfileFromForm);

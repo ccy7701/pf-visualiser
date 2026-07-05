@@ -90,6 +90,10 @@ class ProjectionServiceTest extends TestCase
 
         $this->assertSame(50.0, $month['employee_epf']);
         $this->assertSame(70.0, $month['employer_epf']);
+        $this->assertSame(4.75, $month['socso']);
+        $this->assertSame(7.15, $month['socso_l24']);
+        $this->assertSame(1.9, $month['eis']);
+        $this->assertSame(936.2, $month['net_income']);
         $this->assertSame(120.0, $month['closing_epf']);
         $this->assertSame(
             $month['closing_coh'] + $month['closing_elr'] + $month['closing_epf'],

@@ -11,7 +11,9 @@ class StatutoryDeductionResolver
     {
         if ($grossSalary <= 0) {
             return [
+                'employer_socso' => 0.0,
                 'socso' => 0.0,
+                'socso_l24' => 0.0,
                 'eis' => 0.0,
             ];
         }
@@ -20,7 +22,9 @@ class StatutoryDeductionResolver
         $eisBracket = $this->findBracket(self::EIS_PATH, $grossSalary);
 
         return [
-            'socso' => $this->amount($socsoBracket['employee_cat1'] ?? 0),
+            'employer_socso' => $this->amount($socsoBracket['employer_share'] ?? 0),
+            'socso' => $this->amount($socsoBracket['employee_INV'] ?? 0),
+            'socso_l24' => $this->amount($socsoBracket['employee_NEI'] ?? 0),
             'eis' => $this->amount($eisBracket['employee'] ?? 0),
         ];
     }
