@@ -14,10 +14,11 @@ Related high-level project specification: `overview.md`
 * net transactions
 * workday-aware unpaid salary accrual
 
-The module exposes two related balances:
+The module exposes these related values:
 
 * Actual COH: static between transaction/settings changes
 * Expected COH: actual COH plus unpaid scheduled salary accrual
+* Counter hover value: Actual COH plus the current month's unpaid scheduled salary accrual
 
 ---
 
@@ -54,8 +55,8 @@ Default visible state:
 
 Hover/focus state:
 
-* displays Expected COH
-* increases over time via unpaid salary accrual logic
+* displays Actual COH plus current-month unpaid salary accrual
+* increases over time via current-month unpaid salary accrual logic
 * displays increment status text below the value
 * uses a distinct accent color from the Actual COH state
 
@@ -68,7 +69,7 @@ The Counter Settings panel shall provide an opt-in browser system notification.
 When enabled and `increment_per_second > 0`:
 
 * the notification title uses `RM{expected_counter} | Incrementing (GET TO WORK!)`
-* the displayed Expected COH is refreshed every 60 seconds
+* the displayed Expected COH uses Actual COH plus total unpaid salary accrual and is refreshed every 60 seconds
 * updates replace the existing notification silently rather than creating a notification stack
 * the notification remains available only while the Counter page is open
 
@@ -98,7 +99,7 @@ The system shall support income logging with:
 
 Income increases Actual COH.
 
-Income transactions categorized as `Salary` also reconcile against scheduled salary accrual for the transaction month so salary is not double-counted in Expected COH.
+Income transactions categorized as `Salary` also reconcile against scheduled salary accrual using oldest-unpaid-month-first allocation, so a salary paid in the following month can settle the prior month's accrued salary without clearing the current month's accrual.
 
 Successful transaction create, update, and delete actions shall use the page-level bottom-right status toast rather than an inline form success alert.
 
@@ -174,7 +175,8 @@ Net Transactions = Total Income - Total Expenses
 4. Count scheduled workdays in that month (`workday` + `absence`) to derive daily base salary.
 5. If day status is `workday`, accrue proportionally by eligible seconds within working windows.
 6. Sum all days into `scheduled_accrued_salary`.
-7. Subtract realized salary transactions for each month to derive `accrued_salary` as unpaid accrual.
+7. Allocate realized salary transactions against scheduled accrual from oldest unpaid month to newest.
+8. Subtract allocated realized salary from scheduled accrual to derive `accrued_salary` as unpaid accrual.
 
 Increment rate at a point in time:
 
@@ -182,7 +184,7 @@ Increment rate at a point in time:
 2. Ensure date status is `workday`.
 3. Ensure time is inside configured working windows.
 4. `increment_per_second = (monthly_net_salary / scheduled_workdays_in_month) / 28800`.
-5. If the current month's scheduled salary is already fully realized by `Income:Salary` transactions, `increment_per_second = 0`.
+5. If the current month's scheduled salary is already fully realized by allocated `Income:Salary` transactions, `increment_per_second = 0`.
 
 Conceptual example:
 
@@ -196,11 +198,12 @@ Scheduled Accrued Salary = sum of each day's eligible_seconds * per-second_rate_
 
 ### 4.4 Salary Reconciliation Rule
 
-Salary transactions are grouped by transaction month.
+Salary transactions are ordered by transaction datetime and allocated against unpaid scheduled salary accrual from oldest month to newest month. The transaction date still controls when the income affects Actual COH and current-month Net Transactions, but it does not force the salary receipt to reconcile only against that transaction month.
 
 ```text
-realized_salary_by_month[YYYY-MM] = sum(Income:Salary transactions in that month)
-unpaid_accrual_for_month = max(0, scheduled_accrual_for_month - realized_salary_by_month[YYYY-MM])
+salary_realizations = Income:Salary transactions ordered by datetime
+allocated_realized_salary_by_month = FIFO allocation of salary_realizations against scheduled_accrual_by_month
+unpaid_accrual_for_month = max(0, scheduled_accrual_for_month - allocated_realized_salary_by_month[YYYY-MM])
 Unpaid Salary Accrual = sum(unpaid_accrual_for_month)
 ```
 
@@ -213,9 +216,38 @@ No salary transaction yet:
 Actual COH = 871.61
 Expected COH = 2637.96
 
-After logging Income:Salary RM1766.35 for June:
+After logging Income:Salary RM1766.35:
 Actual COH = 2637.96
 Expected COH = 2637.96
+```
+
+If the June salary is paid in July, the July-dated transaction increases July Actual COH and July Net Transactions, while the salary reconciliation allocates the payment to June's unpaid accrual first. July unpaid accrual remains visible and continues incrementing until it is later paid or otherwise fully allocated.
+
+### 4.5 Current-Month Summary Values
+
+The Transaction Log "Values for this month" panel uses month-specific values:
+
+```text
+Current Month Starting Amount = Starting Amount + all transactions before start_of_month
+Current Month Net Transactions = income during as_of month - expenses during as_of month
+Current Month Unpaid Accrual = unpaid scheduled salary accrual for as_of month only
+Projected EOTM TFP = Current Month Starting Amount + Current Month Net Transactions + Current Month Unpaid Accrual
+```
+
+This means the displayed Starting Amount in the monthly panel is the opening cash position for the selected/current month, not necessarily the persisted `starting_amount` setting.
+
+Example:
+
+```text
+Global Starting Amount setting: RM871.61
+June net transactions before July: +RM70.24
+July Current Month Starting Amount: RM941.85
+
+July salary receipt for June: +RM1576.60
+July expenses so far: -RM190.65
+July Current Month Net Transactions: RM1385.95
+Actual COH/static counter: RM2327.80
+Hover counter: RM2327.80 + July unpaid accrual
 ```
 
 ---
@@ -314,7 +346,7 @@ The backend must not run minute-based Counter persistence jobs.
 Instead:
 
 * backend returns computed Actual COH, Expected COH, unpaid accrual, and increment rate
-* frontend increments the Expected COH value locally while Actual COH remains static
+* frontend increments the hover value and summary unpaid-accrual values locally while Actual COH remains static
 * full recomputation occurs on refresh, transaction mutation, config change, or manual sync
 * the browser notification service worker (`/counter-notification-sw.js`) owns the persistent system notification surface
 * while opted in and incrementing, the page replaces that notification every 60 seconds using a stable notification tag
@@ -327,6 +359,7 @@ Current response fields:
 
 * `as_of`
 * `starting_amount`
+* `current_month_starting_amount`
 * `income_total`
 * `expense_total`
 * `net_transactions`
@@ -347,13 +380,15 @@ Current response fields:
 Field meanings:
 
 * `actual_counter`: Starting Amount + Net Transactions
-* `expected_counter`: Actual COH + unpaid salary accrual
+* `expected_counter`: Actual COH + total unpaid salary accrual
 * `counter`: alias of `actual_counter`
-* `projected_eotm_tfp`: Starting Amount + current-month Net Transactions + current-month Unpaid Accrual
+* `starting_amount`: persisted base cash setting
+* `current_month_starting_amount`: opening cash position for the `as_of` month, calculated as Starting Amount + all transactions before that month
+* `projected_eotm_tfp`: Current Month Starting Amount + current-month Net Transactions + current-month Unpaid Accrual
 * `accrued_salary`: unpaid scheduled salary accrual after salary transaction reconciliation
 * `current_month_unpaid_accrual`: unpaid scheduled salary accrual for the `as_of` month only
 * `scheduled_accrued_salary`: raw schedule-derived accrual before salary transaction reconciliation
-* `realized_salary`: schedule accrual amount covered by salary transactions
+* `realized_salary`: schedule accrual amount covered by allocated salary transactions
 
 `as_of` resolution:
 
@@ -368,7 +403,8 @@ Field meanings:
 
 * starting amount retrieval
 * transaction aggregation
-* salary transaction aggregation by month
+* current-month opening balance derivation
+* salary transaction realization retrieval
 * salary accrual integration
 * Actual COH and Expected COH derivation
 
@@ -378,7 +414,8 @@ Field meanings:
 * scheduled-workday counting (`workday + absence`)
 * per-second rate computation
 * eligible working-seconds computation within configured windows
-* unpaid accrual calculation after realized salary offsets
+* oldest-unpaid-month-first salary realization allocation
+* unpaid accrual calculation after allocated realized salary offsets
 
 ### WorkdayService
 

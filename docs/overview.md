@@ -71,16 +71,19 @@ Counter runtime also supports simulation time via settings (`simulation_now`, `u
 
 Purpose:
 
-* derive current liquid cash from `starting_amount + net_transactions + accrued_salary`
+* derive current liquid cash from `starting_amount + net_transactions`
+* derive expected and hover counter values from actual cash plus unpaid salary accrual
 
 Key characteristics:
 
 * no minute-persistence job for counter value
 * salary accrual applies only during working windows on `workday` status dates
+* salary receipts reconcile oldest unpaid salary accrual first, independent of the receipt month
+* monthly summaries use the month-opening cash position plus current-month net transactions and current-month unpaid accrual
 * default workday fallback: weekdays are workdays, weekends are holidays
 * workday status model supports `workday`, `absence`, `holiday`
 * snapshot API returns `counter`, `increment_per_second`, and related breakdown fields
-* optional system notification displays the incrementing Expected COH and refreshes every 60 seconds while the Counter page remains open
+* optional system notification displays incrementing Expected COH and refreshes every 60 seconds while the Counter page remains open
 * shared Workday Calendar, Salary Schedules, and Settings popup uses 50% viewport width on desktop
 
 ### Module B: COH Projection (`coh-projection`)

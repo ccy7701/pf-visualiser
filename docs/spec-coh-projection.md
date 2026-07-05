@@ -30,6 +30,7 @@ The following constraints apply:
 * no frontend-side financial computations
 * all projection assumptions must be inside payload
 * projection must not derive assumptions from live counter transactions
+* projection must not derive unpaid salary accrual or salary receipt reconciliation state from the live Counter module
 
 ---
 
@@ -41,7 +42,7 @@ The system shall support:
 
 * projection start month
 * projection end month
-* starting COH
+* starting COH, supplied explicitly as the opening cash position for the first projected month
 * starting ELR
 * starting EPF
 
@@ -141,7 +142,7 @@ The system shall return monthly rows containing core balances and breakdown fiel
 * gross/net income
 * expenses and debt servicing
 * ELR contribution and ELR interest
-* statutory deductions (`socso`, `eis`)
+* statutory deductions (`socso`, `socso_l24`, `eis`)
 
 `closing_coh` may be negative.
 
@@ -169,7 +170,7 @@ Each month inherits opening balances from the previous month's closing balances.
 Closing COH
 =
 Opening COH
-+ Net Salary
++ Net Salary Received In Projection Month
 + Allowances
 + One-Off Income
 - Living Expenses
@@ -221,7 +222,9 @@ Opening EPF
 
 Salary is resolved from `employment.salary_schedules`.
 
-Schedules are sorted by start month. For each month, the matching schedule is the latest schedule whose `start_month` is on or before the target month and whose optional `end_month` is either blank or on or after the target month.
+Schedules are normalized in ascending start-month order. For each month, the matching schedule is the first normalized schedule whose `start_month` is on or before the target month and whose optional `end_month` is either blank or on or after the target month.
+
+Schedules should be configured as non-overlapping ranges. If overlapping ranges are supplied, the first matching normalized schedule is used.
 
 If no schedule matches a month, gross salary is 0.
 
@@ -231,7 +234,13 @@ Schedule-specific EPF rates override the scenario-level EPF rates for months res
 
 If `salary_paid_in_arrears = true`, salary is shifted by exactly one full month.
 
+For a projection month, salary is resolved from the previous work month. For example, a July projection row receives June salary, and an August projection row receives July salary.
+
+If `salary_paid_in_arrears = false`, salary is resolved from the same month as the projection row.
+
 No partial first-month proration is applied.
+
+Salary arrears in this module is a scenario-planning rule only. It does not consume live `Income:Salary` transactions, does not allocate salary receipts against unpaid accrual, and does not model workday-by-workday unpaid salary accrual. Those behaviors belong to the live Counter module.
 
 ### 4.7 PTPTN Logic
 
@@ -258,6 +267,83 @@ If an `elr_override` event exists for a month, it overrides that month’s resol
 ### 4.11 EPF Basis Rule
 
 EPF contributions are computed from gross salary only using configured percent rates.
+
+### 4.12 Statutory Deduction and Net Salary Rule
+
+Monthly statutory deductions are resolved from gross salary using local bracket JSON files:
+
+* SOCSO: `data/contribution-brackets/socso_act4_brackets.json`
+* EIS: `data/contribution-brackets/eis_act800_brackets.json`
+
+If gross salary is less than or equal to 0, all statutory deductions are 0.
+
+For positive gross salary:
+
+1. Find the first bracket where `gross_salary >= min` and `gross_salary <= max`.
+2. If `max` is `null`, the bracket has no upper limit.
+3. If no matching bracket file or bracket exists, the missing deduction amount defaults to 0.
+
+SOCSO Act 4 bracket fields:
+
+* `employer_share`: employer SOCSO amount resolved by the statutory resolver
+* `employee_INV`: employee invalidity contribution, exposed in projection rows as `socso`
+* `employee_NEI`: employee employment injury contribution, exposed in projection rows as `socso_l24`
+
+EIS Act 800 bracket fields:
+
+* `employee`: employee EIS contribution, exposed in projection rows as `eis`
+* `employer`: employer EIS contribution in the source data, not currently included in projection row outputs
+
+Base net salary received in a projection month is:
+
+```text
+base_net_salary
+= gross_income
+- employee_epf
+- socso
+- socso_l24
+- eis
+```
+
+The monthly row field `net_income` includes base net salary plus income-style monthly additions:
+
+```text
+net_income = base_net_salary + allowances + one_off_income
+```
+
+The COH formula uses the same components separately:
+
+```text
+Closing COH
+= Opening COH
++ base_net_salary
++ Allowances
++ One-Off Income
+- Living Expenses
+- BNPL Repayments
+- PTPTN Repayments
+- One-Off Expenses
+- ELR Contribution
+```
+
+### 4.13 Relationship to Counter Module
+
+The projection module is independent from the live Counter module.
+
+Counter behavior:
+
+* Actual COH is derived from persisted starting amount plus actual transactions.
+* Counter hover displays Actual COH plus current-month unpaid salary accrual.
+* Salary receipts reconcile against unpaid salary accrual from oldest unpaid month first.
+* Current-month summaries use month-opening cash plus current-month net transactions and current-month unpaid accrual.
+
+Projection behavior:
+
+* `scenario.starting_coh` is an explicit scenario input and is not automatically pulled from Counter.
+* Monthly `opening_coh` is the prior projection row's `closing_coh`, except for the first row where it equals `scenario.starting_coh`.
+* `Net Salary Received In Projection Month` is planned salary after the salary arrears rule, not live unpaid accrual.
+* FIFO salary receipt reconciliation is not applied because projection rows do not contain actual transaction receipts.
+* If a scenario should start from the live app state, the caller must explicitly seed `starting_coh` with the desired Counter-derived value, such as live Actual COH or a month-opening cash amount.
 
 ---
 
@@ -419,6 +505,7 @@ Cache is written on save/load/compare paths when needed.
       "employee_epf": 0,
       "employer_epf": 0,
       "socso": 0,
+      "socso_l24": 0,
       "eis": 0
     }
   ]
