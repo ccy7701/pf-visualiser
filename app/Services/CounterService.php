@@ -24,23 +24,35 @@ class CounterService
         $netTransactions = $income - $expense;
         $actualCounter = $startingAmount + $netTransactions;
 
-        $salary = $this->salaryAccrualService->computeAccruedSalary($asOf, $this->realizedSalaryByMonth());
+        $salary = $this->salaryAccrualService->computeAccruedSalary($asOf, $this->salaryRealizations());
         $expectedCounter = $actualCounter + $salary['accrued_salary'];
+        $currentMonthStart = $asOf->copy()->startOfMonth();
+        $currentMonthEnd = $asOf->copy()->endOfMonth();
+        $priorIncome = (float) Transaction::query()
+            ->where('type', 'income')
+            ->where('datetime', '<', $currentMonthStart)
+            ->sum('amount');
+        $priorExpense = (float) Transaction::query()
+            ->where('type', 'expense')
+            ->where('datetime', '<', $currentMonthStart)
+            ->sum('amount');
+        $currentMonthStartingAmount = $startingAmount + $priorIncome - $priorExpense;
         $currentMonthIncome = (float) Transaction::query()
             ->where('type', 'income')
-            ->whereBetween('datetime', [$asOf->copy()->startOfMonth(), $asOf->copy()->endOfMonth()])
+            ->whereBetween('datetime', [$currentMonthStart, $currentMonthEnd])
             ->sum('amount');
         $currentMonthExpense = (float) Transaction::query()
             ->where('type', 'expense')
-            ->whereBetween('datetime', [$asOf->copy()->startOfMonth(), $asOf->copy()->endOfMonth()])
+            ->whereBetween('datetime', [$currentMonthStart, $currentMonthEnd])
             ->sum('amount');
         $currentMonthNetTransactions = $currentMonthIncome - $currentMonthExpense;
         $currentMonthUnpaidAccrual = (float) ($salary['current_month_accrued_salary'] ?? 0);
-        $projectedEotmTfp = $startingAmount + $currentMonthNetTransactions + $currentMonthUnpaidAccrual;
+        $projectedEotmTfp = $currentMonthStartingAmount + $currentMonthNetTransactions + $currentMonthUnpaidAccrual;
 
         return [
             'as_of' => $asOf->toDateTimeString(),
             'starting_amount' => round($startingAmount, 2),
+            'current_month_starting_amount' => round($currentMonthStartingAmount, 2),
             'income_total' => round($income, 2),
             'expense_total' => round($expense, 2),
             'net_transactions' => round($netTransactions, 2),
@@ -60,7 +72,7 @@ class CounterService
         ];
     }
 
-    private function realizedSalaryByMonth(): array
+    private function salaryRealizations(): array
     {
         return Transaction::query()
             ->where('type', 'income')
@@ -69,8 +81,10 @@ class CounterService
                     ->where('name', 'Salary');
             })
             ->get(['datetime', 'amount'])
-            ->groupBy(fn (Transaction $transaction): string => Carbon::parse($transaction->datetime)->format('Y-m'))
-            ->map(fn ($transactions): float => (float) $transactions->sum('amount'))
+            ->map(fn (Transaction $transaction): array => [
+                'datetime' => Carbon::parse($transaction->datetime)->toDateTimeString(),
+                'amount' => (float) $transaction->amount,
+            ])
             ->all();
     }
 

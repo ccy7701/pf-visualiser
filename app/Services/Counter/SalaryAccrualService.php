@@ -19,7 +19,7 @@ class SalaryAccrualService
     {
     }
 
-    public function computeAccruedSalary(CarbonInterface $asOf, array $realizedSalaryByMonth = []): array
+    public function computeAccruedSalary(CarbonInterface $asOf, array $salaryRealizations = []): array
     {
         $firstSchedule = SalarySchedule::query()->orderBy('effective_from')->first();
 
@@ -72,6 +72,7 @@ class SalaryAccrualService
 
         $realizedTotal = 0.0;
         $unpaidAccrued = 0.0;
+        $realizedSalaryByMonth = $this->allocateRealizedSalaryByMonth($accruedByMonth, $salaryRealizations);
 
         foreach ($accruedByMonth as $month => $scheduledAccrued) {
             $realizedForMonth = max(0.0, (float) ($realizedSalaryByMonth[$month] ?? 0));
@@ -168,5 +169,40 @@ class SalaryAccrualService
         }
 
         return false;
+    }
+
+    private function allocateRealizedSalaryByMonth(array $accruedByMonth, array $salaryRealizations): array
+    {
+        $allocatedByMonth = array_fill_keys(array_keys($accruedByMonth), 0.0);
+        $remainingAccrualByMonth = $accruedByMonth;
+
+        usort($salaryRealizations, function (array $a, array $b): int {
+            return strcmp((string) ($a['datetime'] ?? ''), (string) ($b['datetime'] ?? ''));
+        });
+
+        foreach ($salaryRealizations as $realization) {
+            $remainingPayment = max(0.0, (float) ($realization['amount'] ?? 0));
+
+            if ($remainingPayment <= 0) {
+                continue;
+            }
+
+            foreach ($remainingAccrualByMonth as $month => $remainingAccrual) {
+                if ($remainingPayment <= 0) {
+                    break;
+                }
+
+                if ($remainingAccrual <= 0) {
+                    continue;
+                }
+
+                $allocated = min($remainingAccrual, $remainingPayment);
+                $remainingAccrualByMonth[$month] -= $allocated;
+                $allocatedByMonth[$month] += $allocated;
+                $remainingPayment -= $allocated;
+            }
+        }
+
+        return $allocatedByMonth;
     }
 }

@@ -4,7 +4,7 @@
 
     let projectedEotmTfpValue = Number(snapshot.projected_eotm_tfp ?? snapshot.expected_counter ?? snapshot.counter ?? 0);
     let unpaidAccrualValue = Number(snapshot.current_month_unpaid_accrual ?? snapshot.accrued_salary ?? 0);
-    let startingAmountValue = Number(snapshot.starting_amount || 0);
+    let startingAmountValue = Number(snapshot.current_month_starting_amount ?? snapshot.starting_amount ?? 0);
     let netTransactionsValue = Number(snapshot.current_month_net_transactions || 0);
     let incrementPerSecond = Number(snapshot.increment_per_second || 0);
 
@@ -54,7 +54,7 @@
     }
 
     function readSnapshotValues(data) {
-        startingAmountValue = Number(data.starting_amount || 0);
+        startingAmountValue = Number(data.current_month_starting_amount ?? data.starting_amount ?? 0);
         netTransactionsValue = Number(data.current_month_net_transactions || 0);
         unpaidAccrualValue = Number(data.current_month_unpaid_accrual ?? data.accrued_salary ?? 0);
         projectedEotmTfpValue = Number(

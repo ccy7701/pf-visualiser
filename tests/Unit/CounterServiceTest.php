@@ -65,7 +65,67 @@ class CounterServiceTest extends TestCase
         $this->assertEqualsWithDelta(1766.35, $oneMonthAhead['accrued_salary'], 0.01);
         $this->assertSame(0.0, $oneMonthAhead['current_month_net_transactions']);
         $this->assertEqualsWithDelta(1766.35, $oneMonthAhead['current_month_unpaid_accrual'], 0.01);
-        $this->assertEqualsWithDelta(2637.96, $oneMonthAhead['projected_eotm_tfp'], 0.01);
+        $this->assertEqualsWithDelta(4404.31, $oneMonthAhead['projected_eotm_tfp'], 0.01);
         $this->assertEqualsWithDelta(4404.31, $oneMonthAhead['expected_counter'], 0.01);
+    }
+
+    public function test_salary_paid_in_following_month_does_not_clear_current_month_accrual(): void
+    {
+        Setting::setValue('starting_amount', 871.61);
+
+        SalarySchedule::query()->create([
+            'effective_from' => '2026-06-01',
+            'effective_until' => null,
+            'monthly_net_salary' => 1576.60,
+        ]);
+
+        $incomeCategory = Category::query()->create([
+            'name' => 'Other Income',
+            'type' => 'income',
+        ]);
+        $salaryCategory = Category::query()->create([
+            'name' => 'Salary',
+            'type' => 'income',
+        ]);
+        $expenseCategory = Category::query()->create([
+            'name' => 'Food',
+            'type' => 'expense',
+        ]);
+
+        Transaction::query()->create([
+            'type' => 'income',
+            'datetime' => '2026-06-20 12:00:00',
+            'category_id' => $incomeCategory->id,
+            'amount' => 100.00,
+        ]);
+        Transaction::query()->create([
+            'type' => 'expense',
+            'datetime' => '2026-06-21 12:00:00',
+            'category_id' => $expenseCategory->id,
+            'amount' => 29.76,
+        ]);
+        Transaction::query()->create([
+            'type' => 'expense',
+            'datetime' => '2026-07-05 18:00:00',
+            'category_id' => $expenseCategory->id,
+            'amount' => 190.65,
+        ]);
+        Transaction::query()->create([
+            'type' => 'income',
+            'datetime' => '2026-07-05 18:30:00',
+            'category_id' => $salaryCategory->id,
+            'amount' => 1576.60,
+        ]);
+
+        $snapshot = app(CounterService::class)->snapshot(
+            CarbonImmutable::parse('2026-07-05 23:59:00', 'Asia/Kuala_Lumpur')
+        );
+
+        $this->assertSame(941.85, $snapshot['current_month_starting_amount']);
+        $this->assertSame(1385.95, $snapshot['current_month_net_transactions']);
+        $this->assertSame(2327.80, $snapshot['actual_counter']);
+        $this->assertEqualsWithDelta(205.64, $snapshot['current_month_unpaid_accrual'], 0.01);
+        $this->assertEqualsWithDelta(2533.44, $snapshot['expected_counter'], 0.01);
+        $this->assertEqualsWithDelta(2533.44, $snapshot['projected_eotm_tfp'], 0.01);
     }
 }

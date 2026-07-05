@@ -14,6 +14,7 @@ new class extends Component
         'net_transactions' => 0,
         'accrued_salary' => 0,
         'expected_counter' => 0,
+        'current_month_starting_amount' => 0,
         'current_month_net_transactions' => 0,
         'current_month_unpaid_accrual' => 0,
         'projected_eotm_tfp' => 0,
@@ -347,7 +348,7 @@ new class extends Component
                     <div class="counter-equation-card">
                         <div class="counter-equation-item">
                             <div class="text-secondary">Starting Amount</div>
-                            <div class="fw-semibold" id="startingAmountSummary">RM {{ number_format($snapshot['starting_amount'], 2) }}</div>
+                            <div class="fw-semibold" id="startingAmountSummary">RM {{ number_format($snapshot['current_month_starting_amount'] ?? $snapshot['starting_amount'], 2) }}</div>
                         </div>
                     </div>
                     <div class="counter-equation-operator">+</div>

@@ -9,6 +9,7 @@
     let actualValue = Number(snapshot.actual_counter ?? snapshot.counter ?? 0);
     let expectedValue = Number(snapshot.expected_counter ?? snapshot.counter ?? 0);
     let accruedSalaryValue = Number(snapshot.accrued_salary || 0);
+    let currentMonthUnpaidAccrualValue = Number(snapshot.current_month_unpaid_accrual ?? snapshot.accrued_salary ?? 0);
     let incrementPerSecond = Number(snapshot.increment_per_second || 0);
     let notificationRegistration = null;
 
@@ -26,7 +27,7 @@
         }
 
         if (expectedCounterElement) {
-            expectedCounterElement.textContent = `RM ${formatter.format(expectedValue)}`;
+            expectedCounterElement.textContent = `RM ${formatter.format(actualValue + currentMonthUnpaidAccrualValue)}`;
         }
     }
 
@@ -62,6 +63,7 @@
     function tick() {
         expectedValue += incrementPerSecond;
         accruedSalaryValue += incrementPerSecond;
+        currentMonthUnpaidAccrualValue += incrementPerSecond;
         renderCounter();
         renderAccruedSalary();
         renderDynamicTotal();
@@ -85,6 +87,7 @@
         actualValue = Number(data.actual_counter ?? data.counter ?? 0);
         expectedValue = Number(data.expected_counter ?? data.counter ?? 0);
         accruedSalaryValue = Number(data.accrued_salary);
+        currentMonthUnpaidAccrualValue = Number(data.current_month_unpaid_accrual ?? data.accrued_salary ?? 0);
         incrementPerSecond = Number(data.increment_per_second);
         renderCounter();
         renderAccruedSalary();

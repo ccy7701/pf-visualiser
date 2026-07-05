@@ -30,12 +30,12 @@
 
 {{-- Main counter (always visible) ──── --}}
 <div class="counter-fullscreen">
-    <div class="counter-stage" tabindex="0" aria-label="Actual cash on hand. Hover or focus to show expected cash on hand.">
+    <div class="counter-stage" tabindex="0" aria-label="Actual cash on hand. Hover or focus to show actual cash plus this month's unpaid salary accrual.">
         <div class="counter-layer counter-layer-actual">
             <div id="actualCounterValue" class="counter-value">RM {{ number_format($snapshot['actual_counter'] ?? $snapshot['counter'], 2) }}</div>
         </div>
         <div class="counter-layer counter-layer-expected">
-            <div id="expectedCounterValue" class="counter-value">RM {{ number_format($snapshot['expected_counter'] ?? $snapshot['counter'], 2) }}</div>
+            <div id="expectedCounterValue" class="counter-value">RM {{ number_format(($snapshot['actual_counter'] ?? $snapshot['counter']) + ($snapshot['current_month_unpaid_accrual'] ?? $snapshot['accrued_salary'] ?? 0), 2) }}</div>
             <div id="incrementStatus" class="counter-status"></div>
         </div>
     </div>
