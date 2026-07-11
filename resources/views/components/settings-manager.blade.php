@@ -40,7 +40,7 @@ new class extends Component
             <div class="row align-items-center g-2 mb-2">
                 <div class="col-8">
                     <label for="startingAmount" class="form-label" style="font-size:0.85rem; margin-bottom:0;">Starting Amount (RM)</label>
-                    <div class="text-secondary" style="font-size:0.7rem;">The base cash amount used as the starting point of the counter.</div>
+                    <div class="text-secondary" style="font-size:0.7rem;">The base cash amount used as the starting point of the counter from its inception.</div>
                 </div>
                 <div class="col-4">
                     <input id="startingAmount" wire:model="startingAmount" class="form-control form-control-sm text-start" min="0" step="0.01" type="number">

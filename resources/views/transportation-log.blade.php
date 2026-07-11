@@ -305,12 +305,26 @@
         <div class="col-xl-8">
             <div class="card panel-card">
                 <div class="card-header transportation-summary-shell-header">
-                    <div id="transportationSummaryTitle">Summary for {{ now()->format('F Y') }}</div>
+                    <div class="summary-title-actions">
+                        <div id="transportationSummaryTitle">Summary for {{ now()->format('F Y') }}</div>
+                        <button id="transportationSummaryExport" class="summary-export-button" type="button" aria-label="Export current transportation summary" title="Export current selection">
+                            <i class="fa-solid fa-download" aria-hidden="true"></i>
+                            <span>Export</span>
+                        </button>
+                    </div>
                     <div class="summary-period-controls">
                         <div class="summary-period-segmented" id="transportationSummaryPeriod" role="group" aria-label="Summary period">
                             <button type="button" class="summary-period-option active" data-summary-period="monthly">Monthly</button>
                             <button type="button" class="summary-period-option" data-summary-period="weekly">Weekly</button>
                             <button type="button" class="summary-period-option" data-summary-period="since_refuel">Since Last Refuel</button>
+                            <button type="button" class="summary-period-option" data-summary-period="custom">Period</button>
+                        </div>
+                        <div id="transportationSummaryCustomPeriod" class="summary-period-selection" hidden>
+                            <label class="visually-hidden" for="transportationSummaryStartDate">Period start date</label>
+                            <input id="transportationSummaryStartDate" class="form-control form-control-sm" type="date">
+                            <span aria-hidden="true">to</span>
+                            <label class="visually-hidden" for="transportationSummaryEndDate">Period end date</label>
+                            <input id="transportationSummaryEndDate" class="form-control form-control-sm" type="date">
                         </div>
                         <div class="summary-period-shift" id="transportationSummaryShift" role="group" aria-label="Navigate summary period">
                             <button type="button" class="summary-period-shift-btn" data-summary-shift="-1" aria-label="Previous summary period">&lt;</button>

@@ -17,6 +17,8 @@ class SettingsPageTest extends TestCase
         $response->assertSee('General settings');
         $response->assertSee('Workday Calendar');
         $response->assertSee('Salary Schedules');
+        $response->assertDontSee('File Export / Import');
+        $response->assertDontSee('export-import-pane');
         $response->assertSee('Starting Amount (RM)');
         $response->assertSee('id="counterNotificationToggle"', false);
         $response->assertSee('fa-cog', false);

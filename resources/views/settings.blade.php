@@ -56,7 +56,7 @@
                 <div class="card-body settings-content tab-content">
                     <div class="tab-pane fade show active" id="general-pane" role="tabpanel" aria-labelledby="general-tab" tabindex="0">
                         <div class="settings-section-heading">
-                            <h2 class="h5 mb-1">General settings</h2>
+                            <h2 class="h5 mb-1">General</h2>
                             <p class="text-secondary small mb-0">Set the baseline used by your finance counter and manage its browser notification.</p>
                         </div>
                         <livewire:settings-manager />

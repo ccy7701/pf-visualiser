@@ -21,6 +21,8 @@
         summaryMonthDate: new Date(),
         summaryWeekDate: new Date(),
         summaryRefuelOffset: 0,
+        summaryCustomStartDate: null,
+        summaryCustomEndDate: null,
     };
 
     const summaryPeriods = {
@@ -44,6 +46,13 @@
             emptyFuelMessage: 'No refuel logs found.',
             emptyDriveMessage: 'No drive logs in this interval.',
             emptyParkingMessage: 'No parking logs in this interval.',
+        },
+        custom: {
+            spendingLabel: 'Selected Period Fuel Spending',
+            driveCostLabel: 'Selected Period Estimated Drive Cost',
+            emptyFuelMessage: 'No refuel logs in this period.',
+            emptyDriveMessage: 'No drive logs in this period.',
+            emptyParkingMessage: 'No parking logs in this period.',
         },
     };
 
@@ -195,6 +204,30 @@
         return d.toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
     }
 
+    function formatDateInput(dateLike) {
+        const date = new Date(dateLike);
+        if (Number.isNaN(date.getTime())) return '';
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function dateFromInput(value) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return null;
+        const [year, month, day] = value.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null;
+    }
+
+    function initializeCustomPeriod() {
+        if (state.summaryCustomStartDate && state.summaryCustomEndDate) return;
+
+        const start = startOfMonth(new Date());
+        state.summaryCustomStartDate = formatDateInput(start);
+        state.summaryCustomEndDate = formatDateInput(addDays(addMonths(start, 1), -1));
+    }
+
     function clampRefuelOffset(fuelRows) {
         if (!fuelRows.length) {
             state.summaryRefuelOffset = 0;
@@ -221,6 +254,24 @@
                 start: null,
                 end: null,
                 title: 'Summary since last refuel',
+            };
+        }
+
+        if (state.summaryPeriod === 'custom') {
+            const start = dateFromInput(state.summaryCustomStartDate);
+            const endDate = dateFromInput(state.summaryCustomEndDate);
+            if (!start || !endDate || endDate < start) {
+                return {
+                    start: null,
+                    end: null,
+                    title: 'Select a valid period',
+                };
+            }
+
+            return {
+                start,
+                end: addDays(endDate, 1),
+                title: `Summary for ${formatDateOnly(start)} - ${formatDateOnly(endDate)}`,
             };
         }
 
@@ -257,6 +308,16 @@
 
         if (state.summaryPeriod === 'since_refuel') {
             return refuelPeriodScope(fuelRows, state.summaryRefuelOffset + 1);
+        }
+
+        if (state.summaryPeriod === 'custom') {
+            if (!currentScope?.start || !currentScope?.end) return null;
+            const duration = currentScope.end.getTime() - currentScope.start.getTime();
+            const start = new Date(currentScope.start.getTime() - duration);
+            return {
+                start,
+                end: new Date(currentScope.start),
+            };
         }
 
         const start = addMonths(currentScope.start, -1);
@@ -518,6 +579,7 @@
     function comparisonPeriodPhrase() {
         if (state.summaryPeriod === 'weekly') return 'last week';
         if (state.summaryPeriod === 'since_refuel') return 'last interval';
+        if (state.summaryPeriod === 'custom') return 'previous period';
         return 'last month';
     }
 
@@ -798,7 +860,23 @@
         });
     }
 
+    function renderCustomPeriodSelection() {
+        const customPeriod = document.getElementById('transportationSummaryCustomPeriod');
+        const customStartDate = document.getElementById('transportationSummaryStartDate');
+        const customEndDate = document.getElementById('transportationSummaryEndDate');
+        if (!customPeriod) return;
+
+        const isCustom = state.summaryPeriod === 'custom';
+        customPeriod.hidden = !isCustom;
+        if (!isCustom) return;
+
+        initializeCustomPeriod();
+        if (customStartDate) customStartDate.value = state.summaryCustomStartDate;
+        if (customEndDate) customEndDate.value = state.summaryCustomEndDate;
+    }
+
     function renderSelectedSummaryPeriod() {
+        renderCustomPeriodSelection();
         renderRefuelLogsSectionVisibility();
         renderFuelRows();
         renderDriveRows();
@@ -820,6 +898,7 @@
         renderDriveRows();
         renderParkingRows();
         renderDashboard();
+        renderCustomPeriodSelection();
         renderFuelFormMode();
         renderDriveFormMode();
         renderParkingFormMode();
@@ -828,6 +907,8 @@
     function wireSummaryPeriodSelect() {
         const group = document.getElementById('transportationSummaryPeriod');
         const shiftGroup = document.getElementById('transportationSummaryShift');
+        const customStartDate = document.getElementById('transportationSummaryStartDate');
+        const customEndDate = document.getElementById('transportationSummaryEndDate');
 
         const buttons = group ? Array.from(group.querySelectorAll('[data-summary-period]')) : [];
         const renderActivePeriod = () => {
@@ -846,10 +927,22 @@
                 if (state.summaryPeriod === 'since_refuel') {
                     state.summaryRefuelOffset = 0;
                 }
+                if (state.summaryPeriod === 'custom') {
+                    initializeCustomPeriod();
+                }
                 renderActivePeriod();
                 renderSelectedSummaryPeriod();
             });
         }
+
+        const syncCustomPeriod = () => {
+            state.summaryCustomStartDate = customStartDate?.value || null;
+            state.summaryCustomEndDate = customEndDate?.value || null;
+            renderSelectedSummaryPeriod();
+        };
+
+        customStartDate?.addEventListener('change', syncCustomPeriod);
+        customEndDate?.addEventListener('change', syncCustomPeriod);
 
         if (shiftGroup) {
             shiftGroup.addEventListener('click', (event) => {
@@ -863,6 +956,13 @@
                     state.summaryWeekDate = addDays(state.summaryWeekDate, direction * 7);
                 } else if (state.summaryPeriod === 'since_refuel') {
                     state.summaryRefuelOffset = Math.max(0, state.summaryRefuelOffset - direction);
+                } else if (state.summaryPeriod === 'custom') {
+                    const start = dateFromInput(state.summaryCustomStartDate);
+                    const end = dateFromInput(state.summaryCustomEndDate);
+                    if (!start || !end || end < start) return;
+                    const days = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+                    state.summaryCustomStartDate = formatDateInput(addDays(start, direction * days));
+                    state.summaryCustomEndDate = formatDateInput(addDays(end, direction * days));
                 } else {
                     state.summaryMonthDate = addMonths(state.summaryMonthDate, direction);
                 }

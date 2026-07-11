@@ -13,7 +13,32 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
             gap: 1rem;
+        }
+        .summary-title-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 0;
+        }
+        .summary-export-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            flex: 0 0 auto;
+            padding: 0.3rem 0.5rem;
+            border: 1px solid #adb5bd;
+            border-radius: 0.35rem;
+            background: transparent;
+            color: #495057;
+            font-size: 0.82rem;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+        .summary-export-button:hover {
+            background: #f1f3f5;
         }
         .summary-period-controls {
             display: flex;
@@ -21,6 +46,17 @@
             justify-content: flex-end;
             gap: 0.5rem;
             min-width: 0;
+        }
+        .summary-period-selection {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .summary-period-selection[hidden] {
+            display: none;
+        }
+        .summary-period-selection .form-control {
+            width: 8.5rem;
         }
         .summary-period-segmented {
             display: inline-flex;
@@ -94,10 +130,17 @@
             border-right-color: #333;
             color: #e0e0e0;
         }
+        [data-bs-theme="dark"] .summary-export-button {
+            border-color: #555;
+            color: #e0e0e0;
+        }
         [data-bs-theme="dark"] .summary-period-option:hover {
             background: #2a2a2a;
         }
         [data-bs-theme="dark"] .summary-period-shift-btn:hover {
+            background: #2a2a2a;
+        }
+        [data-bs-theme="dark"] .summary-export-button:hover {
             background: #2a2a2a;
         }
         [data-bs-theme="dark"] .summary-period-option.active {
@@ -334,5 +377,15 @@
 
             .summary-period-shift-btn {
                 flex: 1;
+            }
+
+            .summary-period-selection {
+                width: 100%;
+            }
+
+            .summary-period-selection .form-control {
+                flex: 1;
+                min-width: 0;
+                width: auto;
             }
         }
