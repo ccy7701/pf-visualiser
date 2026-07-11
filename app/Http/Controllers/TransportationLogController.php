@@ -7,14 +7,20 @@ use App\Models\TransportationCommuteLog;
 use App\Models\TransportationFuelLog;
 use App\Models\TransportationParkingLog;
 use App\Models\TransportationVehicle;
+use App\Services\TransportationExportPayloadBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class TransportationLogController extends Controller
 {
+    public function __construct(private readonly TransportationExportPayloadBuilder $transportationExportPayloadBuilder)
+    {
+    }
+
     public function index(): View
     {
         return view('transportation-log', [
@@ -25,6 +31,34 @@ class TransportationLogController extends Controller
     public function snapshot(): JsonResponse
     {
         return response()->json($this->snapshotData());
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $validated = $request->validate([
+            'period' => ['required', Rule::in(['monthly', 'weekly', 'since_refuel', 'custom'])],
+            'reference_date' => ['required', 'date_format:Y-m-d'],
+            'custom_start_date' => ['nullable', 'date_format:Y-m-d'],
+            'custom_end_date' => ['nullable', 'date_format:Y-m-d'],
+            'refuel_offset' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        if ($validated['period'] === 'custom') {
+            $request->validate([
+                'custom_start_date' => ['required', 'date_format:Y-m-d'],
+                'custom_end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:custom_start_date'],
+            ]);
+        }
+
+        $payload = $this->transportationExportPayloadBuilder->build($validated);
+        $periodStart = str($payload['period']['starts_at'])->before(' ');
+        $filename = "transportation-log-{$payload['period']['type']}-{$periodStart}.json";
+
+        return response()->streamDownload(
+            static fn () => print json_encode($payload, JSON_PRETTY_PRINT | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR),
+            $filename,
+            ['Content-Type' => 'application/json'],
+        );
     }
 
     public function storeVehicle(Request $request): JsonResponse

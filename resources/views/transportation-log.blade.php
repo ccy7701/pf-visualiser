@@ -412,6 +412,7 @@
 <script>
     window.transportationLogConfig = {
         snapshotEndpoint: '{{ route('transportation-log.snapshot') }}',
+        exportEndpoint: '{{ route('transportation-log.export') }}',
         vehiclesEndpoint: '{{ route('transportation-log.vehicles.store') }}',
         fuelLogsEndpoint: '{{ route('transportation-log.fuel-logs.store') }}',
         fuelLogsBaseUrl: '{{ url('/transportation-log/fuel-logs') }}',

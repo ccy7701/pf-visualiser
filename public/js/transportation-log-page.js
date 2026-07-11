@@ -579,7 +579,6 @@
     function comparisonPeriodPhrase() {
         if (state.summaryPeriod === 'weekly') return 'last week';
         if (state.summaryPeriod === 'since_refuel') return 'last interval';
-        if (state.summaryPeriod === 'custom') return 'previous period';
         return 'last month';
     }
 
@@ -803,7 +802,9 @@
         const period = summaryPeriods[state.summaryPeriod] || summaryPeriods.monthly;
         const fuelRows = deriveFuelRows();
         const scope = selectedPeriodScope(fuelRows);
-        const previousSummary = summaryForScope(previousPeriodScope(fuelRows, scope));
+        const previousSummary = state.summaryPeriod === 'custom'
+            ? null
+            : summaryForScope(previousPeriodScope(fuelRows, scope));
         const summary = selectedPeriodSummary();
         const wrap = document.getElementById('fuelDashboardCards');
         const title = document.getElementById('transportationSummaryTitle');
@@ -970,6 +971,37 @@
                 renderSelectedSummaryPeriod();
             });
         }
+    }
+
+    function wireTransportationExport() {
+        const button = document.getElementById('transportationSummaryExport');
+        if (!button || !config.exportEndpoint) return;
+
+        button.addEventListener('click', () => {
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = config.exportEndpoint;
+
+            const fields = {
+                _token: csrfToken,
+                period: state.summaryPeriod,
+                reference_date: formatDateInput(state.summaryPeriod === 'weekly' ? state.summaryWeekDate : state.summaryMonthDate),
+                custom_start_date: state.summaryCustomStartDate || '',
+                custom_end_date: state.summaryCustomEndDate || '',
+                refuel_offset: String(state.summaryRefuelOffset),
+            };
+
+            Object.entries(fields).forEach(([name, value]) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                input.value = value;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        });
     }
 
     function activateInputTab(tabButtonId) {
@@ -1817,6 +1849,7 @@
         wireFuelPriceModeHelpers();
         wireFuelTotalAutoCalculation();
         wireSummaryPeriodSelect();
+        wireTransportationExport();
         initDefaults();
         initDatePickers();
         initFuelInputTabUI();

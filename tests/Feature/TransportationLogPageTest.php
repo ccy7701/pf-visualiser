@@ -25,4 +25,16 @@ class TransportationLogPageTest extends TestCase
         $response->assertSee('id="transportationSummaryStartDate"', false);
         $response->assertSee('id="transportationSummaryEndDate"', false);
     }
+
+    public function test_transportation_export_downloads_the_selected_period_as_json(): void
+    {
+        $response = $this->post(route('transportation-log.export'), [
+            'period' => 'monthly',
+            'reference_date' => '2026-07-11',
+        ]);
+
+        $response->assertOk();
+        $response->assertDownload('transportation-log-monthly-2026-07-01.json');
+        $this->assertSame('monthly', json_decode($response->streamedContent(), true, 512, JSON_THROW_ON_ERROR)['period']['type']);
+    }
 }

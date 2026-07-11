@@ -17,6 +17,7 @@ Route::get('/settings', [SettingsController::class, 'index'])->name('settings.in
 Route::get('/transaction-log', [TransactionLogPageController::class, 'index'])->name('transaction-log.index');
 Route::get('/transportation-log', [TransportationLogController::class, 'index'])->name('transportation-log.index');
 Route::get('/transportation-log/snapshot', [TransportationLogController::class, 'snapshot'])->name('transportation-log.snapshot');
+Route::post('/transportation-log/export', [TransportationLogController::class, 'export'])->name('transportation-log.export');
 Route::post('/transportation-log/vehicles', [TransportationLogController::class, 'storeVehicle'])->name('transportation-log.vehicles.store');
 Route::put('/transportation-log/vehicles/{vehicle}', [TransportationLogController::class, 'updateVehicle'])->name('transportation-log.vehicles.update');
 Route::delete('/transportation-log/vehicles/{vehicle}', [TransportationLogController::class, 'destroyVehicle'])->name('transportation-log.vehicles.destroy');
