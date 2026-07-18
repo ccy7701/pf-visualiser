@@ -71,6 +71,7 @@ class ProjectionModuleTest extends TestCase
 
         $secondPayload = $payload;
         $secondPayload['scenario']['starting_coh'] = 1000;
+        $secondPayload['scenario']['end_month'] = '2026-09';
 
         $scenarioB = ProjectionScenario::query()->create([
             'name' => 'Scenario B',
@@ -84,6 +85,10 @@ class ProjectionModuleTest extends TestCase
 
         $compareResponse->assertOk();
         $compareResponse->assertJsonCount(2, 'comparisons');
+        $compareResponse->assertJsonCount(3, 'comparisons.0.result.months');
+        $compareResponse->assertJsonCount(4, 'comparisons.1.result.months');
+        $compareResponse->assertJsonPath('comparisons.0.result.months.0.month', '2026-06');
+        $compareResponse->assertJsonPath('comparisons.1.result.months.3.month', '2026-09');
     }
 
     private function payload(int $foodCategoryId, int $transportCategoryId): array

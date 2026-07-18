@@ -389,7 +389,8 @@
             text-overflow: ellipsis;
         }
         #scenarioComparisonModal .modal-dialog {
-            max-width: 980px;
+            width: calc(100% - 2rem);
+            max-width: 1500px;
         }
         #scenarioComparisonModal .modal-content {
             max-height: 82vh;
@@ -430,6 +431,45 @@
         #scenarioComparisonModal thead th:last-child {
             padding-left: 0.85rem;
             padding-right: 0.85rem;
+        }
+
+        .scenario-comparison-table {
+            min-width: 1240px;
+        }
+        .scenario-comparison-table .scenario-comparison-month-col {
+            width: 10%;
+        }
+        .scenario-comparison-table .scenario-comparison-value-col {
+            width: 7.5%;
+        }
+        .scenario-comparison-table thead th {
+            border: 1px solid #d7dde3;
+            text-align: center;
+        }
+        .scenario-comparison-table .scenario-comparison-month {
+            font-weight: 600;
+        }
+        .scenario-comparison-table .comparison-variance {
+            font-weight: 600;
+        }
+        .scenario-comparison-table .comparison-positive {
+            color: #198754;
+        }
+        .scenario-comparison-table .comparison-negative {
+            color: #dc3545;
+        }
+        .scenario-comparison-table .comparison-unmatched-row > td {
+            --bs-table-bg-type: #e2e3e5;
+            background-color: #e2e3e5;
+            color: #6c757d;
+        }
+        [data-bs-theme="dark"] .scenario-comparison-table thead th {
+            border-color: #3f464d;
+        }
+        [data-bs-theme="dark"] .scenario-comparison-table .comparison-unmatched-row > td {
+            --bs-table-bg-type: #343a40;
+            background-color: #343a40;
+            color: #adb5bd;
         }
 
         .negative-value {

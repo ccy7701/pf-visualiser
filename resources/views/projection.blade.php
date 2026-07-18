@@ -23,7 +23,7 @@
 <div class="container-fluid py-4 px-3 px-lg-5">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
-            <h1 class="h3 mb-1">Cumulative COH Projection</h1>
+            <h1 class="h3 mb-1">Projection</h1>
             <p class="text-secondary mb-2">Projection engine to visualise budget plans over time</p>
         </div>
     </div>
@@ -474,30 +474,38 @@
 </div>
 
 <div class="modal fade" id="scenarioComparisonModal" tabindex="-1" aria-labelledby="scenarioComparisonModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="scenarioComparisonModalLabel">Scenario Comparison</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body mx-0 px-0">
+                <div id="comparisonVarianceNote" class="small text-secondary px-3 pb-2">Variance = Scenario B − Scenario A</div>
                 <div class="table-responsive mx-0 px-0">
-                    <table class="table table-striped table-sm mb-0 mx-0 px-0 projection-table">
+                    <table class="table table-striped table-sm mb-0 mx-0 px-0 projection-table scenario-comparison-table">
                         <colgroup>
-                            <col span="6" style="width:16.6667%">
+                            <col class="scenario-comparison-month-col">
+                            <col span="12" class="scenario-comparison-value-col">
                         </colgroup>
                         <thead class="table-light sticky-top">
-                        <tr>
-                            <th>Scenario</th>
-                            <th class="text-end">Final COH</th>
-                            <th class="text-end">Final ELR</th>
-                            <th class="text-end">Final EPF</th>
-                            <th class="text-end">Lowest COH</th>
-                            <th class="text-end">Highest COH</th>
+                        <tr class="text-center">
+                            <th rowspan="2">Month</th>
+                            <th colspan="3">COH</th>
+                            <th colspan="3">ELR</th>
+                            <th colspan="3">EPF</th>
+                            <th colspan="3">TFP</th>
+                        </tr>
+                        <tr class="text-center">
+                            @foreach (['COH', 'ELR', 'EPF', 'TFP'] as $metric)
+                                <th class="comparison-scenario-a-name">Scenario A</th>
+                                <th class="comparison-scenario-b-name">Scenario B</th>
+                                <th>Variance</th>
+                            @endforeach
                         </tr>
                         </thead>
                         <tbody id="comparisonRows">
-                        <tr><td colspan="6" class="text-center text-secondary">No comparison data yet.</td></tr>
+                        <tr><td colspan="13" class="text-center text-secondary">No comparison data yet.</td></tr>
                         </tbody>
                     </table>
                 </div>

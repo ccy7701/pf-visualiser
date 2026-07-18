@@ -1099,21 +1099,89 @@
         const tbody = document.getElementById('comparisonRows');
         tbody.innerHTML = '';
 
-        if (!comparisons || comparisons.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-secondary py-3">No comparison data returned.</td></tr>';
+        if (!comparisons || comparisons.length < 2) {
+            tbody.innerHTML = '<tr><td colspan="13" class="text-center text-secondary py-3">Two scenarios are required for comparison.</td></tr>';
             return;
         }
 
-        comparisons.forEach((item) => {
-            const summary = item.result?.summary || {};
+        const [scenarioA, scenarioB] = comparisons;
+        const scenarioAName = scenarioA.scenario?.name || 'Scenario A';
+        const scenarioBName = scenarioB.scenario?.name || 'Scenario B';
+        const scenarioAMonths = new Map((scenarioA.result?.months || []).map((row) => [row.month, row]));
+        const scenarioBMonths = new Map((scenarioB.result?.months || []).map((row) => [row.month, row]));
+        const allMonths = [...new Set([...scenarioAMonths.keys(), ...scenarioBMonths.keys()])].sort();
+
+        document.querySelectorAll('.comparison-scenario-a-name').forEach((header) => {
+            header.textContent = scenarioAName;
+            header.title = scenarioAName;
+        });
+        document.querySelectorAll('.comparison-scenario-b-name').forEach((header) => {
+            header.textContent = scenarioBName;
+            header.title = scenarioBName;
+        });
+
+        const varianceNote = document.getElementById('comparisonVarianceNote');
+        if (varianceNote) {
+            varianceNote.textContent = `Variance = ${scenarioBName} − ${scenarioAName}`;
+        }
+
+        if (!allMonths.length) {
+            tbody.innerHTML = '<tr><td colspan="13" class="text-center text-secondary py-3">No monthly comparison data returned.</td></tr>';
+            return;
+        }
+
+        function tfpForRow(row) {
+            if (!row) return null;
+
+            return toNumber(row.closing_coh, 0)
+                + toNumber(row.closing_elr, 0)
+                + toNumber(row.closing_epf, 0);
+        }
+
+        function metricValue(row, metric) {
+            if (!row) return null;
+            if (metric === 'tfp') return tfpForRow(row);
+
+            return toNumber(row[`closing_${metric}`], 0);
+        }
+
+        function amountCell(value) {
+            if (value === null) return '<td class="text-end text-secondary">—</td>';
+
+            return `<td class="text-end ${value < 0 ? 'negative-value' : ''}">${money.format(value)}</td>`;
+        }
+
+        function varianceCell(valueA, valueB) {
+            if (valueA === null || valueB === null) {
+                return '<td class="text-end text-secondary">—</td>';
+            }
+
+            const variance = valueB - valueA;
+            const sign = variance > 0 ? '+' : '';
+            const className = variance > 0 ? 'comparison-positive' : (variance < 0 ? 'comparison-negative' : '');
+
+            return `<td class="text-end comparison-variance ${className}">${sign}${money.format(variance)}</td>`;
+        }
+
+        allMonths.forEach((month) => {
+            const rowA = scenarioAMonths.get(month) || null;
+            const rowB = scenarioBMonths.get(month) || null;
+            const isSharedMonth = Boolean(rowA && rowB);
             const tr = document.createElement('tr');
+            const cells = ['coh', 'elr', 'epf', 'tfp'].map((metric) => {
+                const valueA = metricValue(rowA, metric);
+                const valueB = metricValue(rowB, metric);
+
+                return `${amountCell(valueA)}${amountCell(valueB)}${varianceCell(valueA, valueB)}`;
+            }).join('');
+
+            tr.classList.toggle('comparison-unmatched-row', !isSharedMonth);
+            if (!isSharedMonth) {
+                tr.title = 'This month is not included in both scenario ranges.';
+            }
             tr.innerHTML = `
-                <td>${item.scenario.name}</td>
-                <td class="text-end ${summary.final_coh < 0 ? 'negative-value' : ''}">${money.format(summary.final_coh || 0)}</td>
-                <td class="text-end ${summary.final_elr < 0 ? 'negative-value' : ''}">${money.format(summary.final_elr || 0)}</td>
-                <td class="text-end ${summary.final_epf < 0 ? 'negative-value' : ''}">${money.format(summary.final_epf || 0)}</td>
-                <td class="text-end ${summary.lowest_coh < 0 ? 'negative-value' : ''}">${money.format(summary.lowest_coh || 0)}</td>
-                <td class="text-end ${summary.highest_coh < 0 ? 'negative-value' : ''}">${money.format(summary.highest_coh || 0)}</td>
+                <td class="scenario-comparison-month">${escapeHtml(formatMonthLabel(month))}${isSharedMonth ? '' : '<span class="visually-hidden"> — not included in both scenario ranges</span>'}</td>
+                ${cells}
             `;
             tbody.appendChild(tr);
         });
@@ -1298,7 +1366,7 @@
 
         document.getElementById('compareScenarioA').value = '';
         document.getElementById('compareScenarioB').value = '';
-        document.getElementById('comparisonRows').innerHTML = '<tr><td colspan="6" class="text-center text-secondary py-3">No comparison data yet.</td></tr>';
+        document.getElementById('comparisonRows').innerHTML = '<tr><td colspan="13" class="text-center text-secondary py-3">No comparison data yet.</td></tr>';
 
         initMonthPickers();
         normalizeDecimalInputs();
