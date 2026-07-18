@@ -2,6 +2,8 @@
 
 ## Functional Specification
 
+Implementation status: verified against the application on 2026-07-18.
+
 Related high-level project specification: `overview.md`
 
 ---
@@ -104,6 +106,8 @@ The system shall present month-by-month comparison rows:
 * EPF variance
 * TFP (actual vs projected)
 * TFP variance
+
+Each metric value cell displays both the History-backed actual value and the saved projected value; its adjacent variance cell displays the signed delta.
 
 ### 3.6 Read-Only Actuals
 
@@ -259,7 +263,7 @@ Scenario delete behavior:
 
 ### 6.3 Save Actuals Request
 
-Current UI does not call this endpoint. The endpoint may remain available for legacy compatibility.
+Current UI does not call this endpoint. It writes `projection_actual_months` for legacy compatibility, but those rows are not read by the current Variance Analysis UI.
 
 `POST /variance-analysis/scenarios/{scenario}/actuals` request body:
 

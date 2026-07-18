@@ -2,6 +2,8 @@
 
 ## High-Level Project Specification
 
+Implementation status: verified against the application on 2026-07-18.
+
 ---
 
 ## 1. Project Overview
@@ -99,6 +101,8 @@ Key characteristics:
 * result caching through `projection_results_cache`
 * ELR schedule support with optional compound-interest progression
 * cost-of-living handled via saved budget profiles and month-specific budget selection
+* optional SOCSO L24 deduction, effective no earlier than June 2026
+* monthly scenario comparison across COH, ELR, EPF, and TFP, with higher shared-month values highlighted and non-shared months greyed out
 
 ### Module C: Variance Analysis (`variance-analysis`)
 
@@ -110,9 +114,10 @@ Key characteristics:
 
 * scenario-linked monthly plan-vs-actual workflow
 * projected baseline sourced from cached projection results (regenerated when missing)
-* actual month values persisted in `projection_actual_months`
-* per-category expense breakdown support for actual expenses
-* month-level variance display for COH, ELR, and EPF
+* active actual month values sourced read-only from `history_months`
+* `projection_actual_months` retained only for the legacy write endpoint
+* per-category History expense breakdown support for actual expenses
+* month-level variance display for COH, ELR, EPF, and TFP
 
 ### Module D: Transportation Log (`transportation-log`)
 
@@ -124,12 +129,14 @@ Purpose:
 
 Key characteristics:
 
-* submodules: vehicle profile, fuel logs, commute logs
+* submodules: vehicle profile, fuel logs, commute logs, and parking logs
 * deterministic calculations from explicit odometer/fuel/commute inputs
-* backend-connected snapshot + CRUD endpoints for vehicle/refuel/drive logs
-* monthly dashboard for fuel spend, commute estimate, weighted average mileage, and commute distance
+* backend-connected snapshot + CRUD endpoints for vehicle, refuel, drive, and parking logs
+* monthly, weekly, since-refuel, and custom dashboards for fuel spend, drive estimate, weighted average mileage, commute distance, and parking cost
 * row-click edit workflow for refuel and drive logs (populate input tab + edit/delete actions)
 * drive logs support an optional final odometer reading for the end of each trip
+* casual and monthly-pass parking records with billing-month handling
+* JSON export for monthly, weekly, since-refuel, and custom periods
 * 24-hour datetime input/display consistency for refuel and drive records
 * transport-cost tracking aligned with projection budget profile planning assumptions
 
@@ -137,17 +144,18 @@ Key characteristics:
 
 Purpose:
 
-* track historical month-end COH, monthly income, and monthly expenses
+* track historical month-end COH, ELR, EPF, monthly income, and monthly expenses
 * visualise historical trend movement across rolling 12-month windows
 
 Key characteristics:
 
 * explicit month-scoped persistence in `history_months`
-* manual month-end COH entry
+* manual month-end COH, ELR, and EPF entry, with derived TFP
 * income and expense totals derived from category-level monthly breakdowns
 * month picker with automatic month load behavior
 * rolling 12-month navigation with one-month backward/forward window movement
-* two-chart desktop view: standalone COH line chart plus grouped income/expense bar chart
+* selectable visualisations for TFP trend, stacked COH/ELR/EPF, income/expenses, and expense-category composition
+* optional current-month unpaid-accrual overlay on TFP Trend
 
 ---
 
@@ -221,7 +229,7 @@ Key characteristics:
 ## PHASE 10 - Variance Analysis
 
 * Scenario-linked plan-vs-actual workflow
-* Actual month value persistence
+* History-backed actual month loading
 * COH/ELR/EPF variance reporting
 * Expense breakdown support for actuals
 
@@ -230,16 +238,16 @@ Key characteristics:
 * Vehicle profile modeling
 * Fuel log entry and efficiency estimation
 * Commute log entry and cost estimation
-* Monthly fuel dashboard and weighted mileage summary
+* Period-scoped fuel dashboard and weighted mileage summary
 * Row-driven edit/delete workflow for refuel and drive logs
+* Parking-log workflow and period-based JSON export
 
 ## PHASE 12 - History Module
 
 * Historical month persistence model
 * Month-based save/load workflow
 * Category-level income and expense breakdown inputs
-* Rolling 12-month COH trend chart
-* Rolling 12-month income-versus-expense grouped bar chart
+* Rolling 12-month selectable TFP, balance-breakdown, income/expense, and expense-category visualisations
 
 ---
 
@@ -258,7 +266,6 @@ The system is time-sensitive. Follow these rules:
 
 Potential future additions:
 
-* Charts
 * Advanced salary forecasting variants
 * Scenario simulation
 * Savings goals
@@ -266,6 +273,6 @@ Potential future additions:
 * Rich BNPL modelling templates
 * Projected month-end balance
 * Historical Counter playback
-* Export/import
+* General application import and non-transport exports
 * Mobile UX enhancements
 * Investment simulation

@@ -2,6 +2,8 @@
 
 ## Functional Specification
 
+Implementation status: verified against the application on 2026-07-18.
+
 Related high-level project specification: `overview.md`
 
 ---
@@ -13,7 +15,8 @@ Related high-level project specification: `overview.md`
 * refuelling records
 * commute-cost estimation
 * fuel-efficiency monitoring
-* monthly plan-versus-actual transport cost comparison
+* parking-cost tracking
+* period-scoped transport summaries and JSON export
 
 This module supports the personal finance model where transportation can materially vary between saved projection budget profiles.
 
@@ -34,13 +37,15 @@ The following constraints apply:
 
 ## 3. Functional Requirements
 
-### 3.1 Submodules (Initial Scope)
+### 3.1 Submodules
 
 The system shall include:
 
 * vehicle profile
 * fuel logs
 * commute logs
+* parking logs
+* dashboard and export
 
 ### 3.2 Vehicle Profile
 
@@ -51,15 +56,15 @@ The system shall support:
 * preferred consumption unit (`L/100km` or `km/L`)
 * tank capacity (L)
 
-Initial fuel price modes:
+Fuel price modes:
 
 * `budi95`
 * `ron95`
 
-Initial pricing rules:
+Current pricing rules:
 
 * `budi95` default reference price: `RM1.99/L` (manual override allowed)
-* `ron95_non_subsidised` may change weekly (manual override allowed)
+* `ron95` defaults to `RM2.05/L` in the UI and permits manual override
 
 ### 3.3 Fuel Logs
 
@@ -101,7 +106,7 @@ The system shall support commute-focused entry with:
 * distance (km)
 * optional final odometer reading at the end of the drive (km)
 * consumption input value
-* consumption input unit (`L/100km` or `km/L`)
+* mileage in `L/100km`
 * start date and time
 * end date and time
 * average speed (km/h)
@@ -115,7 +120,7 @@ The system shall support row-based edit workflow:
 * action mode switches from `Add` to `Edit` and `Delete` in a two-column layout
 * update and delete persist through backend endpoints
 
-Initial commute type values:
+Commute type values:
 
 * `work_commute`
 * `personal_drive`
@@ -126,24 +131,45 @@ The system shall compute and expose:
 * estimated fuel cost
 * estimated cost per km
 
-### 3.5 Dashboard (Initial)
+### 3.5 Parking Logs
 
-The dashboard shall include:
+The system shall support:
 
-* this month fuel spending (actual)
-* this month estimated commute cost
-* total fuel litres logged (month)
-* average `L/100km` (weighted from monthly drive logs by distance)
-* estimated commute distance (month)
-* fuel budget remaining
-* projected month-end fuel cost
+* casual parking with location, parking date, start hour, end hour, amount, and notes
+* monthly passes with purchase date, billing month, location, amount, and notes
+* row-click edit/delete workflow matching fuel and drive logs
 
-### 3.6 Comparison View
+Casual parking requires an end hour later than its start hour. Monthly passes omit hours; if billing month is omitted, it defaults to the purchase-date month.
 
-The system shall support monthly comparison between:
+For monthly summaries, a monthly pass is scoped by `billing_month`; other periods use its purchase date.
+
+### 3.6 Dashboard
+
+The dashboard supports monthly, weekly, since-refuel, and custom date scopes. It includes:
+
+* scoped fuel spending (actual)
+* scoped estimated drive cost
+* scoped fuel litres refilled
+* average `L/100km` weighted from scoped drive logs by distance
+* scoped drive distance
+* parking cost
+
+The monthly and weekly controls support previous/next navigation. Since-refuel scopes are bounded by refuel events. Custom scopes require inclusive start/end dates.
+
+### 3.7 Comparison and Export
+
+The system shall support current-period comparison between:
 
 * actual fuel spending from fuel logs
 * estimated commute fuel cost from commute logs
+
+The current scoped dashboard can be exported as JSON. The export contains:
+
+* period metadata (`type`, `starts_at`, `ends_before`)
+* headline statistics
+* refuel logs
+* derived drive logs
+* parking logs
 
 ---
 
@@ -169,16 +195,10 @@ cost_per_km = total_amount / distance_since_last_km
 
 Given distance `d_km`, consumption, and price per litre:
 
-When input unit is `L/100km`:
+The current UI stores drive mileage as `L_PER_100KM`:
 
 ```text
 estimated_fuel_litres = (consumption_l_per_100km / 100) * d_km
-```
-
-When input unit is `km/L`:
-
-```text
-estimated_fuel_litres = d_km / consumption_km_per_l
 ```
 
 Then:
@@ -188,42 +208,34 @@ estimated_fuel_cost = estimated_fuel_litres * price_per_litre
 estimated_cost_per_km = estimated_fuel_cost / d_km
 ```
 
-### 4.3 Fuel Spending and Budget Metrics
+### 4.3 Period Summary Metrics
 
-Monthly actual fuel spending:
+Scoped actual fuel spending:
 
 ```text
-actual_fuel_spending_month = sum(fuel_logs.total_amount for month)
+actual_fuel_spending = sum(scoped_fuel_logs.total_amount)
 ```
 
-Monthly estimated commute fuel cost:
+Scoped estimated drive fuel cost:
 
 ```text
-estimated_commute_cost_month = sum(commute_logs.estimated_fuel_cost for month)
+estimated_drive_cost = sum(scoped_commute_logs.estimated_fuel_cost)
 ```
 
-Monthly weighted average mileage from drive logs:
+Distance-weighted average mileage from scoped drive logs:
 
 ```text
-weighted_avg_l_per_100km_month
+weighted_avg_l_per_100km
 =
-sum(commute_logs.consumption_value_l_per_100km * commute_logs.distance_km for month)
+sum(scoped_commute_logs.consumption_value * scoped_commute_logs.distance_km)
 /
-sum(commute_logs.distance_km for month)
+sum(scoped_commute_logs.distance_km)
 ```
 
-Fuel budget remaining:
+Scoped parking cost:
 
 ```text
-fuel_budget_remaining = monthly_transport_budget - actual_fuel_spending_month
-```
-
-Projected month-end fuel cost (simple run-rate baseline):
-
-```text
-projected_month_end_fuel_cost
-=
-(actual_fuel_spending_to_date / elapsed_days_in_month) * total_days_in_month
+parking_cost = sum(scoped_parking_logs.total_amount)
 ```
 
 ---
@@ -275,19 +287,37 @@ Derived fields may be materialized later for query performance but are not requi
 | consumption_value        | decimal(10,4) |
 | consumption_unit         | string(16)    |
 | driven_at                | datetime      |
-| ended_at                 | datetime      |
-| average_speed_kmh        | decimal(10,2) |
-| top_speed_kmh            | decimal(10,2) |
-| drive_time_minutes       | unsigned integer |
+| ended_at                 | nullable datetime |
+| average_speed_kmh        | nullable decimal(10,2) |
+| top_speed_kmh            | nullable decimal(10,2) |
+| drive_time_minutes       | nullable unsigned integer |
 | notes                    | nullable text |
 | created_at               | timestamp     |
 | updated_at               | timestamp     |
+
+### 5.4 transportation_parking_logs
+
+| Field         | Type          |
+| ------------- | ------------- |
+| id            | bigint        |
+| parking_type  | string(32)    |
+| location      | string        |
+| parking_date  | date          |
+| billing_month | nullable date |
+| start_hour    | nullable unsigned tiny integer |
+| end_hour      | nullable unsigned tiny integer |
+| total_amount  | decimal(10,2) |
+| notes         | nullable text |
+| created_at    | timestamp     |
+| updated_at    | timestamp     |
+
+`parking_type` values are `casual` and `monthly_pass`.
 
 ---
 
 ## 6. Backend/Frontend Contract
 
-### 6.1 Endpoints (Initial Contract Target)
+### 6.1 Endpoints
 
 * `GET /transportation-log`
 * `GET /transportation-log/snapshot`
@@ -300,6 +330,10 @@ Derived fields may be materialized later for query performance but are not requi
 * `POST /transportation-log/commute-logs`
 * `PUT /transportation-log/commute-logs/{commuteLog}`
 * `DELETE /transportation-log/commute-logs/{commuteLog}`
+* `POST /transportation-log/parking-logs`
+* `PUT /transportation-log/parking-logs/{parkingLog}`
+* `DELETE /transportation-log/parking-logs/{parkingLog}`
+* `POST /transportation-log/export`
 
 ### 6.2 Validation Baseline
 
@@ -309,17 +343,21 @@ Derived fields may be materialized later for query performance but are not requi
 * price per litre and total amount must be non-negative
 * datetime/date fields must be valid
 * vehicle relation must exist
-* consumption unit must be one of `L/100km`, `km/L`
+* backend consumption unit must be `L_PER_100KM` or `KM_PER_L`; the current drive form submits `L_PER_100KM`
 * drive end datetime must be after drive start datetime
 * top speed must be greater than or equal to average speed
+* parking type must be `casual` or `monthly_pass`
+* casual parking hours must satisfy `0 <= start_hour < end_hour <= 24`
+* export period must be `monthly`, `weekly`, `since_refuel`, or `custom`
+* custom export end date must be on or after its start date
 
 ### 6.3 Response Baseline
 
-API responses should include:
+Snapshot and mutation responses include:
 
 * persisted source fields
-* source arrays for vehicles, refuel logs, and drive logs via snapshot
-* frontend-derived metrics used by UI cards/tables
+* source arrays for vehicles, refuel logs, drive logs, and parking logs via snapshot
+* source records only; the frontend derives metrics used by UI cards and tables
 
 ### 6.4 Input/Display Time Format
 
@@ -328,32 +366,33 @@ API responses should include:
 
 ---
 
-## 7. Service Structure (Laravel)
+## 7. Implementation Structure
 
-### FuelLogService
-
-Responsibilities:
-
-* create/update fuel logs
-* compute fuel-log derived metrics
-* aggregate monthly actual fuel spending
-
-### CommuteLogService
+### TransportationLogController
 
 Responsibilities:
 
-* create/update commute logs
-* compute commute fuel/cost estimates
-* aggregate monthly commute estimates
+* render the page and return the complete snapshot
+* validate and persist vehicle, fuel, drive, and parking CRUD operations
+* derive drive duration from start/end timestamps
+* validate export scope and stream the JSON download
 
-### FuelDashboardService
+### TransportationExportPayloadBuilder
 
 Responsibilities:
 
-* monthly summary cards
-* budget remaining computation
-* month-end projection baseline
-* actual-vs-estimated comparison output
+* resolve monthly, weekly, since-refuel, and custom scopes
+* scope source records consistently
+* derive drive mileage, fuel use, and route cost using the applicable fuel price
+* build headline statistics and normalized export rows
+
+### Frontend dashboard
+
+Responsibilities:
+
+* derive scoped cards and table metrics from snapshot source arrays
+* manage period navigation and row-click editing
+* submit the active export scope
 
 ---
 
@@ -364,16 +403,18 @@ Responsibilities:
 3. System computes per-log distance/efficiency/cost metrics.
 4. User logs routine commute events.
 5. System computes commute fuel and cost estimates.
-6. Dashboard aggregates monthly actuals and estimates.
-7. User reviews actual fuel spending vs estimated commute fuel cost.
+6. Dashboard aggregates actuals and estimates for the selected period.
+7. User logs casual parking or monthly passes.
+8. User reviews a monthly, weekly, since-refuel, or custom period.
+9. User may export that period as JSON.
 
 ---
 
-## 9. Non-Goals (Initial Release)
+## 9. Non-Goals
 
 This module does not:
 
-* track parking/tolls/maintenance as full transport ledger items
+* track tolls or maintenance as full transport ledger items
 * provide full GPS trip history
 * run advanced route analytics or map optimization
-* provide complex BI-grade charting in first release
+* provide complex BI-grade charting

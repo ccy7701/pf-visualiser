@@ -2,6 +2,8 @@
 
 ## Functional Specification
 
+Implementation status: verified against the application on 2026-07-18.
+
 Related high-level project specification: `overview.md`
 
 ---
@@ -354,6 +356,16 @@ Instead:
 Current snapshot endpoint:
 
 * `GET /counter/snapshot`
+
+Related current page and mutation endpoints:
+
+* `GET /counter`
+* `GET /transaction-log`
+* `POST /transactions`
+* `PATCH /transactions/{transaction}`
+* `DELETE /transactions/{transaction}`
+* `PATCH /workdays/{workday}`
+* `GET /settings`
 
 Current response fields:
 

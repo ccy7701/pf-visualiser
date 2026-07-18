@@ -2,6 +2,8 @@
 
 ## Functional Specification
 
+Implementation status: verified against the application on 2026-07-18.
+
 Related high-level project specification: `overview.md`
 
 ---
@@ -10,13 +12,14 @@ Related high-level project specification: `overview.md`
 
 `history` is a historical trend visualisation module for month-by-month personal finance tracking.
 
-The system visualises 12 months of historical values for:
+The system visualises a rolling 12-month window of historical values for:
 
 * Cash on Hand (COH)
 * Emergency Liquidity Reserve (ELR)
 * Employees Provident Fund (EPF)
 * total expenses
 * total income
+* Total Financial Position (TFP), where `TFP = COH + ELR + EPF`
 
 The most recent month is displayed on the right. Moving left goes backward through the prior months, one month per step.
 
@@ -36,7 +39,7 @@ The following constraints apply:
 * monthly inputs shall be saved and reloaded from persistent storage
 * chart values must be reproducible from stored monthly history records
 * Variance Analysis consumes History month records as its actual-values source of truth
-* category definitions are fixed to the current category set below for this module spec
+* category definitions come from the shared category catalog, with the documented category set used as fallback metadata
 
 Expense categories:
 
@@ -90,10 +93,12 @@ The left column shall include:
 
 The right column shall include:
 
-* a COH trend chart
-* an income-versus-expenses chart
+* one active visualisation pane
+* a visualisation selector
+* previous/next rolling-window controls
+* context-specific controls for unpaid accrual and expense-pie value mode
 
-Mobile optimisation is not required for this module.
+The layout collapses responsively at narrower viewport widths.
 
 ### 3.2 Month Window
 
@@ -126,7 +131,7 @@ The system shall support manual expense entry by category for each month.
 
 The available expense categories are listed in section 2.
 
-The expense entry UI shall use a two-column grid of category input cells.
+The expense entry UI shall use a two-column grid of compact category input cells.
 
 Each category input cell contains:
 
@@ -148,7 +153,7 @@ The system shall support manual income entry by category for each month.
 
 The available income categories are listed in section 2.
 
-The income entry UI shall use the same category-cell structure as expenses.
+The income entry UI shall use the same two-column category-cell structure as expenses.
 
 The income section shall include a computed total row at the bottom.
 
@@ -160,17 +165,26 @@ Total Income = sum(income_category_amounts[].amount)
 
 ### 3.6 Visualisation
 
-The system shall render:
+The visualisation selector shall provide:
 
-* a dedicated line graph for month-end COH
-* a dedicated grouped bar graph for total income and total expenses
+* **TFP Trend**: line graph of `COH + ELR + EPF`
+* **COH, ELR and EPF**: stacked balance bars
+* **Income and Expenses**: grouped income/expense bars
+* **Expenses by Category**: pie chart for the selected month
 
 The visualisation shall use the 12-month window described in section 3.2.
 
-COH chart rules:
+TFP Trend rules:
 
 * render straight line segments between points
-* display month label and month-end COH label below the x-axis
+* display month label and Total Balance value below the x-axis
+* optionally overlay the current month's `Total Balance + Accrual` using the Counter snapshot
+* when the unpaid-accrual overlay is active, display its current-month value as an additional green x-axis label
+
+Balance-breakdown rules:
+
+* render COH, ELR, and EPF as one stacked bar per month
+* show total TFP in the tooltip footer
 
 Income and expense chart rules:
 
@@ -178,6 +192,13 @@ Income and expense chart rules:
 * display month label, income value, and expense value below the x-axis
 * income label text should use the same green family as the income bars
 * expense label text should use the same red family as the expense bars
+
+Expense-category rules:
+
+* use the selected month's expense breakdown
+* support `sen/RM` and `RM` value modes
+* show category detail on hover
+* suppress category slices and legend entries when the selected month has no expense total
 
 ### 3.7 Save Inputs
 
@@ -312,23 +333,27 @@ Category selection rules:
 
 ### 6.1 Endpoints
 
-Initial endpoints:
+Current endpoints:
 
 * `GET /history`
 * `GET /history/months`
 * `POST /history/months`
-* `PUT /history/months/{month}` or equivalent month-upsert endpoint
+* `PUT /history/months/{month}`
 
 ### 6.2 History Page Payload
 
-`GET /history` provides the initial page shell and category metadata.
+`GET /history` provides the page shell and category metadata.
 
-Initial payload includes:
+The inline `window.historyConfig` includes:
 
-* `expense_categories[]`
-* `income_categories[]`
-* selected latest month
-* theme-aware desktop page shell for the monthly input and chart workflow
+* `latestMonth`
+* `monthsEndpoint`
+* `saveEndpoint`
+* `counterSnapshotEndpoint`
+* `expenseCategories[]`
+* `incomeCategories[]`
+
+The view also receives the active theme.
 
 ### 6.3 Month Data Response
 
@@ -376,17 +401,18 @@ Save operation rules:
 
 ## 7. UI Notes
 
-The initial UI shall prioritise data entry and trend readability over mobile responsiveness.
+The UI prioritises data entry and trend readability while retaining responsive control wrapping.
 
 Expected desktop view:
 
 * left input column for selected month values
-* right visualisation column for two vertically stacked charts
+* right visualisation column with one selectable chart pane
 * save button in the monthly inputs header
 * selected month display in the monthly inputs header
 * month picker, COH input, ELR input, and EPF input grouped in a balance tab
 * balance, income, and expense inputs separated by tabs
 * category input cells arranged in a two-column grid
-* COH rendered as a standalone line series
-* income and expenses rendered as standalone grouped bar series
+* one selected visualisation displayed at a time
+* TFP rendered as the default line series
+* stacked COH/ELR/EPF, grouped income/expenses, and expense-category pie alternatives
 * previous and next buttons for one-month history window paging

@@ -1,6 +1,8 @@
-# Cumulative Cash on Hand Projection Module (`coh-projection`)
+# Projection Module (`coh-projection`)
 
 ## Functional Specification
+
+Implementation status: verified against the application on 2026-07-18.
 
 Related high-level project specification: `overview.md`
 
@@ -58,6 +60,7 @@ The system shall support:
 * optional schedule-specific employer EPF rate percent
 * schedule note
 * salary paid-in-arrears toggle
+* opt-in SOCSO L24 toggle, effective from June 2026
 
 Employment settings are scenario-local.
 
@@ -151,6 +154,23 @@ The system shall also return metadata fields including:
 * `start_month`
 * `end_month`
 * `months_count`
+* `salary_paid_in_arrears`
+* `socso_l24_enabled`
+* `ptptn_waiver_granted`
+
+### 3.11 Saved Scenarios and Comparison
+
+The Projection page supports saving, updating, loading, deleting, and comparing saved scenarios.
+
+Scenario comparison rules:
+
+* exactly two scenarios are selected by the current UI
+* the table uses the chronological union of both scenarios' month ranges
+* each month is split into COH, ELR, EPF, and TFP groups with one value column per scenario
+* for shared months, the greater value in each pair is highlighted blue
+* hovering or keyboard-focusing the highlighted cell shows the absolute RM advantage
+* ties are neutral
+* months present in only one scenario are greyed out, the missing side is shown as `—`, and no winner is highlighted
 
 ---
 
@@ -291,6 +311,8 @@ SOCSO Act 4 bracket fields:
 
 SOCSO L24 is optional at scenario level through `employment.socso_l24_enabled`. It is deducted only when enabled and the projection month is June 2026 or later. Projection months before June 2026 always expose `socso_l24` as `0`, regardless of the option.
 
+The checkbox and normalized payload default to `false` when the field is absent, including for older saved scenarios.
+
 EIS Act 800 bracket fields:
 
 * `employee`: employee EIS contribution, exposed in projection rows as `eis`
@@ -306,6 +328,8 @@ base_net_salary
 - socso_l24
 - eis
 ```
+
+`socso_l24` is `0` unless `employment.socso_l24_enabled` is true and the projection month is June 2026 or later. This effective-month rule is applied to the payroll month being projected, including when salary schedules use the paid-in-arrears option.
 
 The monthly row field `net_income` includes base net salary plus income-style monthly additions:
 
@@ -419,7 +443,8 @@ Cache is written on save/load/compare paths when needed.
         "note": "Confirmed"
       }
     ],
-    "salary_paid_in_arrears": true
+    "salary_paid_in_arrears": true,
+    "socso_l24_enabled": true
   },
   "cost_of_living": {
     "budgets": {
@@ -477,6 +502,7 @@ Cache is written on save/load/compare paths when needed.
     "end_month": "2026-08",
     "months_count": 3,
     "salary_paid_in_arrears": true,
+    "socso_l24_enabled": true,
     "ptptn_waiver_granted": false
   },
   "summary": {
@@ -519,7 +545,34 @@ Frontend responsibilities:
 * collect projection inputs
 * call projection endpoints
 * render tables/charts
-* perform no financial computations
+* derive display-only TFP sums and pairwise comparison highlights from backend-returned closing balances
+* perform no source projection or statutory-deduction computation
+
+### 6.4 Saved Scenario Contract
+
+`POST /projection/scenarios` accepts the projection payload plus:
+
+* `name` (required)
+* `notes` (optional)
+* `scenario_id` (optional; when present, update that scenario)
+
+Saving persists the full normalized input payload in `projection_scenarios.parameters_json`, computes the result, and updates `projection_results_cache`. The response contains `message`, scenario summary metadata, and `result`.
+
+`GET /projection/scenarios/{scenario}` returns detailed scenario metadata including `parameters_json`, plus the cached or regenerated `result`.
+
+`DELETE /projection/scenarios/{scenario}` deletes the scenario and cascades its cached result and legacy actual rows.
+
+### 6.5 Scenario Comparison Contract
+
+`POST /projection/compare` accepts:
+
+```json
+{
+  "scenario_ids": [1, 2]
+}
+```
+
+The endpoint accepts two to four IDs; the current UI sends two distinct scenario IDs. The response contains `comparisons[]`, where each item contains comparison scenario metadata and its complete projection `result`. The UI performs the month-union and highlight presentation described in section 3.11.
 
 ---
 
@@ -581,6 +634,7 @@ The following decisions are finalized:
 * closing COH may be negative
 * salary arrears means exact one-month lag
 * EPF is based on gross salary only
+* SOCSO L24 is scenario-local, opt-in, and never applies before June 2026
 * budget selection is month-specific via `monthly_budget_selection`
 * budget profiles are arbitrary saved plans keyed by profile ID
 * if a month has no valid selected budget profile, the first saved profile is used
