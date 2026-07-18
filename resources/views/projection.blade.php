@@ -481,31 +481,28 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body mx-0 px-0">
-                <div id="comparisonVarianceNote" class="small text-secondary px-3 pb-2">Variance = Scenario B − Scenario A</div>
                 <div class="table-responsive mx-0 px-0">
                     <table class="table table-striped table-sm mb-0 mx-0 px-0 projection-table scenario-comparison-table">
                         <colgroup>
                             <col class="scenario-comparison-month-col">
-                            <col span="12" class="scenario-comparison-value-col">
+                            <col span="8" class="scenario-comparison-value-col">
                         </colgroup>
                         <thead class="table-light sticky-top">
                         <tr class="text-center">
                             <th rowspan="2">Month</th>
-                            <th colspan="3">COH</th>
-                            <th colspan="3">ELR</th>
-                            <th colspan="3">EPF</th>
-                            <th colspan="3">TFP</th>
+                            @foreach (['COH', 'ELR', 'EPF', 'TFP'] as $metric)
+                                <th class="comparison-group-start" colspan="2">{{ $metric }}</th>
+                            @endforeach
                         </tr>
                         <tr class="text-center">
                             @foreach (['COH', 'ELR', 'EPF', 'TFP'] as $metric)
-                                <th class="comparison-scenario-a-name">Scenario A</th>
+                                <th class="comparison-group-start comparison-scenario-a-name">Scenario A</th>
                                 <th class="comparison-scenario-b-name">Scenario B</th>
-                                <th>Variance</th>
                             @endforeach
                         </tr>
                         </thead>
                         <tbody id="comparisonRows">
-                        <tr><td colspan="13" class="text-center text-secondary">No comparison data yet.</td></tr>
+                        <tr><td colspan="9" class="text-center text-secondary">No comparison data yet.</td></tr>
                         </tbody>
                     </table>
                 </div>

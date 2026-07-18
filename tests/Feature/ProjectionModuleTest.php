@@ -26,6 +26,12 @@ class ProjectionModuleTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        $this->get(route('projection.index'))
+            ->assertOk()
+            ->assertSee('Scenario Comparison')
+            ->assertDontSee('Shared-range final TFP')
+            ->assertDontSee('<th>Advantage</th>', false);
+
         $payload = $this->payload($expenseCategories, $transportCategory);
 
         $runResponse = $this->postJson(route('projection.run'), $payload);

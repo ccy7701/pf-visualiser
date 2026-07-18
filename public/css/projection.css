@@ -434,29 +434,34 @@
         }
 
         .scenario-comparison-table {
-            min-width: 1240px;
+            min-width: 980px;
         }
         .scenario-comparison-table .scenario-comparison-month-col {
-            width: 10%;
+            width: 12%;
         }
         .scenario-comparison-table .scenario-comparison-value-col {
-            width: 7.5%;
+            width: 11%;
         }
         .scenario-comparison-table thead th {
-            border: 1px solid #d7dde3;
+            border: 1px solid #adb5bd;
             text-align: center;
+        }
+        .scenario-comparison-table thead .comparison-group-start,
+        .scenario-comparison-table tbody td:nth-child(2),
+        .scenario-comparison-table tbody td:nth-child(4),
+        .scenario-comparison-table tbody td:nth-child(6),
+        .scenario-comparison-table tbody td:nth-child(8) {
+            border-left: 2px solid #7f8993;
         }
         .scenario-comparison-table .scenario-comparison-month {
             font-weight: 600;
         }
-        .scenario-comparison-table .comparison-variance {
-            font-weight: 600;
-        }
-        .scenario-comparison-table .comparison-positive {
-            color: #198754;
-        }
-        .scenario-comparison-table .comparison-negative {
-            color: #dc3545;
+        .scenario-comparison-table .comparison-leading-cell {
+            --bs-table-bg-type: #dbeafe;
+            background-color: #dbeafe;
+            color: #0a58ca;
+            font-weight: 700;
+            cursor: help;
         }
         .scenario-comparison-table .comparison-unmatched-row > td {
             --bs-table-bg-type: #e2e3e5;
@@ -465,6 +470,18 @@
         }
         [data-bs-theme="dark"] .scenario-comparison-table thead th {
             border-color: #3f464d;
+        }
+        [data-bs-theme="dark"] .scenario-comparison-table thead .comparison-group-start,
+        [data-bs-theme="dark"] .scenario-comparison-table tbody td:nth-child(2),
+        [data-bs-theme="dark"] .scenario-comparison-table tbody td:nth-child(4),
+        [data-bs-theme="dark"] .scenario-comparison-table tbody td:nth-child(6),
+        [data-bs-theme="dark"] .scenario-comparison-table tbody td:nth-child(8) {
+            border-left-color: #59636e;
+        }
+        [data-bs-theme="dark"] .scenario-comparison-table .comparison-leading-cell {
+            --bs-table-bg-type: #12365c;
+            background-color: #12365c;
+            color: #9ecbff;
         }
         [data-bs-theme="dark"] .scenario-comparison-table .comparison-unmatched-row > td {
             --bs-table-bg-type: #343a40;

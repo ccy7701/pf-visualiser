@@ -1097,10 +1097,15 @@
 
     function renderComparison(comparisons) {
         const tbody = document.getElementById('comparisonRows');
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            tbody.querySelectorAll('.comparison-leading-cell').forEach((cell) => {
+                bootstrap.Tooltip.getInstance(cell)?.dispose();
+            });
+        }
         tbody.innerHTML = '';
 
         if (!comparisons || comparisons.length < 2) {
-            tbody.innerHTML = '<tr><td colspan="13" class="text-center text-secondary py-3">Two scenarios are required for comparison.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-secondary py-3">Two scenarios are required for comparison.</td></tr>';
             return;
         }
 
@@ -1120,13 +1125,8 @@
             header.title = scenarioBName;
         });
 
-        const varianceNote = document.getElementById('comparisonVarianceNote');
-        if (varianceNote) {
-            varianceNote.textContent = `Variance = ${scenarioBName} − ${scenarioAName}`;
-        }
-
         if (!allMonths.length) {
-            tbody.innerHTML = '<tr><td colspan="13" class="text-center text-secondary py-3">No monthly comparison data returned.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-secondary py-3">No monthly comparison data returned.</td></tr>';
             return;
         }
 
@@ -1145,22 +1145,18 @@
             return toNumber(row[`closing_${metric}`], 0);
         }
 
-        function amountCell(value) {
+        function amountCell(value, isLeader = false, advantage = 0) {
             if (value === null) return '<td class="text-end text-secondary">—</td>';
 
-            return `<td class="text-end ${value < 0 ? 'negative-value' : ''}">${money.format(value)}</td>`;
-        }
+            const classes = ['text-end'];
+            if (value < 0) classes.push('negative-value');
+            if (isLeader) classes.push('comparison-leading-cell');
 
-        function varianceCell(valueA, valueB) {
-            if (valueA === null || valueB === null) {
-                return '<td class="text-end text-secondary">—</td>';
-            }
+            const tooltipAttributes = isLeader
+                ? ` tabindex="0" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Advantage: RM ${money.format(advantage)}"`
+                : '';
 
-            const variance = valueB - valueA;
-            const sign = variance > 0 ? '+' : '';
-            const className = variance > 0 ? 'comparison-positive' : (variance < 0 ? 'comparison-negative' : '');
-
-            return `<td class="text-end comparison-variance ${className}">${sign}${money.format(variance)}</td>`;
+            return `<td class="${classes.join(' ')}"${tooltipAttributes}>${money.format(value)}</td>`;
         }
 
         allMonths.forEach((month) => {
@@ -1171,8 +1167,13 @@
             const cells = ['coh', 'elr', 'epf', 'tfp'].map((metric) => {
                 const valueA = metricValue(rowA, metric);
                 const valueB = metricValue(rowB, metric);
+                const hasComparison = valueA !== null && valueB !== null;
+                const difference = hasComparison ? valueA - valueB : 0;
+                const advantage = Math.abs(difference);
+                const aIsLeader = hasComparison && difference > 0.005;
+                const bIsLeader = hasComparison && difference < -0.005;
 
-                return `${amountCell(valueA)}${amountCell(valueB)}${varianceCell(valueA, valueB)}`;
+                return `${amountCell(valueA, aIsLeader, advantage)}${amountCell(valueB, bIsLeader, advantage)}`;
             }).join('');
 
             tr.classList.toggle('comparison-unmatched-row', !isSharedMonth);
@@ -1185,6 +1186,12 @@
             `;
             tbody.appendChild(tr);
         });
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            tbody.querySelectorAll('.comparison-leading-cell').forEach((cell) => {
+                bootstrap.Tooltip.getOrCreateInstance(cell, { trigger: 'hover focus' });
+            });
+        }
     }
 
     async function postJson(url, payload) {
@@ -1366,7 +1373,7 @@
 
         document.getElementById('compareScenarioA').value = '';
         document.getElementById('compareScenarioB').value = '';
-        document.getElementById('comparisonRows').innerHTML = '<tr><td colspan="13" class="text-center text-secondary py-3">No comparison data yet.</td></tr>';
+        document.getElementById('comparisonRows').innerHTML = '<tr><td colspan="9" class="text-center text-secondary py-3">No comparison data yet.</td></tr>';
 
         initMonthPickers();
         normalizeDecimalInputs();
