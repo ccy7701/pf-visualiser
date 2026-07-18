@@ -25,7 +25,7 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
             <h1 class="h3 mb-1">History</h1>
-            <p class="text-secondary mb-2">Month-end COH and category-level income/expense trends</p>
+            <p class="text-secondary mb-2">Month-end TFP and category-level income and expense trends</p>
         </div>
     </div>
 

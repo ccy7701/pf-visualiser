@@ -134,6 +134,19 @@
         return { elr: 0, epf: 0 };
     }
 
+    function currentAccruedBalanceForRow(row) {
+        if (!showCurrentAccrualOverlay || !counterSnapshot || row?.month !== currentMonthKey()) {
+            return null;
+        }
+
+        const retirementBalances = latestKnownRetirementBalances(row.month);
+        const currentTotal = row.has_record
+            ? balanceTotalForRow(row)
+            : balanceTotalFromValues(counterSnapshot.actual_counter, retirementBalances.elr, retirementBalances.epf);
+
+        return currentTotal + toNumber(counterSnapshot.accrued_salary, 0);
+    }
+
     function currentBalanceOverlayDatasets() {
         if (!showCurrentAccrualOverlay || !counterSnapshot) return [];
 
@@ -142,11 +155,7 @@
         if (currentIndex < 0) return [];
 
         const currentRow = months[currentIndex];
-        const retirementBalances = latestKnownRetirementBalances(currentMonth);
-        const currentTotal = currentRow?.has_record
-            ? balanceTotalForRow(currentRow)
-            : balanceTotalFromValues(counterSnapshot.actual_counter, retirementBalances.elr, retirementBalances.epf);
-        const accruedCurrentTotal = currentTotal + toNumber(counterSnapshot.accrued_salary, 0);
+        const accruedCurrentTotal = currentAccruedBalanceForRow(currentRow);
 
         const accruedData = months.map(() => null);
         if (currentIndex > 0) {
@@ -418,7 +427,7 @@
             cohChart.destroy();
         }
 
-        const options = applySharedXAxisOptions(baseChartOptions(), 44);
+        const options = applySharedXAxisOptions(baseChartOptions(), showCurrentAccrualOverlay && counterSnapshot ? 60 : 44);
         options.plugins.tooltip.callbacks.label = (context) => `${context.dataset.label}: RM ${money.format(context.parsed.y)}`;
 
         cohChart = new Chart(canvas, {
@@ -442,10 +451,19 @@
             },
             options,
             plugins: [
-                createHistoryAxisLabelPlugin('historyCohLabels', (row) => [
-                    { text: formatMonthLabel(row.month), color: '#212529' },
-                    { text: money.format(balanceTotalForRow(row)), color: '#0d6efd' },
-                ]),
+                createHistoryAxisLabelPlugin('historyCohLabels', (row) => {
+                    const lines = [
+                        { text: formatMonthLabel(row.month), color: '#212529' },
+                        { text: money.format(balanceTotalForRow(row)), color: '#0d6efd' },
+                    ];
+                    const accruedBalance = currentAccruedBalanceForRow(row);
+
+                    if (accruedBalance !== null) {
+                        lines.push({ text: money.format(accruedBalance), color: '#198754' });
+                    }
+
+                    return lines;
+                }),
             ],
         });
     }
