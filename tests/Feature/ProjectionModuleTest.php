@@ -123,6 +123,7 @@ class ProjectionModuleTest extends TestCase
                     ],
                 ],
                 'salary_paid_in_arrears' => true,
+                'socso_l24_enabled' => false,
             ],
             'cost_of_living' => [
                 'budgets' => [

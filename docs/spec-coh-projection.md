@@ -289,6 +289,8 @@ SOCSO Act 4 bracket fields:
 * `employee_INV`: employee invalidity contribution, exposed in projection rows as `socso`
 * `employee_NEI`: employee employment injury contribution, exposed in projection rows as `socso_l24`
 
+SOCSO L24 is optional at scenario level through `employment.socso_l24_enabled`. It is deducted only when enabled and the projection month is June 2026 or later. Projection months before June 2026 always expose `socso_l24` as `0`, regardless of the option.
+
 EIS Act 800 bracket fields:
 
 * `employee`: employee EIS contribution, exposed in projection rows as `eis`

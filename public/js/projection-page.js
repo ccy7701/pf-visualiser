@@ -31,6 +31,7 @@
 
     const money = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const monthLabelFormatter = new Intl.DateTimeFormat('en-MY', { month: 'short', year: 'numeric' });
+    const socsoL24EffectiveMonth = '2026-06';
     let projectionChart = null;
     let currentProjectionMonths = [];
     let statusTimer = null;
@@ -501,18 +502,21 @@
         return null;
     }
 
-    function resolveStatutoryDeductions(grossSalary) {
+    function resolveStatutoryDeductions(grossSalary, month = null) {
         if (grossSalary <= 0) {
             return { employerSocso: 0, socso: 0, socsoL24: 0, eis: 0 };
         }
 
         const socsoBracket = findStatutoryBracket(statutoryBrackets.socso, grossSalary);
         const eisBracket = findStatutoryBracket(statutoryBrackets.eis, grossSalary);
+        const includeSocsoL24 = Boolean(document.getElementById('socsoL24Enabled')?.checked)
+            && Boolean(month)
+            && month >= socsoL24EffectiveMonth;
 
         return {
             employerSocso: toNumber(socsoBracket?.employer_share ?? 0, 0),
             socso: toNumber(socsoBracket?.employee_INV ?? 0, 0),
-            socsoL24: toNumber(socsoBracket?.employee_NEI ?? 0, 0),
+            socsoL24: includeSocsoL24 ? toNumber(socsoBracket?.employee_NEI ?? 0, 0) : 0,
             eis: toNumber(eisBracket?.employee ?? 0, 0),
         };
     }
@@ -654,7 +658,10 @@
         const grossSalary = toNumber(schedule.monthly_gross_salary, 0);
         const employeeEpfRatePercent = toNumber(schedule.employee_epf_rate_percent, 0);
         const employerEpfRatePercent = toNumber(schedule.employer_epf_rate_percent, 0);
-        const statutory = resolveStatutoryDeductions(grossSalary);
+        const scheduleSpansEffectiveMonth = schedule.start_month <= socsoL24EffectiveMonth
+            && (!schedule.end_month || schedule.end_month >= socsoL24EffectiveMonth);
+        const deductionMonth = scheduleSpansEffectiveMonth ? socsoL24EffectiveMonth : schedule.start_month;
+        const statutory = resolveStatutoryDeductions(grossSalary, deductionMonth);
         const employeeEpf = grossSalary * (employeeEpfRatePercent / 100);
         const employerEpf = grossSalary * (employerEpfRatePercent / 100);
 
@@ -665,6 +672,7 @@
             employerSocso: statutory.employerSocso,
             socso: statutory.socso,
             socsoL24: statutory.socsoL24,
+            includesSocsoL24: statutory.socsoL24 > 0,
             eis: statutory.eis,
             net: grossSalary - employeeEpf - statutory.socso - statutory.socsoL24 - statutory.eis,
         };
@@ -690,10 +698,26 @@
         if (deleteBtn) deleteBtn.classList.toggle('d-none', !isEdit);
     }
 
+    function setMonthPickerValue(inputId, value) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        const month = toMonthOrNull(value) || '';
+        if (input._flatpickr) {
+            if (month) {
+                input._flatpickr.setDate(`${month}-01`, false, 'Y-m-d');
+            } else {
+                input._flatpickr.clear(false);
+            }
+        }
+
+        input.value = month;
+    }
+
     function fillSalaryScheduleForm(schedule = null) {
         document.getElementById('salaryScheduleEditingId').value = schedule?.id || '';
-        document.getElementById('salaryScheduleFrom').value = schedule?.start_month || toMonthOrNull(document.getElementById('startMonth').value) || '';
-        document.getElementById('salaryScheduleUntil').value = schedule?.end_month || '';
+        setMonthPickerValue('salaryScheduleFrom', schedule?.start_month || toMonthOrNull(document.getElementById('startMonth').value));
+        setMonthPickerValue('salaryScheduleUntil', schedule?.end_month);
         document.getElementById('salaryScheduleNote').value = schedule?.note || '';
         document.getElementById('salaryScheduleGross').value = formatToTwoDp(schedule?.monthly_gross_salary ?? 0);
         document.getElementById('employeeEpfRatePercent').value = formatToTwoDp(schedule?.employee_epf_rate_percent ?? 11);
@@ -730,7 +754,7 @@
                             </div>
                             <div class="salary-schedule-list-right">
                                 <div><strong>Gross: RM ${money.format(deductions.grossSalary)}</strong></div>
-                                <div>Net: RM ${money.format(deductions.net)}</div>
+                                <div>Net${deductions.includesSocsoL24 ? ' (incl. L24)' : ''}: RM ${money.format(deductions.net)}</div>
                             </div>
                         </div>
                         <div class="salary-schedule-deduction-grid">
@@ -851,6 +875,7 @@
                     note: schedule.note || '',
                 })).filter((schedule) => schedule.start_month),
                 salary_paid_in_arrears: document.getElementById('salaryPaidInArrears').checked,
+                socso_l24_enabled: document.getElementById('socsoL24Enabled').checked,
             },
             cost_of_living: {
                 ...collectCostOfLivingPayload(),
@@ -883,8 +908,8 @@
         const elr = payload.elr || {};
         const epf = payload.epf || {};
 
-        document.getElementById('startMonth').value = scenario.start_month || '';
-        document.getElementById('endMonth').value = scenario.end_month || '';
+        setMonthPickerValue('startMonth', scenario.start_month);
+        setMonthPickerValue('endMonth', scenario.end_month);
         document.getElementById('startingCoh').value = scenario.starting_coh ?? 0;
         document.getElementById('startingElr').value = scenario.starting_elr ?? 0;
         document.getElementById('startingEpf').value = scenario.starting_epf ?? 0;
@@ -895,6 +920,7 @@
         fillSalaryScheduleForm(null);
         renderSalaryScheduleCards();
         document.getElementById('salaryPaidInArrears').checked = Boolean(employment.salary_paid_in_arrears);
+        document.getElementById('socsoL24Enabled').checked = Boolean(employment.socso_l24_enabled);
         updateEmploymentContributionSummary();
 
         const legacyCost = {
@@ -930,7 +956,7 @@
 
         document.getElementById('ptptnWaiverGranted').checked = Boolean(ptptn.waiver_granted);
         document.getElementById('ptptnMonthlyRepayment').value = ptptn.monthly_repayment ?? 0;
-        document.getElementById('ptptnRepaymentStartMonth').value = ptptn.repayment_start_month || '';
+        setMonthPickerValue('ptptnRepaymentStartMonth', ptptn.repayment_start_month);
 
         document.getElementById('employeeEpfRatePercent').value = epf.employee_rate_percent ?? 0;
         document.getElementById('employerEpfRatePercent').value = epf.employer_rate_percent ?? 0;
@@ -1337,8 +1363,8 @@
         document.getElementById('saveName').value = '';
         document.getElementById('saveNotes').value = '';
 
-        document.getElementById('startMonth').value = startMonth || '';
-        document.getElementById('endMonth').value = endMonth || '';
+        setMonthPickerValue('startMonth', startMonth);
+        setMonthPickerValue('endMonth', endMonth);
         document.getElementById('startingCoh').value = '0.00';
         document.getElementById('startingElr').value = '0.00';
         document.getElementById('startingEpf').value = '0.00';
@@ -1349,13 +1375,14 @@
         fillSalaryScheduleForm(null);
         renderSalaryScheduleCards();
         document.getElementById('salaryPaidInArrears').checked = true;
+        document.getElementById('socsoL24Enabled').checked = false;
 
         createCostAllocationRows();
         syncMonthlyBudgetRows();
 
         document.getElementById('ptptnWaiverGranted').checked = false;
         document.getElementById('ptptnMonthlyRepayment').value = '120.00';
-        document.getElementById('ptptnRepaymentStartMonth').value = '';
+        setMonthPickerValue('ptptnRepaymentStartMonth', '');
 
         document.getElementById('employeeEpfRatePercent').value = '11.00';
         document.getElementById('employerEpfRatePercent').value = '13.00';
@@ -1487,6 +1514,7 @@
     document.getElementById('employeeEpfRatePercent').addEventListener('blur', updateEmploymentContributionSummary);
     document.getElementById('employerEpfRatePercent').addEventListener('input', updateEmploymentContributionSummary);
     document.getElementById('employerEpfRatePercent').addEventListener('blur', updateEmploymentContributionSummary);
+    document.getElementById('socsoL24Enabled').addEventListener('change', updateEmploymentContributionSummary);
 
     document.getElementById('runProjectionBtn').addEventListener('click', async () => {
         setStatus('Running projection...');

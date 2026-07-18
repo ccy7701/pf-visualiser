@@ -161,6 +161,7 @@ class ProjectionController extends Controller
             'employment.salary_schedules.*.employer_epf_rate_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'employment.salary_schedules.*.note' => ['nullable', 'string', 'max:200'],
             'employment.salary_paid_in_arrears' => ['required', 'boolean'],
+            'employment.socso_l24_enabled' => ['sometimes', 'boolean'],
 
             'cost_of_living' => ['required', 'array'],
             'cost_of_living.budgets' => ['required', 'array'],

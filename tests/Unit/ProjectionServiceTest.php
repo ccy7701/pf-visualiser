@@ -57,6 +57,7 @@ class ProjectionServiceTest extends TestCase
                     ],
                 ],
                 'salary_paid_in_arrears' => false,
+                'socso_l24_enabled' => true,
             ],
             'cost_of_living' => [
                 'budgets' => [
@@ -99,6 +100,20 @@ class ProjectionServiceTest extends TestCase
             $month['closing_coh'] + $month['closing_elr'] + $month['closing_epf'],
             $result['summary']['final_tfp']
         );
+
+        $payload['scenario']['start_month'] = '2026-05';
+        $payload['scenario']['end_month'] = '2026-06';
+        $payload['employment']['salary_schedules'][0]['start_month'] = '2026-05';
+        $effectiveDateResult = $service->project($payload);
+
+        $this->assertSame(0.0, $effectiveDateResult['months'][0]['socso_l24']);
+        $this->assertSame(7.15, $effectiveDateResult['months'][1]['socso_l24']);
+
+        $payload['employment']['socso_l24_enabled'] = false;
+        $optedOutResult = $service->project($payload);
+
+        $this->assertSame(0.0, $optedOutResult['months'][1]['socso_l24']);
+        $this->assertSame(943.35, $optedOutResult['months'][1]['net_income']);
     }
 
     public function test_projection_respects_locked_rules(): void

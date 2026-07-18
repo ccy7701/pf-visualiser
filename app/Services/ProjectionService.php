@@ -14,6 +14,8 @@ use App\Services\Projection\StatutoryDeductionResolver;
 
 class ProjectionService
 {
+    private const SOCSO_L24_EFFECTIVE_MONTH = '2026-06';
+
     public function __construct(
         private readonly SalaryCalculator $salaryCalculator,
         private readonly ExpenseCalculator $expenseCalculator,
@@ -57,7 +59,9 @@ class ProjectionService
             $employerEpf = $this->epfCalculator->employerContribution($grossIncome, $monthEpf);
             $statutory = $this->statutoryDeductionResolver->resolve($grossIncome);
             $socso = (float) ($statutory['socso'] ?? 0);
-            $socsoL24 = (float) ($statutory['socso_l24'] ?? 0);
+            $socsoL24 = $employment['socso_l24_enabled'] && $month >= self::SOCSO_L24_EFFECTIVE_MONTH
+                ? (float) ($statutory['socso_l24'] ?? 0)
+                : 0.0;
             $eis = (float) ($statutory['eis'] ?? 0);
             $netIncome = $grossIncome - $employeeEpf - $socso - $socsoL24 - $eis;
 
@@ -123,6 +127,7 @@ class ProjectionService
             'end_month' => $scenario['end_month'],
             'months_count' => count($months),
             'salary_paid_in_arrears' => (bool) $employment['salary_paid_in_arrears'],
+            'socso_l24_enabled' => (bool) $employment['socso_l24_enabled'],
             'ptptn_waiver_granted' => (bool) $ptptn['waiver_granted'],
         ];
 
@@ -151,6 +156,7 @@ class ProjectionService
             'employment' => [
                 'salary_schedules' => $this->normalizeSalarySchedules($employment),
                 'salary_paid_in_arrears' => filter_var($employment['salary_paid_in_arrears'] ?? false, FILTER_VALIDATE_BOOL),
+                'socso_l24_enabled' => filter_var($employment['socso_l24_enabled'] ?? false, FILTER_VALIDATE_BOOL),
             ],
             'cost_of_living' => [
                 'budgets' => $this->normalizeCostOfLivingBudgets($costOfLiving),

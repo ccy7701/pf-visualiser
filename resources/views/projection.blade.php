@@ -170,7 +170,12 @@
                                     <div class="col-12">
                                         <div class="form-check mt-1">
                                             <input id="salaryPaidInArrears" class="form-check-input" type="checkbox" checked>
-                                            <label class="form-check-label" for="salaryPaidInArrears">Salary paid in arrears (full-month lag)</label>
+                                            <label class="form-check-label" for="salaryPaidInArrears">Salary paid in arrears the month after</label>
+                                        </div>
+                                        <div class="form-check mt-2">
+                                            <input id="socsoL24Enabled" class="form-check-input" type="checkbox">
+                                            <label class="form-check-label" for="socsoL24Enabled">Include SOCSO L24 from June 2026</label>
+                                            <div class="form-text">Optional deduction. Months before June 2026 are always excluded.</div>
                                         </div>
                                     </div>
                                 </div>
