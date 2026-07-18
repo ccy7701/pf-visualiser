@@ -501,8 +501,8 @@
                         </tr>
                         <tr class="text-center">
                             @foreach (['COH', 'ELR', 'EPF', 'TFP'] as $metric)
-                                <th class="comparison-group-start comparison-scenario-a-name">Scenario A</th>
-                                <th class="comparison-scenario-b-name">Scenario B</th>
+                                <th id="comparison-scenario-a" class="comparison-group-start comparison-scenario-a-name">Scenario A</th>
+                                <th id="comparison-scenario-b" class="comparison-scenario-b-name">Scenario B</th>
                             @endforeach
                         </tr>
                         </thead>

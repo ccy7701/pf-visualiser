@@ -1140,7 +1140,8 @@
         const scenarioBName = scenarioB.scenario?.name || 'Scenario B';
         const scenarioAMonths = new Map((scenarioA.result?.months || []).map((row) => [row.month, row]));
         const scenarioBMonths = new Map((scenarioB.result?.months || []).map((row) => [row.month, row]));
-        const allMonths = [...new Set([...scenarioAMonths.keys(), ...scenarioBMonths.keys()])].sort();
+        const allMonths = [...new Set([...scenarioAMonths.keys(), ...scenarioBMonths.keys()])]
+            .sort((monthA, monthB) => monthA.localeCompare(monthB));
 
         document.querySelectorAll('.comparison-scenario-a-name').forEach((header) => {
             header.textContent = scenarioAName;
