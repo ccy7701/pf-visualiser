@@ -43,6 +43,7 @@ class CategorySeeder extends Seeder
             'Money Pot Share',
             'Cash Assistance',
             'Interest',
+            'EPF',
             'Fees',
             'Other',
         ];
