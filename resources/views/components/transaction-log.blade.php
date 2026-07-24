@@ -22,13 +22,29 @@ new class extends Component
 
     public array $transactions = [];
 
+    public float $periodIncomeTotal = 0.0;
+
+    public float $periodExpenseTotal = 0.0;
+
     public array $categories = [];
 
     public array $allCategories = [];
 
+    public array $selectedCategoryIds = [];
+
+    public bool $categoryFiltersInitialized = false;
+
     public string $recentTransactionPeriod = 'daily';
 
     public string $referenceDate = '';
+
+    public string $customPeriodStartDate = '';
+
+    public string $customPeriodEndDate = '';
+
+    public string $noteSearch = '';
+
+    public bool $showNoteSearch = false;
 
     public string $type = 'income';
 
@@ -56,13 +72,22 @@ new class extends Component
     {
         $this->snapshot = $counterService->snapshot();
 
-        $this->loadTransactions();
-
         $this->allCategories = Category::query()
             ->orderBy('type')
             ->orderBy('name')
             ->get()
             ->toArray();
+
+        $allCategoryIds = array_map(fn ($category) => (string) $category['id'], $this->allCategories);
+
+        if (! $this->categoryFiltersInitialized) {
+            $this->selectedCategoryIds = $allCategoryIds;
+            $this->categoryFiltersInitialized = true;
+        } else {
+            $this->selectedCategoryIds = array_values(array_intersect($this->selectedCategoryIds, $allCategoryIds));
+        }
+
+        $this->loadTransactions();
 
         $this->setInitialDatetime();
         $this->filterCategoriesByType();
@@ -73,18 +98,100 @@ new class extends Component
         $this->loadTransactions();
     }
 
+    public function updatedNoteSearch(): void
+    {
+        $this->loadTransactions();
+    }
+
+    public function updatedSelectedCategoryIds(): void
+    {
+        $validCategoryIds = array_map(fn ($category) => (string) $category['id'], $this->allCategories);
+        $this->selectedCategoryIds = array_values(array_intersect($this->selectedCategoryIds, $validCategoryIds));
+        $this->loadTransactions();
+    }
+
+    public function toggleNoteSearch(): void
+    {
+        if ($this->showNoteSearch) {
+            $this->closeNoteSearch();
+
+            return;
+        }
+
+        $this->showNoteSearch = true;
+    }
+
+    public function closeNoteSearch(): void
+    {
+        $this->showNoteSearch = false;
+    }
+
+    public function resetTransactionFilters(): void
+    {
+        $this->noteSearch = '';
+        $this->selectedCategoryIds = array_map(fn ($category) => (string) $category['id'], $this->allCategories);
+        $this->loadTransactions();
+    }
+
+    public function setCategoryGroupSelection(string $type, bool $selected): void
+    {
+        if (! in_array($type, ['income', 'expense'], true)) {
+            return;
+        }
+
+        $groupCategoryIds = array_map(
+            fn ($category) => (string) $category['id'],
+            array_filter($this->allCategories, fn ($category) => $category['type'] === $type),
+        );
+
+        $this->selectedCategoryIds = $selected
+            ? array_values(array_unique([...$this->selectedCategoryIds, ...$groupCategoryIds]))
+            : array_values(array_diff($this->selectedCategoryIds, $groupCategoryIds));
+
+        $this->loadTransactions();
+    }
+
+    public function hasActiveTransactionFilters(): bool
+    {
+        return trim($this->noteSearch) !== ''
+            || count($this->selectedCategoryIds) !== count($this->allCategories);
+    }
+
     public function setRecentTransactionPeriod(string $period): void
     {
-        if (! in_array($period, ['daily', 'weekly', 'monthly', 'annually'], true)) {
+        if (! in_array($period, ['daily', 'weekly', 'monthly', 'annually', 'custom'], true)) {
             return;
         }
 
         $this->recentTransactionPeriod = $period;
+
+        if ($period === 'custom' && ($this->customPeriodStartDate === '' || $this->customPeriodEndDate === '')) {
+            $referenceDate = $this->selectedReferenceDate();
+            $this->customPeriodStartDate = $referenceDate->copy()->startOfMonth()->toDateString();
+            $this->customPeriodEndDate = $referenceDate->copy()->endOfMonth()->toDateString();
+        }
+
         $this->loadTransactions();
     }
 
     public function shiftRecentTransactionPeriod(int $direction): void
     {
+        if ($this->recentTransactionPeriod === 'custom') {
+            $range = $this->customPeriodRange();
+
+            if ($range === null) {
+                return;
+            }
+
+            [$startDate, $endDate] = $range;
+            $periodLength = $startDate->diffInDays($endDate) + 1;
+            $this->customPeriodStartDate = $startDate->addDays($direction * $periodLength)->toDateString();
+            $this->customPeriodEndDate = $endDate->addDays($direction * $periodLength)->toDateString();
+            $this->loadTransactions();
+
+            return;
+        }
+
         $referenceDate = $this->selectedReferenceDate();
 
         match ($this->recentTransactionPeriod) {
@@ -98,6 +205,20 @@ new class extends Component
         $this->loadTransactions();
     }
 
+    public function updatedCustomPeriodStartDate(): void
+    {
+        if ($this->recentTransactionPeriod === 'custom') {
+            $this->loadTransactions();
+        }
+    }
+
+    public function updatedCustomPeriodEndDate(): void
+    {
+        if ($this->recentTransactionPeriod === 'custom') {
+            $this->loadTransactions();
+        }
+    }
+
     public function loadTransactions(): void
     {
         $referenceDate = $this->selectedReferenceDate();
@@ -105,12 +226,33 @@ new class extends Component
             'weekly' => [$referenceDate->copy()->startOfWeek(), $referenceDate->copy()->endOfWeek()],
             'monthly' => [$referenceDate->copy()->startOfMonth(), $referenceDate->copy()->endOfMonth()],
             'annually' => [$referenceDate->copy()->startOfYear(), $referenceDate->copy()->endOfYear()],
+            'custom' => $this->customPeriodRange(),
             default => [$referenceDate->copy()->startOfDay(), $referenceDate->copy()->endOfDay()],
         };
 
-        $this->transactions = Transaction::query()
-            ->with('category')
+        if ($range === null) {
+            $this->transactions = [];
+            $this->periodIncomeTotal = 0.0;
+            $this->periodExpenseTotal = 0.0;
+
+            return;
+        }
+
+        $noteSearch = trim($this->noteSearch);
+        $filteredQuery = Transaction::query()
             ->whereBetween('datetime', $range)
+            ->when($noteSearch !== '', fn ($query) => $query->whereLike('note', '%'.$noteSearch.'%'))
+            ->whereIn('category_id', $this->selectedCategoryIds);
+
+        $this->periodIncomeTotal = (float) (clone $filteredQuery)
+            ->where('type', 'income')
+            ->sum('amount');
+        $this->periodExpenseTotal = (float) (clone $filteredQuery)
+            ->where('type', 'expense')
+            ->sum('amount');
+
+        $this->transactions = $filteredQuery
+            ->with('category')
             ->latest('datetime')
             ->get()
             ->toArray();
@@ -121,6 +263,36 @@ new class extends Component
         return $this->referenceDate
             ? Carbon::parse($this->referenceDate, 'Asia/Kuala_Lumpur')
             : now('Asia/Kuala_Lumpur');
+    }
+
+    private function customPeriodRange(): ?array
+    {
+        if (
+            ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->customPeriodStartDate)
+            || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->customPeriodEndDate)
+        ) {
+            return null;
+        }
+
+        try {
+            $startDate = Carbon::createFromFormat('!Y-m-d', $this->customPeriodStartDate, 'Asia/Kuala_Lumpur')->startOfDay();
+            $endDate = Carbon::createFromFormat('!Y-m-d', $this->customPeriodEndDate, 'Asia/Kuala_Lumpur')->endOfDay();
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $endDate->lt($startDate) ? null : [$startDate, $endDate];
+    }
+
+    public function customPeriodLabel(): string
+    {
+        $range = $this->customPeriodRange();
+
+        if ($range === null) {
+            return 'a custom period';
+        }
+
+        return $range[0]->format('j/n/Y').' - '.$range[1]->format('j/n/Y');
     }
 
     public function updatedType(): void
@@ -264,6 +436,7 @@ new class extends Component
             'weekly' => $periodReferenceDate->copy()->startOfWeek()->format('j/n').' - '.$periodReferenceDate->copy()->endOfWeek()->format('j/n'),
             'monthly' => $periodReferenceDate->format('F Y'),
             'annually' => 'the year '.$periodReferenceDate->format('Y'),
+            'custom' => $this->customPeriodLabel(),
             default => $periodReferenceDate->format('j/n/Y'),
         };
     @endphp
@@ -381,12 +554,101 @@ new class extends Component
             <div class="card-header transaction-output-header py-2">
                 <span>Transactions over {{ $periodLabel }}</span>
                 <div class="recent-transaction-controls">
+                    <div
+                        class="recent-transaction-search"
+                        @if ($showNoteSearch) wire:click.outside="closeNoteSearch" @endif
+                    >
+                        <button
+                            type="button"
+                            class="recent-transaction-search-btn {{ $this->hasActiveTransactionFilters() ? 'active' : '' }}"
+                            wire:click="toggleNoteSearch"
+                            aria-label="Filter transactions"
+                            aria-expanded="{{ $showNoteSearch ? 'true' : 'false' }}"
+                            aria-controls="transactionFilterPanel"
+                        >
+                            <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                        </button>
+                        @if ($showNoteSearch)
+                            <button
+                                type="button"
+                                class="recent-transaction-filter-backdrop"
+                                wire:click="closeNoteSearch"
+                                aria-label="Close transaction filters"
+                            ></button>
+                            <div class="recent-transaction-search-panel" id="transactionFilterPanel">
+                                <div class="recent-transaction-filter-panel-header">
+                                    <span class="fw-semibold">Filter transactions</span>
+                                    <button type="button" class="btn btn-sm btn-light" wire:click="closeNoteSearch" aria-label="Close transaction filters">
+                                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                                <div>
+                                    <label class="form-label small" for="noteSearch">Note</label>
+                                    <input
+                                        wire:model.live.debounce.300ms="noteSearch"
+                                        class="form-control form-control-sm"
+                                        type="search"
+                                        id="noteSearch"
+                                        placeholder="Search transaction notes"
+                                        autocomplete="off"
+                                        autofocus
+                                    >
+                                </div>
+                                <div class="recent-transaction-category-groups">
+                                    @foreach (['income' => 'Income', 'expense' => 'Expense'] as $categoryType => $categoryTypeLabel)
+                                        <fieldset class="recent-transaction-category-group">
+                                            <legend class="visually-hidden">{{ $categoryTypeLabel }} categories</legend>
+                                            <div class="recent-transaction-category-group-header">
+                                                <span class="recent-transaction-category-group-title">{{ $categoryTypeLabel }} categories</span>
+                                                <span>
+                                                    <button type="button" wire:click="setCategoryGroupSelection('{{ $categoryType }}', true)">All</button>
+                                                    <span aria-hidden="true">/</span>
+                                                    <button type="button" wire:click="setCategoryGroupSelection('{{ $categoryType }}', false)">None</button>
+                                                </span>
+                                            </div>
+                                            <div class="recent-transaction-category-options">
+                                                @foreach ($allCategories as $filterCategory)
+                                                    @if ($filterCategory['type'] === $categoryType)
+                                                        <div class="form-check">
+                                                            <input
+                                                                wire:model.live="selectedCategoryIds"
+                                                                class="form-check-input"
+                                                                type="checkbox"
+                                                                value="{{ $filterCategory['id'] }}"
+                                                                id="transactionCategoryFilter{{ $filterCategory['id'] }}"
+                                                            >
+                                                            <label class="form-check-label" for="transactionCategoryFilter{{ $filterCategory['id'] }}">
+                                                                {{ $filterCategory['name'] }}
+                                                            </label>
+                                                        </div>
+                                                    @endif
+                                                @endforeach
+                                            </div>
+                                        </fieldset>
+                                    @endforeach
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary align-self-start" wire:click="resetTransactionFilters">
+                                    Reset filters
+                                </button>
+                            </div>
+                        @endif
+                    </div>
                     <div class="recent-transaction-filters" role="group" aria-label="Recent transaction period">
                         <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'daily' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('daily')">Daily</button>
                         <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'weekly' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('weekly')">Weekly</button>
                         <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'monthly' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('monthly')">Monthly</button>
                         <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'annually' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('annually')">Annually</button>
+                        <button type="button" class="recent-transaction-filter {{ $recentTransactionPeriod === 'custom' ? 'active' : '' }}" wire:click="setRecentTransactionPeriod('custom')">Period</button>
                     </div>
+                    @if ($recentTransactionPeriod === 'custom')
+                        <div class="recent-transaction-period-selection">
+                            <label class="visually-hidden" for="customPeriodStartDate">Period start date</label>
+                            <input wire:model.live="customPeriodStartDate" id="customPeriodStartDate" class="form-control form-control-sm" type="date">
+                            <span aria-hidden="true">to</span>
+                            <label class="visually-hidden" for="customPeriodEndDate">Period end date</label>
+                            <input wire:model.live="customPeriodEndDate" id="customPeriodEndDate" class="form-control form-control-sm" type="date">
+                        </div>
+                    @endif
                     <div class="recent-transaction-shift" role="group" aria-label="Navigate transaction period">
                         <button type="button" class="recent-transaction-shift-btn" wire:click="shiftRecentTransactionPeriod(-1)" aria-label="Previous period">&lt;</button>
                         <button type="button" class="recent-transaction-shift-btn" wire:click="shiftRecentTransactionPeriod(1)" aria-label="Next period">&gt;</button>
@@ -407,6 +669,15 @@ new class extends Component
                         </tr>
                         </thead>
                         <tbody>
+                            <tr>
+                                <td colspan="3" class="fw-bold text-end px-2" style="background-color: #212529; color: white;">PERIOD TOTAL</td>
+                                <td class="text-end">
+                                    <span class="text-primary">RM {{ number_format($periodIncomeTotal, 2) }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="text-danger">RM {{ number_format($periodExpenseTotal, 2) }}</span>
+                                </td>
+                            </tr>
                         @forelse ($transactions as $tx)
                             <tr
                                 wire:click="edit({{ $tx['id'] }})"
@@ -428,7 +699,9 @@ new class extends Component
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-3">No transactions in this period</td>
+                                <td colspan="5" class="text-center text-muted py-3">
+                                    {{ trim($noteSearch) !== '' ? 'No transactions match this note' : 'No transactions in this period' }}
+                                </td>
                             </tr>
                         @endforelse
                         </tbody>
