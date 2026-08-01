@@ -24,6 +24,10 @@ class TransportationLogPageTest extends TestCase
         $response->assertSee('id="transportationSummaryCustomPeriod"', false);
         $response->assertSee('id="transportationSummaryStartDate"', false);
         $response->assertSee('id="transportationSummaryEndDate"', false);
+        $response->assertSeeInOrder([
+            'Refuel Logs',
+            '<th>Location</th>',
+        ], false);
     }
 
     public function test_transportation_export_downloads_the_selected_period_as_json(): void

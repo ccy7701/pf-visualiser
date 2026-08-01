@@ -701,7 +701,7 @@
         tbody.innerHTML = '';
 
         if (!rows.length) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-secondary py-4">${period.emptyFuelMessage}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-secondary py-4">${period.emptyFuelMessage}</td></tr>`;
             return;
         }
 
@@ -715,6 +715,7 @@
             tr.innerHTML = `
                 <td>${formatDateTime(row.fuelled_at)}</td>
                 <td>${vehicleName(row.vehicle_id)}</td>
+                <td>${row.location || '—'}</td>
                 <td class="text-end">${money.format(toNumber(row.fuel_litres, 0))}</td>
                 <td class="text-end">${money.format(toNumber(row.total_amount, 0))}</td>
             `;

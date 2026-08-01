@@ -344,13 +344,14 @@
                                     <tr>
                                         <th>Date &amp; Time</th>
                                         <th>Vehicle</th>
+                                        <th>Location</th>
                                         <th class="text-end">Litres</th>
                                         <th class="text-end">Total (RM)</th>
                                     </tr>
                                     </thead>
                                     <tbody id="fuelLogRows">
                                     <tr>
-                                        <td colspan="4" class="text-center text-secondary py-4">No refuel logs yet.</td>
+                                        <td colspan="5" class="text-center text-secondary py-4">No refuel logs yet.</td>
                                     </tr>
                                     </tbody>
                                 </table>
