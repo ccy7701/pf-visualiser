@@ -124,7 +124,7 @@
                     <div class="history-visualisation-header">
                         <div class="history-visualisation-title">
                             <div>Visualisation</div>
-                            <div class="small text-secondary fw-normal">Latest: <span id="latestMonthDisplay">-</span></div>
+                            <div class="small text-secondary fw-normal"><span id="historyVisualisationSubtitleLabel">Latest:</span> <span id="latestMonthDisplay">-</span></div>
                         </div>
                         <div class="history-visualisation-actions">
                             <div id="currentAccrualControls" class="form-check history-current-accrual-toggle d-none">

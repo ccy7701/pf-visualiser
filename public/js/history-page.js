@@ -684,6 +684,11 @@
     function setActiveVisualisation(value) {
         activeHistoryVisualisation = ['coh', 'coh-breakdown', 'income-expense', 'expense-category'].includes(value) ? value : 'coh';
 
+        const subtitleLabel = document.getElementById('historyVisualisationSubtitleLabel');
+        if (subtitleLabel) {
+            subtitleLabel.textContent = activeHistoryVisualisation === 'expense-category' ? 'Showing:' : 'Latest:';
+        }
+
         document.getElementById('historyCohPane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'coh');
         document.getElementById('historyCohBreakdownPane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'coh-breakdown');
         document.getElementById('historyIncomeExpensePane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'income-expense');
