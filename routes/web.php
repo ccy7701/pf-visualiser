@@ -3,6 +3,7 @@
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\ProjectionController;
+use App\Http\Controllers\PromptTemplateController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TransportationLogController;
 use App\Http\Controllers\TransactionController;
@@ -14,6 +15,10 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/counter');
 Route::get('/counter', [CounterController::class, 'index'])->name('counter');
 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+Route::post('/settings/prompt-templates', [PromptTemplateController::class, 'store'])->name('settings.prompt-templates.store');
+Route::put('/settings/prompt-templates/{promptTemplate}', [PromptTemplateController::class, 'update'])->name('settings.prompt-templates.update');
+Route::delete('/settings/prompt-templates/{promptTemplate}', [PromptTemplateController::class, 'destroy'])->name('settings.prompt-templates.destroy');
+Route::post('/settings/prompt-templates/compose', [PromptTemplateController::class, 'compose'])->name('settings.prompt-templates.compose');
 Route::get('/transaction-log', [TransactionLogPageController::class, 'index'])->name('transaction-log.index');
 Route::get('/transportation-log', [TransportationLogController::class, 'index'])->name('transportation-log.index');
 Route::get('/transportation-log/snapshot', [TransportationLogController::class, 'snapshot'])->name('transportation-log.snapshot');
