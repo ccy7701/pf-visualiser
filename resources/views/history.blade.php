@@ -131,11 +131,11 @@
                                 <input id="showCurrentAccrualOverlay" class="form-check-input" type="checkbox">
                                 <label class="form-check-label" for="showCurrentAccrualOverlay">Unpaid accrual</label>
                             </div>
-                            <div id="expensePieValueControls" class="btn-group btn-group-sm history-pie-value-toggle d-none" role="group" aria-label="Expense category value display">
-                                <input class="btn-check" type="radio" name="expensePieValueMode" id="expensePieModeSen" value="sen" checked>
-                                <label class="btn btn-outline-secondary" for="expensePieModeSen">sen/RM</label>
-                                <input class="btn-check" type="radio" name="expensePieValueMode" id="expensePieModeRm" value="rm">
-                                <label class="btn btn-outline-secondary" for="expensePieModeRm">RM</label>
+                            <div id="expenseWaffleValueControls" class="btn-group btn-group-sm history-waffle-value-toggle d-none" role="group" aria-label="Expense category value display">
+                                <input class="btn-check" type="radio" name="expenseWaffleValueMode" id="expenseWaffleModeSen" value="sen" checked>
+                                <label class="btn btn-outline-secondary" for="expenseWaffleModeSen">sen/RM</label>
+                                <input class="btn-check" type="radio" name="expenseWaffleValueMode" id="expenseWaffleModeRm" value="rm">
+                                <label class="btn btn-outline-secondary" for="expenseWaffleModeRm">RM</label>
                             </div>
                             <div class="history-visualisation-switcher">
                                 <select id="historyVisualisationSelect" class="form-select form-select-sm history-visualisation-select" aria-label="History visualisation">
@@ -173,8 +173,8 @@
                         </div>
                     </div>
                     <div id="historyExpenseCategoryPane" class="history-visualisation-pane d-none">
-                        <div class="history-chart-wrap history-pie-chart-wrap">
-                            <canvas id="historyExpenseCategoryChart"></canvas>
+                        <div class="history-waffle-chart-wrap">
+                            <div id="historyExpenseCategoryChart" class="history-waffle-chart" role="group" aria-label="Expenses by category"></div>
                         </div>
                     </div>
                 </div>

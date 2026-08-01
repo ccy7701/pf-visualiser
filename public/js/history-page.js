@@ -10,14 +10,13 @@
     let cohChart = null;
     let cohBreakdownChart = null;
     let incomeExpenseChart = null;
-    let expenseCategoryChart = null;
     let months = [];
     let selectedMonth = config.latestMonth || '';
     let activeHistoryVisualisation = 'coh';
     let counterSnapshot = null;
     let showCurrentAccrualOverlay = false;
-    let hoveredExpensePieCategoryId = null;
-    let expensePieValueMode = 'sen';
+    const deselectedExpenseWaffleCategoryIds = new Set();
+    let expenseWaffleValueMode = 'sen';
     let statusTimer = null;
     const categoryPalette = [
         '#0d6efd',
@@ -188,38 +187,59 @@
         return `${Math.round(percentage)} sen/RM`;
     }
 
-    function formatExpensePieValue(value, totalValue) {
-        if (expensePieValueMode === 'rm') {
+    function formatExpenseWaffleValue(value, totalValue) {
+        if (expenseWaffleValueMode === 'rm') {
             return `RM ${money.format(value)}`;
         }
 
         return formatSenPerRinggit(value, totalValue);
     }
 
-    function updateExpensePieHoverState(chart, breakdown, totalExpenses, hoveredCategoryId) {
-        if (!chart || totalExpenses <= 0) {
-            return;
-        }
+    function allocateExpenseWaffleCells(breakdown, totalExpenses) {
+        const allocations = breakdown.map((item, index) => {
+            const exactCells = percentOfTotal(item.amount, totalExpenses);
+            const cellCount = Math.floor(exactCells);
 
-        const dataset = chart.data.datasets[0];
-        dataset.backgroundColor = breakdown.map((item, index) => Number(item.category_id) === hoveredCategoryId
-            ? categoryPalette[index % categoryPalette.length]
-            : `${categoryPalette[index % categoryPalette.length]}b8`);
-        dataset.borderColor = breakdown.map((item) => Number(item.category_id) === hoveredCategoryId ? '#212529' : '#fff');
-        dataset.borderWidth = breakdown.map((item) => Number(item.category_id) === hoveredCategoryId ? 3 : 2);
-
-        const hoveredItemIndex = breakdown.findIndex((item) => Number(item.category_id) === hoveredCategoryId);
-        if (hoveredItemIndex >= 0) {
-            const hoveredItem = breakdown[hoveredItemIndex];
-            chart.$expensePieDetail = {
-                index: hoveredItemIndex,
-                text: `${hoveredItem.name}: ${formatExpensePieValue(hoveredItem.amount, totalExpenses)}`,
+            return {
+                ...item,
+                index,
+                cellCount,
+                remainder: exactCells - cellCount,
             };
+        });
+        let remainingCells = 100 - allocations.reduce((sum, item) => sum + item.cellCount, 0);
+
+        [...allocations]
+            .sort((a, b) => b.remainder - a.remainder || a.index - b.index)
+            .slice(0, remainingCells)
+            .forEach((item) => {
+                allocations[item.index].cellCount += 1;
+            });
+
+        return allocations;
+    }
+
+    function updateExpenseWaffleSelectionState(chart) {
+        if (!chart) return;
+
+        chart.querySelectorAll('[data-expense-category-id]').forEach((element) => {
+            const categoryId = Number(element.dataset.expenseCategoryId);
+            const isSelected = !deselectedExpenseWaffleCategoryIds.has(categoryId);
+            element.classList.toggle('is-deselected', !isSelected);
+            if (element.matches('.history-waffle-legend-item')) {
+                element.setAttribute('aria-pressed', String(isSelected));
+            }
+        });
+    }
+
+    function toggleExpenseWaffleCategory(chart, categoryId) {
+        if (deselectedExpenseWaffleCategoryIds.has(categoryId)) {
+            deselectedExpenseWaffleCategoryIds.delete(categoryId);
         } else {
-            chart.$expensePieDetail = null;
+            deselectedExpenseWaffleCategoryIds.add(categoryId);
         }
 
-        chart.update();
+        updateExpenseWaffleSelectionState(chart);
     }
 
     function renderCategoryInputs(containerId, categories, breakdown, inputClass) {
@@ -582,63 +602,9 @@
         });
     }
 
-    const expensePieHoverDetailPlugin = {
-        id: 'historyExpensePieHoverDetail',
-        afterDraw(chart) {
-            const detail = chart.$expensePieDetail;
-            if (!detail) {
-                return;
-            }
-
-            const { ctx, chartArea } = chart;
-            const arc = chart.getDatasetMeta(0)?.data?.[detail.index];
-            if (!arc) {
-                return;
-            }
-
-            const arcProps = arc.getProps(['x', 'y', 'startAngle', 'endAngle', 'outerRadius'], true);
-            const angle = (arcProps.startAngle + arcProps.endAngle) / 2;
-            const directionX = Math.cos(angle);
-            const directionY = Math.sin(angle);
-            const side = directionX >= 0 ? 1 : -1;
-            const lineColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-secondary-color').trim() || '#6c757d';
-            const textColor = getComputedStyle(document.documentElement).getPropertyValue('--bs-body-color').trim() || '#212529';
-            const textMaxWidth = Math.min(190, Math.max(120, chartArea.width * 0.42));
-            const startX = arcProps.x + (directionX * (arcProps.outerRadius + 4));
-            const startY = arcProps.y + (directionY * (arcProps.outerRadius + 4));
-            const elbowX = arcProps.x + (directionX * (arcProps.outerRadius + 26));
-            const elbowY = arcProps.y + (directionY * (arcProps.outerRadius + 26));
-            const textX = side > 0
-                ? Math.min(chartArea.right - textMaxWidth - 8, elbowX + 62)
-                : Math.max(chartArea.left + textMaxWidth + 8, elbowX - 62);
-            const textY = elbowY;
-            const lineEndX = side > 0 ? textX - 8 : textX + 8;
-
-            ctx.save();
-            ctx.strokeStyle = lineColor;
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(startX, startY);
-            ctx.lineTo(elbowX, elbowY);
-            ctx.lineTo(lineEndX, textY);
-            ctx.stroke();
-
-            ctx.textAlign = side > 0 ? 'left' : 'right';
-            ctx.textBaseline = 'middle';
-            ctx.font = '700 13px system-ui, sans-serif';
-            ctx.fillStyle = textColor;
-            ctx.fillText(detail.text, textX, textY, textMaxWidth);
-            ctx.restore();
-        },
-    };
-
     function renderExpenseCategoryChart() {
-        const canvas = document.getElementById('historyExpenseCategoryChart');
-        if (!canvas || typeof Chart === 'undefined') return;
-
-        if (expenseCategoryChart) {
-            expenseCategoryChart.destroy();
-        }
+        const chart = document.getElementById('historyExpenseCategoryChart');
+        if (!chart) return;
 
         const row = findMonth(selectedMonth);
         const currentInputMonth = document.getElementById('historyMonth')?.value || selectedMonth;
@@ -647,89 +613,72 @@
             ? collectBreakdown('history-expense-input')
             : row?.expense_breakdown || [];
         const breakdown = normalizeBreakdown(sourceBreakdown, expenseCategories)
-            .filter((item) => toNumber(item.amount, 0) > 0);
+            .filter((item) => toNumber(item.amount, 0) > 0)
+            .sort((a, b) => toNumber(b.amount, 0) - toNumber(a.amount, 0));
         const totalExpenses = total(breakdown);
-        if (!breakdown.some((item) => Number(item.category_id) === hoveredExpensePieCategoryId)) {
-            hoveredExpensePieCategoryId = null;
+        chart.replaceChildren();
+
+        if (totalExpenses <= 0) {
+            const emptyState = document.createElement('div');
+            emptyState.className = 'history-waffle-empty';
+            emptyState.textContent = 'No expense data for this month.';
+            chart.appendChild(emptyState);
+            chart.setAttribute('aria-label', 'Expenses by category: no expense data for this month');
+            return;
         }
 
-        expenseCategoryChart = new Chart(canvas, {
-            type: 'pie',
-            data: {
-                labels: totalExpenses > 0 ? breakdown.map((item) => item.name) : [],
-                datasets: [
-                    {
-                        label: 'Expenses',
-                        data: totalExpenses > 0 ? breakdown.map((item) => item.amount) : [],
-                        backgroundColor: totalExpenses > 0
-                            ? breakdown.map((item, index) => Number(item.category_id) === hoveredExpensePieCategoryId
-                                ? categoryPalette[index % categoryPalette.length]
-                                : `${categoryPalette[index % categoryPalette.length]}b8`)
-                            : [],
-                        borderColor: totalExpenses > 0
-                            ? breakdown.map((item) => Number(item.category_id) === hoveredExpensePieCategoryId ? '#212529' : '#fff')
-                            : [],
-                        borderWidth: totalExpenses > 0
-                            ? breakdown.map((item) => Number(item.category_id) === hoveredExpensePieCategoryId ? 3 : 2)
-                            : [],
-                        hoverOffset: 0,
-                        offset: 0,
-                        radius: '68%',
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: {
-                    duration: 180,
-                    easing: 'easeOutQuart',
-                },
-                transitions: {
-                    active: {
-                        animation: {
-                            duration: 180,
-                        },
-                    },
-                },
-                layout: {
-                    padding: {
-                        left: 42,
-                        right: 52,
-                        top: 18,
-                        bottom: 18,
-                    },
-                },
-                onHover: (event, elements) => {
-                    const nextHoveredCategoryId = elements.length && totalExpenses > 0
-                        ? Number(breakdown[elements[0].index]?.category_id) || null
-                        : null;
+        const allocations = allocateExpenseWaffleCells(breakdown, totalExpenses);
+        const grid = document.createElement('div');
+        const legend = document.createElement('div');
+        grid.className = 'history-waffle-grid';
+        grid.setAttribute('aria-hidden', 'true');
+        legend.className = 'history-waffle-legend';
 
-                    event.native.target.style.cursor = nextHoveredCategoryId ? 'pointer' : 'default';
-                    if (nextHoveredCategoryId !== hoveredExpensePieCategoryId) {
-                        hoveredExpensePieCategoryId = nextHoveredCategoryId;
-                        updateExpensePieHoverState(expenseCategoryChart, breakdown, totalExpenses, hoveredExpensePieCategoryId);
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        display: totalExpenses > 0,
-                        labels: {
-                            boxWidth: 14,
-                            boxHeight: 14,
-                            padding: 14,
-                        },
-                    },
-                    tooltip: {
-                        enabled: false,
-                    },
-                },
-            },
-            plugins: [expensePieHoverDetailPlugin],
+        let cellIndex = 0;
+        allocations.forEach((item) => {
+            const categoryId = Number(item.category_id);
+            const color = categoryPalette[item.index % categoryPalette.length];
+            const formattedValue = formatExpenseWaffleValue(item.amount, totalExpenses);
+
+            for (let index = 0; index < item.cellCount; index += 1) {
+                const cell = document.createElement('span');
+                cell.className = 'history-waffle-cell';
+                cell.dataset.expenseCategoryId = String(categoryId);
+                cell.style.backgroundColor = color;
+                cell.style.gridColumn = String((cellIndex % 10) + 1);
+                cell.style.gridRow = String(Math.floor(cellIndex / 10) + 1);
+                cell.title = `${item.name}: ${formattedValue}`;
+                cell.addEventListener('click', () => {
+                    toggleExpenseWaffleCategory(chart, categoryId);
+                });
+                cellIndex += 1;
+                grid.appendChild(cell);
+            }
+
+            const legendItem = document.createElement('button');
+            const swatch = document.createElement('span');
+            const name = document.createElement('span');
+            const value = document.createElement('span');
+            legendItem.type = 'button';
+            legendItem.className = 'history-waffle-legend-item';
+            legendItem.dataset.expenseCategoryId = String(categoryId);
+            legendItem.setAttribute('aria-label', `${item.name}: ${formattedValue}, ${item.cellCount} of 100 squares`);
+            swatch.className = 'history-waffle-swatch';
+            swatch.style.backgroundColor = color;
+            name.className = 'history-waffle-legend-name';
+            name.textContent = item.name;
+            value.className = 'history-waffle-legend-value';
+            value.textContent = formattedValue;
+            legendItem.append(swatch, name, value);
+            legendItem.addEventListener('click', () => {
+                toggleExpenseWaffleCategory(chart, categoryId);
+            });
+            legend.appendChild(legendItem);
         });
 
-        updateExpensePieHoverState(expenseCategoryChart, breakdown, totalExpenses, hoveredExpensePieCategoryId);
+        chart.setAttribute('aria-label', `Expenses by category. ${allocations.map((item) => `${item.name}: ${item.cellCount} of 100 squares`).join(', ')}`);
+        chart.append(grid, legend);
+        updateExpenseWaffleSelectionState(chart);
     }
 
     function setActiveVisualisation(value) {
@@ -740,7 +689,7 @@
         document.getElementById('historyIncomeExpensePane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'income-expense');
         document.getElementById('historyExpenseCategoryPane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'expense-category');
         document.getElementById('currentAccrualControls')?.classList.toggle('d-none', activeHistoryVisualisation !== 'coh');
-        document.getElementById('expensePieValueControls')?.classList.toggle('d-none', activeHistoryVisualisation !== 'expense-category');
+        document.getElementById('expenseWaffleValueControls')?.classList.toggle('d-none', activeHistoryVisualisation !== 'expense-category');
     }
 
     function renderActiveVisualisation() {
@@ -939,9 +888,9 @@
             saveMonth().catch((error) => setStatus(error.message, true));
         });
 
-        document.querySelectorAll('input[name="expensePieValueMode"]').forEach((input) => {
+        document.querySelectorAll('input[name="expenseWaffleValueMode"]').forEach((input) => {
             input.addEventListener('change', (event) => {
-                expensePieValueMode = event.target.value === 'rm' ? 'rm' : 'sen';
+                expenseWaffleValueMode = event.target.value === 'rm' ? 'rm' : 'sen';
                 if (activeHistoryVisualisation === 'expense-category') {
                     renderExpenseCategoryChart();
                 }

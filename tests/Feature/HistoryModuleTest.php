@@ -15,7 +15,10 @@ class HistoryModuleTest extends TestCase
         $food = Category::query()->create(['name' => 'Food', 'type' => 'expense']);
         $salary = Category::query()->create(['name' => 'Salary', 'type' => 'income']);
 
-        $this->get(route('history.index'))->assertOk();
+        $this->get(route('history.index'))
+            ->assertOk()
+            ->assertSee('class="history-waffle-chart"', false)
+            ->assertDontSee('<canvas id="historyExpenseCategoryChart"', false);
 
         $windowResponse = $this->getJson(route('history.months', ['latest_month' => '2026-06']));
         $windowResponse->assertOk();
