@@ -2,7 +2,7 @@
 
 ## Functional Specification
 
-Implementation status: verified against the application on 2026-07-18.
+Implementation status: verified against the application on 2026-08-01.
 
 Related high-level project specification: `overview.md`
 
@@ -96,7 +96,7 @@ The right column shall include:
 * one active visualisation pane
 * a visualisation selector
 * previous/next rolling-window controls
-* context-specific controls for unpaid accrual and expense-pie value mode
+* context-specific controls for unpaid accrual and expense-category value mode
 
 The layout collapses responsively at narrower viewport widths.
 
@@ -170,7 +170,7 @@ The visualisation selector shall provide:
 * **TFP Trend**: line graph of `COH + ELR + EPF`
 * **COH, ELR and EPF**: stacked balance bars
 * **Income and Expenses**: grouped income/expense bars
-* **Expenses by Category**: pie chart for the selected month
+* **Expenses by Category**: 10x10 square waffle chart for the selected month
 
 The visualisation shall use the 12-month window described in section 3.2.
 
@@ -197,8 +197,15 @@ Expense-category rules:
 
 * use the selected month's expense breakdown
 * support `sen/RM` and `RM` value modes
-* show category detail on hover
-* suppress category slices and legend entries when the selected month has no expense total
+* allocate exactly 100 cells using largest-remainder rounding
+* sort categories by amount descending in both the waffle grid and legend
+* fill cells from the top-left, proceeding from left to right and top to bottom
+* render the complete legend without an internal scrollbar
+* start with every category selected
+* toggle a category's persistent selected/deselected state when any matching cell or legend entry is clicked
+* fade deselected cells and legend entries without removing them from the 100-cell allocation
+* suppress category cells and legend entries when the selected month has no expense total
+* display `Showing:` rather than `Latest:` in the visualisation subtitle while this view is active
 
 ### 3.7 Save Inputs
 
@@ -414,5 +421,5 @@ Expected desktop view:
 * category input cells arranged in a two-column grid
 * one selected visualisation displayed at a time
 * TFP rendered as the default line series
-* stacked COH/ELR/EPF, grouped income/expenses, and expense-category pie alternatives
+* stacked COH/ELR/EPF, grouped income/expenses, and expense-category waffle alternatives
 * previous and next buttons for one-month history window paging

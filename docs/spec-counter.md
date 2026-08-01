@@ -2,7 +2,7 @@
 
 ## Functional Specification
 
-Implementation status: verified against the application on 2026-07-18.
+Implementation status: verified against the application on 2026-08-01.
 
 Related high-level project specification: `overview.md`
 
@@ -66,7 +66,7 @@ The hover/focus transition is presentation only; it does not change computation 
 
 ### 3.2 Counter System Notification
 
-The Counter Settings panel shall provide an opt-in browser system notification.
+The General section of the Settings page shall provide an opt-in browser system notification.
 
 When enabled and `increment_per_second > 0`:
 
@@ -123,11 +123,11 @@ The table header shall describe the active range:
 
 Previous (`<`) and next (`>`) controls shall shift the active range backward or forward by one selected unit.
 
-### 3.6 Counter Management Popup
+### 3.6 Settings Page
 
-Workday Calendar, Salary Schedules, and Settings share the Counter management popup. At desktop widths (`>= 992px`), this popup shall use 50% of the viewport width. Existing responsive sizing remains in effect below the desktop breakpoint.
+Counter configuration is maintained on a dedicated Settings page. Its navigation provides General, Workday Calendar, Salary Schedules, and Prompt Templates sections.
 
-The Settings panel shall:
+The General section shall:
 
 * describe Starting Amount as the base cash amount used to calculate the Counter
 * expose the Counter notification enable/disable control

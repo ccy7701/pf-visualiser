@@ -2,7 +2,7 @@
 
 ## Functional Specification
 
-Implementation status: verified against the application on 2026-07-18.
+Implementation status: verified against the application on 2026-08-01.
 
 Related high-level project specification: `overview.md`
 
@@ -87,6 +87,7 @@ The system shall support row-based edit workflow:
 * the refuel input subsection becomes the active input tab
 * action mode switches from `Add` to `Edit` and `Delete` in a two-column layout
 * update and delete persist through backend endpoints
+* the refuel log table displays the recorded location, or an em dash when location is absent
 
 The system shall compute and expose:
 

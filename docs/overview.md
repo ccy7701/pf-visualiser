@@ -2,7 +2,7 @@
 
 ## High-Level Project Specification
 
-Implementation status: verified against the application on 2026-07-18.
+Implementation status: verified against the application on 2026-08-01.
 
 ---
 
@@ -25,6 +25,7 @@ The system is intentionally:
 * deterministic in computation
 * auditable in data changes
 * backend-calculation first (frontend for input/output rendering)
+* local-only for prompt preparation; no LLM or AI API integration
 
 ---
 
@@ -86,7 +87,7 @@ Key characteristics:
 * workday status model supports `workday`, `absence`, `holiday`
 * snapshot API returns `counter`, `increment_per_second`, and related breakdown fields
 * optional system notification displays incrementing Expected COH and refreshes every 60 seconds while the Counter page remains open
-* shared Workday Calendar, Salary Schedules, and Settings popup uses 50% viewport width on desktop
+* dedicated Settings page hosts General settings, Workday Calendar, Salary Schedules, and Prompt Templates
 
 ### Module B: COH Projection (`coh-projection`)
 
@@ -156,6 +157,27 @@ Key characteristics:
 * rolling 12-month navigation with one-month backward/forward window movement
 * selectable visualisations for TFP trend, stacked COH/ELR/EPF, income/expenses, and expense-category composition
 * optional current-month unpaid-accrual overlay on TFP Trend
+
+### Module F: Prompt Templates (`settings/prompt-templates`)
+
+Purpose:
+
+* save reusable instructions for weekly, monthly, or custom financial reviews
+* combine those instructions with deterministic transaction and balance summaries
+* produce editable, copy-ready plain text for an external LLM without sending application data externally
+
+Key characteristics:
+
+* template create/update/delete workflow under Settings
+* seeded weekly financial-review and month-end report templates
+* readable `{{placeholder}}` substitution for periods, positions, transaction totals, category breakdowns, context, and questions
+* inclusive weekly, monthly, and custom date ranges
+* expense and income category groups sorted by total amount descending
+* transaction notes included as category detail
+* optional COH, ELR, and EPF overrides, with derived LFP and TFP
+* month-end comparison against the immediately preceding History month when available
+* generated preview and browser clipboard copy action
+* no network call or AI service integration
 
 ---
 
@@ -248,6 +270,14 @@ Key characteristics:
 * Month-based save/load workflow
 * Category-level income and expense breakdown inputs
 * Rolling 12-month selectable TFP, balance-breakdown, income/expense, and expense-category visualisations
+
+## PHASE 13 - Prompt Templates
+
+* Prompt-template persistence and CRUD under Settings
+* Weekly, monthly, and custom period presets
+* Transaction/category/note summary composition
+* Optional position overrides and History-backed month comparison
+* Local preview and clipboard workflow with no AI integration
 
 ---
 
