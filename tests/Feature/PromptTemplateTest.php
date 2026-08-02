@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\HistoryMonth;
 use App\Models\PromptTemplate;
+use App\Models\Setting;
 use App\Models\Subcategory;
 use App\Models\Transaction;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -93,9 +95,11 @@ class PromptTemplateTest extends TestCase
         $this->assertStringContainsString('COH at RM779.68', $prompt);
         $this->assertStringContainsString('LFP at RM1415.10', $prompt);
         $this->assertStringContainsString('TFP at RM1847.10', $prompt);
-        $this->assertStringContainsString('-RM52.70 from Food, of which', $prompt);
-        $this->assertStringContainsString("\t-RM22.70 — Lunch", $prompt);
-        $this->assertStringContainsString('+RM1576.60 from Salary — July salary', $prompt);
+        $this->assertStringContainsString('-RM52.70 from Food', $prompt);
+        $this->assertStringContainsString('+RM1576.60 from Salary', $prompt);
+        $this->assertStringNotContainsString('Lunch', $prompt);
+        $this->assertStringNotContainsString('Dinner', $prompt);
+        $this->assertStringNotContainsString('July salary', $prompt);
         $this->assertStringContainsString('I did not attend the event.', $prompt);
         $this->assertStringContainsString('How are things looking?', $prompt);
     }
@@ -144,8 +148,16 @@ class PromptTemplateTest extends TestCase
             'datetime' => '2026-07-21 12:00:00',
             'category_id' => $transportation->id,
             'subcategory_id' => $fuel->id,
-            'note' => 'Full tank',
-            'amount' => 53.10,
+            'note' => 'First fuel purchase',
+            'amount' => 30.00,
+        ]);
+        Transaction::query()->create([
+            'type' => 'expense',
+            'datetime' => '2026-07-22 08:00:00',
+            'category_id' => $transportation->id,
+            'subcategory_id' => $fuel->id,
+            'note' => 'Second fuel purchase',
+            'amount' => 23.10,
         ]);
         Transaction::query()->create([
             'type' => 'expense',
@@ -167,7 +179,45 @@ class PromptTemplateTest extends TestCase
         $response->assertOk();
         $prompt = $response->json('prompt');
         $this->assertStringContainsString('-RM56.28 from Transportation, of which', $prompt);
-        $this->assertStringContainsString("\t-RM53.10 from Fuel — Full tank", $prompt);
-        $this->assertStringContainsString("\t-RM3.18 from Parking — City parking", $prompt);
+        $this->assertStringContainsString("\t-RM53.10 from Fuel", $prompt);
+        $this->assertStringContainsString("\t-RM3.18 from Parking", $prompt);
+        $this->assertStringNotContainsString('First fuel purchase', $prompt);
+        $this->assertStringNotContainsString('Second fuel purchase', $prompt);
+        $this->assertStringNotContainsString('City parking', $prompt);
+        $this->assertStringNotContainsString("\t\t", $prompt);
+    }
+
+    public function test_current_week_positions_use_history_coh_instead_of_the_counter(): void
+    {
+        Carbon::setTestNow('2026-08-02 10:00:00');
+
+        try {
+            Setting::setValue('starting_amount', 9999.99);
+            HistoryMonth::query()->create([
+                'month' => '2026-08',
+                'closing_coh' => 565.33,
+                'closing_elr' => 700.11,
+                'closing_epf' => 432,
+            ]);
+            $template = PromptTemplate::query()->where('period_type', 'weekly')->firstOrFail();
+
+            $response = $this->postJson(route('prompt-studio.compose'), [
+                'template_id' => $template->id,
+                'start_date' => '2026-07-27',
+                'end_date' => '2026-08-02',
+                'period_status' => 'ongoing',
+            ]);
+
+            $response->assertOk();
+            $prompt = $response->json('prompt');
+            $this->assertStringContainsString('COH at RM565.33', $prompt);
+            $this->assertStringContainsString('ELR at RM700.11', $prompt);
+            $this->assertStringContainsString('EPF at RM432.00', $prompt);
+            $this->assertStringContainsString('LFP at RM1265.44', $prompt);
+            $this->assertStringContainsString('TFP at RM1697.44', $prompt);
+            $this->assertStringNotContainsString('RM9999.99', $prompt);
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 }

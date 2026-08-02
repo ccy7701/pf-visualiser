@@ -179,7 +179,7 @@ Key characteristics:
 * week and month selectors that resolve inclusive dates automatically from the template preset
 * automatic or explicit ongoing/complete period status for partial and final prompt wording
 * expense and income category groups sorted by total amount descending
-* transaction notes included as category detail
+* transaction summaries stop at category or formal subcategory totals and omit individual purchase details
 * optional COH, ELR, and EPF overrides, with derived LFP and TFP
 * month-end comparison against the immediately preceding History month when available
 * generated preview and browser clipboard copy action

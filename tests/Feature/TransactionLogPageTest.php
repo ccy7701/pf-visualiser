@@ -20,7 +20,7 @@ class TransactionLogPageTest extends TestCase
         $response->assertOk();
         $response->assertSee('Transaction Log');
         $response->assertSee('Log New Transaction');
-        $response->assertSee('Values for this month');
+        $response->assertSee('Values for this current month');
         $response->assertSee('Starting Amount');
         $response->assertSee('Net Transactions');
         $response->assertSee('Unpaid Accrual');

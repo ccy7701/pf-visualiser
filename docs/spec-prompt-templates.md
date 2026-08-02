@@ -153,11 +153,10 @@ For each transaction type:
 1. Group transactions by parent category and sum each category.
 2. Sort category groups by total amount descending.
 3. When a category contains formal subcategories, render the category total followed by subcategory totals sorted descending and indented with one literal tab character.
-4. When a subcategory contains multiple transactions, render its transactions one level deeper using two literal tab characters.
-5. Preserve category-only transactions under a `No subcategory` component when mixed with subcategorised entries.
-6. For categories without formal subcategories, retain the compact single-transaction or category-plus-transaction-detail format.
-7. Append transaction notes when present and use the transaction date as fallback detail when a grouped entry has no note.
-8. Render `None recorded.` when the period contains no transactions of that type.
+4. Preserve category-only transactions under a `No subcategory` component when mixed with subcategorised entries.
+5. For categories without formal subcategories, render only the category total.
+6. Do not include individual transaction amounts, purchase descriptions, dates, or notes in generated breakdowns.
+7. Render `None recorded.` when the period contains no transactions of that type.
 
 ---
 
@@ -167,11 +166,11 @@ Position overrides have highest priority.
 
 Without overrides:
 
-* for a period ending today or later, COH uses the Counter snapshot's `actual_counter`
-* otherwise, COH uses the most recent History record at or before the period-end month
-* ELR and EPF use the most recent History record at or before the period-end month
+* COH, ELR, and EPF all use the most recent History record at or before the period-end month
+* the three values always come from the same History record
+* Counter values are not used as position fallbacks
 
-This fallback does not imply that PF Visualiser stores historical weekly balance snapshots. Weekly balances should be overridden when an exact historical position is required.
+If no applicable History record exists, unavailable values are reported as such. Weekly balances should be overridden when a value more precise than the applicable monthly History record is required.
 
 Month comparison uses only the History record for the calendar month immediately preceding the period-end month. If it is absent, the generated text states that no prior month-end comparison is available.
 

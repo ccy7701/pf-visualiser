@@ -10,8 +10,6 @@ use Illuminate\Support\Collection;
 
 class PromptComposerService
 {
-    public function __construct(private readonly CounterService $counterService) {}
-
     public function compose(PromptTemplate $template, array $input): array
     {
         $start = CarbonImmutable::parse($input['start_date'])->startOfDay();
@@ -74,10 +72,7 @@ class PromptComposerService
             ->where('month', '<=', $end->format('Y-m'))
             ->latest('month')
             ->first();
-        $isCurrentPeriod = now('Asia/Kuala_Lumpur')->startOfDay()->lessThanOrEqualTo($end);
-        $counterCoh = $isCurrentPeriod ? (float) $this->counterService->snapshot()['actual_counter'] : null;
         $coh = $this->positionOverride($input, 'closing_coh')
-            ?? $counterCoh
             ?? ($history?->closing_coh !== null ? (float) $history->closing_coh : null);
         $elr = $this->positionOverride($input, 'closing_elr')
             ?? ($history?->closing_elr !== null ? (float) $history->closing_elr : null);
@@ -195,50 +190,16 @@ class PromptComposerService
                             return [
                                 'name' => $subcategoryEntries->first()?->subcategory?->name ?? 'No subcategory',
                                 'total' => (float) $subcategoryEntries->sum('amount'),
-                                'entries' => $subcategoryEntries,
                             ];
                         })
                         ->sortByDesc('total')
-                        ->map(function (array $subcategory) use ($sign): string {
-                            $entries = $subcategory['entries'];
-                            if ($entries->count() === 1) {
-                                $entry = $entries->first();
-                                $note = trim((string) $entry->note);
-                                $suffix = $note !== '' ? " — {$note}" : '';
-
-                                return "\t{$sign}RM{$this->money($subcategory['total'])} from {$subcategory['name']}{$suffix}";
-                            }
-
-                            $details = $entries->map(function (Transaction $entry) use ($sign): string {
-                                $note = trim((string) $entry->note);
-                                $detail = $note !== '' ? $note : 'entry on '.$entry->datetime->format('j/n');
-
-                                return "\t\t{$sign}RM{$this->money($entry->amount)} — {$detail}";
-                            })->implode("\n");
-
-                            return "\t{$sign}RM{$this->money($subcategory['total'])} from {$subcategory['name']}, of which\n{$details}";
-                        })
+                        ->map(fn (array $subcategory): string => "\t{$sign}RM{$this->money($subcategory['total'])} from {$subcategory['name']}")
                         ->implode("\n");
 
                     return "{$sign}RM{$this->money($group['total'])} from {$group['name']}, of which\n{$subcategories}";
                 }
 
-                if ($entries->count() === 1) {
-                    $entry = $entries->first();
-                    $note = trim((string) $entry->note);
-                    $suffix = $note !== '' ? " — {$note}" : '';
-
-                    return "{$sign}RM{$this->money($group['total'])} from {$group['name']}{$suffix}";
-                }
-
-                $details = $entries->map(function (Transaction $entry) use ($sign): string {
-                    $note = trim((string) $entry->note);
-                    $detail = $note !== '' ? $note : 'entry on '.$entry->datetime->format('j/n');
-
-                    return "\t{$sign}RM{$this->money($entry->amount)} — {$detail}";
-                })->implode("\n");
-
-                return "{$sign}RM{$this->money($group['total'])} from {$group['name']}, of which\n{$details}";
+                return "{$sign}RM{$this->money($group['total'])} from {$group['name']}";
             })
             ->implode("\n");
     }

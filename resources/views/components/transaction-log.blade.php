@@ -602,7 +602,7 @@ new class extends Component
 
     <div class="transaction-log-output-column">
         <div class="card data-card counter-equation-panel mb-3">
-            <div class="card-header py-2">Values for this month</div>
+            <div class="card-header py-2">Values for this current month</div>
             <div class="card-body p-3">
                 <div class="counter-equation-summary">
                     <div class="counter-equation-card">
