@@ -240,6 +240,14 @@ class PromptComposerService
         $noun = $periodType === 'monthly' ? 'month' : ($periodType === 'weekly' ? 'week' : 'period');
         $label = $periodType === 'monthly' ? $period : "of {$period}";
 
+        if ($periodType === 'monthly') {
+            return match ($periodStatus) {
+                'complete' => "The month of {$period} is over.",
+                'not_started' => "The month of {$period} has not started yet.",
+                default => "The month of {$period} is still ongoing.",
+            };
+        }
+
         if ($periodStatus === 'complete') {
             return "The {$noun} {$label} is over. Here is the final breakdown:";
         }

@@ -220,4 +220,24 @@ class PromptTemplateTest extends TestCase
             Carbon::setTestNow();
         }
     }
+
+    public function test_ongoing_monthly_report_does_not_insert_weekly_breakdown_wording(): void
+    {
+        $template = PromptTemplate::query()->where('period_type', 'monthly')->firstOrFail();
+
+        $response = $this->postJson(route('prompt-studio.compose'), [
+            'template_id' => $template->id,
+            'start_date' => '2026-08-01',
+            'end_date' => '2026-08-31',
+            'period_status' => 'ongoing',
+        ]);
+
+        $response->assertOk();
+        $prompt = $response->json('prompt');
+        $this->assertStringContainsString(
+            'The month August 2026 is still ongoing. I will give you the data first',
+            $prompt,
+        );
+        $this->assertStringNotContainsString('Breakdown so far:', $prompt);
+    }
 }
