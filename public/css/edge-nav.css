@@ -18,7 +18,6 @@
 }
 
 body.edge-nav-right-active .module-nav-stack,
-.module-nav-stack:hover,
 .module-nav-stack:focus-within {
     opacity: 1;
     visibility: visible;

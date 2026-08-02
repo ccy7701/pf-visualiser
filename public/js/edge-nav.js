@@ -7,7 +7,8 @@
 
     document.body.classList.add('has-right-edge-nav');
 
-    const rightThreshold = 72;
+    const rightActivationThreshold = 40;
+    const rightDismissalThreshold = 80;
     let lastInteractionWasPointer = false;
 
     function clearEdgeClasses() {
@@ -37,8 +38,12 @@
 
     function updateByPointer(clientX) {
         const width = window.innerWidth || document.documentElement.clientWidth || 0;
+        const distanceFromRight = width - clientX;
+        const threshold = document.body.classList.contains('edge-nav-right-active')
+            ? rightDismissalThreshold
+            : rightActivationThreshold;
 
-        if (width - clientX <= rightThreshold) {
+        if (distanceFromRight <= threshold) {
             document.body.classList.add('edge-nav-right-active');
         } else {
             document.body.classList.remove('edge-nav-right-active');

@@ -146,11 +146,20 @@
     border-radius: 0.45rem;
 }
 
-.prompt-status-toast {
+.prompt-workspace-status {
+    min-height: 1.25rem;
+    color: #198754;
+}
+
+.prompt-workspace-status.is-error {
+    color: #dc3545;
+}
+
+.prompt-template-toast {
     border-left: 0.25rem solid #198754;
 }
 
-.prompt-status-toast.is-error {
+.prompt-template-toast.is-error {
     border-left-color: #dc3545;
 }
 
