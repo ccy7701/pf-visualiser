@@ -15,7 +15,7 @@ class PromptTemplateTest extends TestCase
 
     public function test_prompt_templates_can_be_created_updated_and_deleted(): void
     {
-        $create = $this->postJson(route('settings.prompt-templates.store'), [
+        $create = $this->postJson(route('prompt-studio.templates.store'), [
             'name' => 'Custom review',
             'period_type' => 'custom',
             'body' => 'Review {{period}} with expenses of RM{{expense_total}}.',
@@ -26,7 +26,7 @@ class PromptTemplateTest extends TestCase
             ->assertJsonPath('template.period_type', 'custom');
         $templateId = $create->json('template.id');
 
-        $this->putJson(route('settings.prompt-templates.update', $templateId), [
+        $this->putJson(route('prompt-studio.templates.update', $templateId), [
             'name' => 'Updated review',
             'period_type' => 'weekly',
             'body' => 'Updated {{period}}',
@@ -38,7 +38,7 @@ class PromptTemplateTest extends TestCase
             'name' => 'Updated review',
         ]);
 
-        $this->deleteJson(route('settings.prompt-templates.destroy', $templateId))
+        $this->deleteJson(route('prompt-studio.templates.destroy', $templateId))
             ->assertOk();
         $this->assertDatabaseMissing('prompt_templates', ['id' => $templateId]);
     }
@@ -70,10 +70,11 @@ class PromptTemplateTest extends TestCase
         ]);
         $template = PromptTemplate::query()->where('period_type', 'weekly')->firstOrFail();
 
-        $response = $this->postJson(route('settings.prompt-templates.compose'), [
+        $response = $this->postJson(route('prompt-studio.compose'), [
             'template_id' => $template->id,
             'start_date' => '2026-07-20',
             'end_date' => '2026-07-26',
+            'period_status' => 'ongoing',
             'closing_coh' => 779.68,
             'closing_elr' => 635.42,
             'closing_epf' => 432.00,
@@ -83,14 +84,16 @@ class PromptTemplateTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('period.label', '20/7–26/7')
+            ->assertJsonPath('period.status', 'ongoing')
             ->assertJsonPath('totals.expenses', 52.70)
             ->assertJsonPath('totals.incomes', 1576.60);
         $prompt = $response->json('prompt');
+        $this->assertStringContainsString('The week of 20/7–26/7 is still ongoing.', $prompt);
         $this->assertStringContainsString('COH at RM779.68', $prompt);
         $this->assertStringContainsString('LFP at RM1415.10', $prompt);
         $this->assertStringContainsString('TFP at RM1847.10', $prompt);
         $this->assertStringContainsString('-RM52.70 from Food, of which', $prompt);
-        $this->assertStringContainsString('-RM22.70 — Lunch', $prompt);
+        $this->assertStringContainsString("\t-RM22.70 — Lunch", $prompt);
         $this->assertStringContainsString('+RM1576.60 from Salary — July salary', $prompt);
         $this->assertStringContainsString('I did not attend the event.', $prompt);
         $this->assertStringContainsString('How are things looking?', $prompt);
@@ -112,14 +115,17 @@ class PromptTemplateTest extends TestCase
         ]);
         $template = PromptTemplate::query()->where('period_type', 'monthly')->firstOrFail();
 
-        $response = $this->postJson(route('settings.prompt-templates.compose'), [
+        $response = $this->postJson(route('prompt-studio.compose'), [
             'template_id' => $template->id,
             'start_date' => '2026-07-01',
             'end_date' => '2026-07-31',
+            'period_status' => 'complete',
         ]);
 
-        $response->assertOk();
+        $response->assertOk()
+            ->assertJsonPath('period.status', 'complete');
         $prompt = $response->json('prompt');
+        $this->assertStringContainsString('The month July 2026 is over.', $prompt);
         $this->assertStringContainsString('EOTM JULY 2026 POSITIONS, COMPARED WITH JUNE 2026:', $prompt);
         $this->assertStringContainsString('TFP RM1797.17 (up from RM941.85)', $prompt);
         $this->assertStringContainsString('LFP RM1365.17 (up from RM941.85)', $prompt);

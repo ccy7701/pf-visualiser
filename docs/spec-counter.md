@@ -125,7 +125,7 @@ Previous (`<`) and next (`>`) controls shall shift the active range backward or 
 
 ### 3.6 Settings Page
 
-Counter configuration is maintained on a dedicated Settings page. Its navigation provides General, Workday Calendar, Salary Schedules, and Prompt Templates sections.
+Counter configuration is maintained on a dedicated Settings page. Its navigation provides General, Workday Calendar, and Salary Schedules sections.
 
 The General section shall:
 

@@ -2,7 +2,7 @@
 
 ## High-Level Project Specification
 
-Implementation status: verified against the application on 2026-08-01.
+Implementation status: verified against the application on 2026-08-02.
 
 ---
 
@@ -87,7 +87,7 @@ Key characteristics:
 * workday status model supports `workday`, `absence`, `holiday`
 * snapshot API returns `counter`, `increment_per_second`, and related breakdown fields
 * optional system notification displays incrementing Expected COH and refreshes every 60 seconds while the Counter page remains open
-* dedicated Settings page hosts General settings, Workday Calendar, Salary Schedules, and Prompt Templates
+* dedicated Settings page hosts General settings, Workday Calendar, and Salary Schedules
 
 ### Module B: COH Projection (`coh-projection`)
 
@@ -158,7 +158,7 @@ Key characteristics:
 * selectable visualisations for TFP trend, stacked COH/ELR/EPF, income/expenses, and expense-category composition
 * optional current-month unpaid-accrual overlay on TFP Trend
 
-### Module F: Prompt Templates (`settings/prompt-templates`)
+### Module F: Prompt Studio (`prompt-studio`)
 
 Purpose:
 
@@ -168,10 +168,14 @@ Purpose:
 
 Key characteristics:
 
-* template create/update/delete workflow under Settings
+* standalone, full-width module with circular subsection controls for separate Prompt Templates and Prompt Composer workspaces
+* desktop Composer layout with working controls on the left and generated output on the right
+* circular module-navigation entry below Transportation and above the theme toggle
 * seeded weekly financial-review and month-end report templates
 * readable `{{placeholder}}` substitution for periods, positions, transaction totals, category breakdowns, context, and questions
 * inclusive weekly, monthly, and custom date ranges
+* week and month selectors that resolve inclusive dates automatically from the template preset
+* automatic or explicit ongoing/complete period status for partial and final prompt wording
 * expense and income category groups sorted by total amount descending
 * transaction notes included as category detail
 * optional COH, ELR, and EPF overrides, with derived LFP and TFP
@@ -271,9 +275,11 @@ Key characteristics:
 * Category-level income and expense breakdown inputs
 * Rolling 12-month selectable TFP, balance-breakdown, income/expense, and expense-category visualisations
 
-## PHASE 13 - Prompt Templates
+## PHASE 13 - Prompt Studio
 
-* Prompt-template persistence and CRUD under Settings
+* Standalone module and circular navigation entry
+* Prompt-template persistence and CRUD in the Prompt Templates workspace
+* Independent Prompt Composer workspace for generating output
 * Weekly, monthly, and custom period presets
 * Transaction/category/note summary composition
 * Optional position overrides and History-backed month comparison

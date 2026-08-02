@@ -27,10 +27,11 @@ class PromptComposerService
         $positions = $this->resolvePositions($end, $input);
         $previousPositions = $this->previousMonthPositions($end);
         $period = $this->periodLabel($start, $end, $template->period_type);
+        $periodStatus = $this->resolvePeriodStatus($start, $end, $input['period_status'] ?? 'automatic');
 
         $placeholders = [
             'period' => $period,
-            'period_intro' => $this->periodIntro($start, $end, $template->period_type, $period),
+            'period_intro' => $this->periodIntro($template->period_type, $period, $periodStatus),
             'start_date' => $start->format('j/n/Y'),
             'end_date' => $end->format('j/n/Y'),
             'month' => $end->format('F Y'),
@@ -58,6 +59,7 @@ class PromptComposerService
                 'label' => $period,
                 'start_date' => $start->toDateString(),
                 'end_date' => $end->toDateString(),
+                'status' => $periodStatus,
             ],
             'totals' => [
                 'expenses' => round((float) $expenses->sum('amount'), 2),
@@ -195,7 +197,7 @@ class PromptComposerService
                     $note = trim((string) $entry->note);
                     $detail = $note !== '' ? $note : 'entry on '.$entry->datetime->format('j/n');
 
-                    return "   {$sign}RM{$this->money($entry->amount)} — {$detail}";
+                    return "\t{$sign}RM{$this->money($entry->amount)} — {$detail}";
                 })->implode("\n");
 
                 return "{$sign}RM{$this->money($group['total'])} from {$group['name']}, of which\n{$details}";
@@ -216,20 +218,37 @@ class PromptComposerService
         return $start->format('j/n/Y').'–'.$end->format('j/n/Y');
     }
 
-    private function periodIntro(CarbonImmutable $start, CarbonImmutable $end, string $periodType, string $period): string
+    private function resolvePeriodStatus(CarbonImmutable $start, CarbonImmutable $end, string $requestedStatus): string
     {
+        if (in_array($requestedStatus, ['ongoing', 'complete'], true)) {
+            return $requestedStatus;
+        }
+
         $today = CarbonImmutable::now('Asia/Kuala_Lumpur')->startOfDay();
+
+        if ($today->greaterThan($end)) {
+            return 'complete';
+        }
+        if ($today->lessThan($start)) {
+            return 'not_started';
+        }
+
+        return 'ongoing';
+    }
+
+    private function periodIntro(string $periodType, string $period, string $periodStatus): string
+    {
         $noun = $periodType === 'monthly' ? 'month' : ($periodType === 'weekly' ? 'week' : 'period');
         $label = $periodType === 'monthly' ? $period : "of {$period}";
 
-        if ($today->greaterThan($end)) {
+        if ($periodStatus === 'complete') {
             return "The {$noun} {$label} is over. Here is the final breakdown:";
         }
-        if ($today->lessThan($start)) {
+        if ($periodStatus === 'not_started') {
             return "The {$noun} {$label} has not started yet.";
         }
 
-        return "The {$noun} {$label} is not yet over. Breakdown so far:";
+        return "The {$noun} {$label} is still ongoing. Breakdown so far:";
     }
 
     private function money(float|int|string|null $value): string

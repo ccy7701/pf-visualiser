@@ -45,6 +45,7 @@ class PromptTemplateController extends Controller
             'template_id' => ['required', 'integer', 'exists:prompt_templates,id'],
             'start_date' => ['required', 'date_format:Y-m-d'],
             'end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+            'period_status' => ['nullable', Rule::in(['automatic', 'ongoing', 'complete'])],
             'closing_coh' => ['nullable', 'numeric'],
             'closing_elr' => ['nullable', 'numeric', 'min:0'],
             'closing_epf' => ['nullable', 'numeric', 'min:0'],

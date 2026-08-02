@@ -32,6 +32,11 @@
             'icon' => 'fa-road',
             'route' => 'transportation-log.index',
         ],
+        'prompt-studio' => [
+            'label' => 'Prompt Studio',
+            'icon' => 'fa-file-pen',
+            'route' => 'prompt-studio.index',
+        ],
     ];
 @endphp
 

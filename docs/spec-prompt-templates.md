@@ -1,8 +1,8 @@
-# Prompt Templates (`settings/prompt-templates`)
+# Prompt Studio (`prompt-studio`)
 
 ## Functional Specification
 
-Implementation status: initial iteration verified against the application on 2026-08-01.
+Implementation status: verified against the application on 2026-08-02.
 
 Related high-level project specification: `overview.md`
 
@@ -28,16 +28,24 @@ The module shall not:
 
 ---
 
-## 2. Settings Layout
+## 2. Module Layout
 
-The Settings page shall include a **Prompt Templates** configuration tab.
+Prompt Studio is a standalone module with two separate workspaces:
 
-The tab contains two sections:
+1. **Prompt Templates** for selecting, creating, editing, and deleting saved templates.
+2. **Prompt Composer** for choosing a saved template and period, supplying optional balance overrides and free-form text, generating a preview, and copying it.
 
-1. **Template** for selecting, creating, editing, and deleting saved templates.
-2. **Compose prompt** for selecting a date range, supplying optional balance overrides and free-form text, generating a preview, and copying it.
+The two workspaces shall be selected using circular subsection icon buttons consistent with the other modules. They share one full-width module card rather than using a separate navigation sidebar. The active workspace's title and subtitle shall occupy the left side of the card header, with the subsection buttons right-aligned on the same row. The overall Prompt Studio page heading remains above the card.
+
+Prompt Composer shall split its full-width content area into two equal columns on desktop: working controls on the left and generated output on the right. The columns stack responsively on narrower displays.
+
+Prompt Templates shall likewise use two equal desktop columns: a card containing template selection, metadata, placeholders, and actions on the left; a separate card containing the template text editor on the right. These columns also stack on narrower displays.
+
+Preparing a new unsaved template shall not change the template currently selected in Prompt Composer. Each configuration maintains its own template selection.
 
 The page shall state that no data is sent outside the application.
+
+The circular module-navigation entry shall appear immediately below Transportation and immediately above the light/dark theme toggle.
 
 ---
 
@@ -61,11 +69,13 @@ The initial migration creates two editable defaults:
 * **Weekly financial review**
 * **Month-end financial report**
 
-The period preset controls the initial date range offered by the browser:
+The period preset controls which period input Prompt Composer displays:
 
-* weekly: Monday through Sunday of the current week
-* monthly: first through last calendar day of the current month
-* custom: current day as both start and end until edited
+* weekly: an ISO week picker; the selected week resolves to Monday through Sunday
+* monthly: a month picker; the selected month resolves to its first and last calendar day
+* custom: explicit start and end dates, initially set to the current day
+
+Weekly and monthly templates do not ask the user to enter start and end dates. The composer displays the resolved inclusive date range beneath the active period input.
 
 ---
 
@@ -75,7 +85,7 @@ Template bodies support these placeholders:
 
 | Placeholder | Generated value |
 | --- | --- |
-| `{{period_intro}}` | Context-aware statement indicating whether the period is past, current, or future |
+| `{{period_intro}}` | Statement indicating whether the period is ongoing, complete, or not yet started |
 | `{{period}}` | Human-readable week, month, or custom date range |
 | `{{start_date}}` | Start date in `D/M/YYYY` form |
 | `{{end_date}}` | End date in `D/M/YYYY` form |
@@ -100,11 +110,13 @@ Three or more consecutive line breaks in generated output are reduced to two. Th
 Required inputs:
 
 * saved template
-* inclusive start date
-* inclusive end date
+* selected week for a weekly template, selected month for a monthly template, or explicit range for a custom template
+
+The frontend resolves every selection into an inclusive start and end date before composition. The backend contract continues to receive `start_date` and `end_date` regardless of preset.
 
 Optional inputs:
 
+* period status: automatic, ongoing, or complete
 * COH override
 * ELR override
 * EPF override
@@ -112,6 +124,12 @@ Optional inputs:
 * questions
 
 The end date must be on or after the start date. ELR and EPF overrides must be non-negative. COH may be negative.
+
+Period status rules:
+
+* `automatic`: use the current date to resolve `not_started`, `ongoing`, or `complete`
+* `ongoing`: generate “is still ongoing” and “Breakdown so far” wording regardless of the current date
+* `complete`: generate “is over” and “final breakdown” wording regardless of the current date
 
 LFP and TFP are always derived:
 
@@ -136,7 +154,7 @@ For each transaction type:
 2. Sum each category.
 3. Sort category groups by total amount descending.
 4. Show a single transaction on one line, appending its note when present.
-5. For multiple transactions in one category, show the category total followed by each transaction amount and note.
+5. For multiple transactions in one category, show the category total followed by each transaction amount and note, indented with one literal tab character.
 6. Use the transaction date as fallback detail when a grouped transaction has no note.
 7. Render `None recorded.` when the period contains no transactions of that type.
 
@@ -189,10 +207,11 @@ Template names are not required to be unique.
 
 Current endpoints:
 
-* `POST /settings/prompt-templates`
-* `PUT /settings/prompt-templates/{promptTemplate}`
-* `DELETE /settings/prompt-templates/{promptTemplate}`
-* `POST /settings/prompt-templates/compose`
+* `GET /prompt-studio`
+* `POST /prompt-studio/templates`
+* `PUT /prompt-studio/templates/{promptTemplate}`
+* `DELETE /prompt-studio/templates/{promptTemplate}`
+* `POST /prompt-studio/compose`
 
 Template create/update fields:
 
@@ -205,6 +224,7 @@ Compose request fields:
 * `template_id`
 * `start_date`
 * `end_date`
+* `period_status` (optional: `automatic`, `ongoing`, or `complete`)
 * `closing_coh` (optional)
 * `closing_elr` (optional)
 * `closing_epf` (optional)
@@ -217,6 +237,7 @@ Compose response fields:
 * `period.label`
 * `period.start_date`
 * `period.end_date`
+* `period.status`
 * `totals.expenses`
 * `totals.incomes`
 
@@ -226,11 +247,17 @@ Compose response fields:
 
 The frontend shall:
 
-* load saved templates from the Settings page payload
-* adjust the date range when the selected period preset changes
+* load saved templates from the Prompt Studio page payload
+* maintain independent template selections for Prompt Templates and Prompt Composer
+* show a week picker for weekly templates and resolve Monday/Sunday boundaries
+* show a month picker for monthly templates and resolve first/last-day boundaries
+* show explicit start/end date inputs only for custom templates
+* display the resolved inclusive date range
+* allow automatic, ongoing, or complete period status selection
+* adjust the composer period input when its selected saved template changes
 * distinguish a new unsaved template from a selected stored template
 * disable generation until a stored template is selected
-* show validation and operation status messages
+* show Prompt Templates and Prompt Composer validation and operation status messages in separate dismissible toasts
 * place generated output in a read-only preview
 * enable Copy only when a generated prompt exists
 * use the Clipboard API when available, with a selection-based fallback

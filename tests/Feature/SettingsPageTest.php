@@ -17,11 +17,9 @@ class SettingsPageTest extends TestCase
         $response->assertSee('General settings');
         $response->assertSee('Workday Calendar');
         $response->assertSee('Salary Schedules');
-        $response->assertSee('Prompt Templates');
-        $response->assertSee('Weekly financial review');
-        $response->assertSee('Month-end financial report');
-        $response->assertSee('Nothing is sent outside this application.');
-        $response->assertSee('id="promptPreview"', false);
+        $response->assertDontSee('id="prompt-templates-pane"', false);
+        $response->assertDontSee('id="prompt-composer-pane"', false);
+        $response->assertDontSee('window.promptStudioConfig', false);
         $response->assertDontSee('File Export / Import');
         $response->assertDontSee('export-import-pane');
         $response->assertSee('Starting Amount (RM)');
