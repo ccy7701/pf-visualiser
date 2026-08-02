@@ -178,9 +178,11 @@ Key characteristics:
 * inclusive weekly, monthly, and custom date ranges
 * week and month selectors that resolve inclusive dates automatically from the template preset
 * automatic or explicit ongoing/complete period status for partial and final prompt wording
+* status-only monthly introductions, with breakdown-introduction wording reserved for weekly and custom templates
 * expense and income category groups sorted by total amount descending
 * transaction summaries stop at category or formal subcategory totals and omit individual purchase details
-* optional COH, ELR, and EPF overrides, with derived LFP and TFP
+* optional COH, ELR, and EPF overrides; otherwise all three positions come from one applicable History record, with derived LFP and TFP
+* no Counter-based COH fallback in prompt position resolution
 * month-end comparison against the immediately preceding History month when available
 * generated preview and browser clipboard copy action
 * no network call or AI service integration
@@ -283,7 +285,7 @@ Key characteristics:
 * Prompt-template persistence and CRUD in the Prompt Templates workspace
 * Independent Prompt Composer workspace for generating output
 * Weekly, monthly, and custom period presets
-* Transaction/category/note summary composition
+* Parent-category and formal-subcategory total composition without individual purchase details
 * Optional position overrides and History-backed month comparison
 * Local preview and clipboard workflow with no AI integration
 

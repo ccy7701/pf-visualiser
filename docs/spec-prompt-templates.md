@@ -93,9 +93,9 @@ Template bodies support these placeholders:
 | `{{positions}}` | COH, ELR, EPF, derived LFP, and derived TFP |
 | `{{positions_comparison}}` | End-month positions compared with the immediately preceding History month |
 | `{{expense_total}}` | Period expense total with two decimal places |
-| `{{expense_breakdown}}` | Expense categories and transaction details |
+| `{{expense_breakdown}}` | Expense category totals with optional subcategory totals |
 | `{{income_total}}` | Period income total with two decimal places |
-| `{{income_breakdown}}` | Income categories and transaction details |
+| `{{income_breakdown}}` | Income category totals with optional subcategory totals |
 | `{{additional_context}}` | User-entered situational notes |
 | `{{questions}}` | User-entered questions for the external LLM |
 
@@ -128,8 +128,10 @@ The end date must be on or after the start date. ELR and EPF overrides must be n
 Period status rules:
 
 * `automatic`: use the current date to resolve `not_started`, `ongoing`, or `complete`
-* `ongoing`: generate “is still ongoing” and “Breakdown so far” wording regardless of the current date
-* `complete`: generate “is over” and “final breakdown” wording regardless of the current date
+* `ongoing`: force “is still ongoing” wording regardless of the current date; weekly and custom introductions also include “Breakdown so far”
+* `complete`: force “is over” wording regardless of the current date; weekly and custom introductions also introduce the final breakdown
+
+Monthly report introductions use status-only sentences (`is over`, `is still ongoing`, or `has not started yet`) because the month-end template supplies its own report instructions.
 
 LFP and TFP are always derived:
 

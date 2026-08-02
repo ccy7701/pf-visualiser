@@ -233,7 +233,7 @@ If the June salary is paid in July, the July-dated transaction increases July Ac
 
 ### 4.5 Current-Month Summary Values
 
-The Transaction Log "Values for this month" panel uses month-specific values:
+The Transaction Log "Values for this current month" panel uses month-specific values:
 
 ```text
 Current Month Starting Amount = Starting Amount + all transactions before start_of_month
