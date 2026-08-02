@@ -36,6 +36,15 @@ class CategoryCatalog
         ['id' => 23, 'name' => 'Petty Cash'],
         ['id' => 24, 'name' => 'Bonus'],
         ['id' => 25, 'name' => 'Loans'],
+        ['id' => 26, 'name' => 'Payments'],
+        ['id' => 27, 'name' => 'Deposit'],
+        ['id' => 28, 'name' => 'Money Pot Share'],
+        ['id' => 29, 'name' => 'Cash Assistance'],
+        ['id' => 30, 'name' => 'Interest'],
+        ['id' => 31, 'name' => 'EPF'],
+        ['id' => 32, 'name' => 'Fees'],
+        ['id' => 33, 'name' => 'Snacktime'],
+        ['id' => 34, 'name' => 'Others'],
     ];
 
     public static function forType(string $type): Collection

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\HistoryMonth;
 use App\Models\PromptTemplate;
+use App\Models\Subcategory;
 use App\Models\Transaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -131,5 +132,42 @@ class PromptTemplateTest extends TestCase
         $this->assertStringContainsString('LFP RM1365.17 (up from RM941.85)', $prompt);
         $this->assertStringContainsString('TOTAL EXPENSES AT RM0.00:', $prompt);
         $this->assertStringNotContainsString('{{', $prompt);
+    }
+
+    public function test_prompt_breakdowns_group_transactions_by_subcategory(): void
+    {
+        $transportation = Category::query()->create(['name' => 'Transportation', 'type' => 'expense']);
+        $fuel = Subcategory::query()->create(['category_id' => $transportation->id, 'name' => 'Fuel']);
+        $parking = Subcategory::query()->create(['category_id' => $transportation->id, 'name' => 'Parking']);
+        Transaction::query()->create([
+            'type' => 'expense',
+            'datetime' => '2026-07-21 12:00:00',
+            'category_id' => $transportation->id,
+            'subcategory_id' => $fuel->id,
+            'note' => 'Full tank',
+            'amount' => 53.10,
+        ]);
+        Transaction::query()->create([
+            'type' => 'expense',
+            'datetime' => '2026-07-22 19:00:00',
+            'category_id' => $transportation->id,
+            'subcategory_id' => $parking->id,
+            'note' => 'City parking',
+            'amount' => 3.18,
+        ]);
+        $template = PromptTemplate::query()->where('period_type', 'weekly')->firstOrFail();
+
+        $response = $this->postJson(route('prompt-studio.compose'), [
+            'template_id' => $template->id,
+            'start_date' => '2026-07-20',
+            'end_date' => '2026-07-26',
+            'period_status' => 'complete',
+        ]);
+
+        $response->assertOk();
+        $prompt = $response->json('prompt');
+        $this->assertStringContainsString('-RM56.28 from Transportation, of which', $prompt);
+        $this->assertStringContainsString("\t-RM53.10 from Fuel — Full tank", $prompt);
+        $this->assertStringContainsString("\t-RM3.18 from Parking — City parking", $prompt);
     }
 }

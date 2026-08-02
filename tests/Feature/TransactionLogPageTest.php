@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\Subcategory;
 use App\Models\Transaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -128,6 +129,81 @@ class TransactionLogPageTest extends TestCase
             ->assertDontSee('February purchase')
             ->assertSet('periodIncomeTotal', 0.0)
             ->assertSet('periodExpenseTotal', 10.0);
+    }
+
+    public function test_transactions_can_store_edit_display_and_filter_optional_subcategories(): void
+    {
+        $food = Category::query()->create(['name' => 'Food', 'type' => 'expense']);
+        $lunch = Subcategory::query()->create(['category_id' => $food->id, 'name' => 'Lunch']);
+        $dinner = Subcategory::query()->create(['category_id' => $food->id, 'name' => 'Dinner']);
+        $salary = Category::query()->create(['name' => 'Salary', 'type' => 'income']);
+
+        $component = Livewire::test('transaction-log')
+            ->set('type', 'expense')
+            ->set('category_id', (string) $food->id)
+            ->assertSee('No subcategory')
+            ->assertSee('Lunch')
+            ->assertSee('Dinner')
+            ->set('subcategory_id', (string) $lunch->id)
+            ->set('datetime', '15/07/2026 12:30')
+            ->set('amount', '22.70')
+            ->set('note', 'Workday meal')
+            ->call('save')
+            ->assertSet('errors', []);
+
+        $transaction = Transaction::query()->where('note', 'Workday meal')->firstOrFail();
+        $this->assertSame($food->id, $transaction->category_id);
+        $this->assertSame($lunch->id, $transaction->subcategory_id);
+
+        $component
+            ->call('setRecentTransactionPeriod', 'custom')
+            ->set('customPeriodStartDate', '2026-07-01')
+            ->set('customPeriodEndDate', '2026-07-31')
+            ->assertSee('Food')
+            ->assertSee('Lunch')
+            ->call('edit', $transaction->id)
+            ->assertSet('subcategory_id', (string) $lunch->id)
+            ->set('selectedCategoryIds', [(string) $food->id])
+            ->set('selectedSubcategoryIds', [(string) $dinner->id])
+            ->assertDontSee('Workday meal')
+            ->set('selectedSubcategoryIds', [(string) $lunch->id])
+            ->assertSee('Workday meal');
+
+        Transaction::query()->create([
+            'type' => 'income',
+            'datetime' => '2026-07-15 17:00:00',
+            'category_id' => $salary->id,
+            'subcategory_id' => null,
+            'amount' => 100,
+            'note' => 'Category-only income',
+        ]);
+
+        Livewire::test('transaction-log')
+            ->call('setRecentTransactionPeriod', 'custom')
+            ->set('customPeriodStartDate', '2026-07-01')
+            ->set('customPeriodEndDate', '2026-07-31')
+            ->assertSee('Category-only income');
+
+        $lunch->delete();
+        $this->assertNull($transaction->fresh()->subcategory_id);
+    }
+
+    public function test_subcategory_must_belong_to_the_selected_category(): void
+    {
+        $food = Category::query()->create(['name' => 'Food', 'type' => 'expense']);
+        $transportation = Category::query()->create(['name' => 'Transportation', 'type' => 'expense']);
+        $fuel = Subcategory::query()->create(['category_id' => $transportation->id, 'name' => 'Fuel']);
+
+        Livewire::test('transaction-log')
+            ->set('type', 'expense')
+            ->set('category_id', (string) $food->id)
+            ->set('subcategory_id', (string) $fuel->id)
+            ->set('datetime', '15/07/2026 12:30')
+            ->set('amount', '22.70')
+            ->call('save')
+            ->assertSet('errors.subcategory_id.0', 'Subcategory does not belong to the selected category.');
+
+        $this->assertDatabaseCount('transactions', 0);
     }
 
     public function test_counter_no_longer_contains_the_settings_popup(): void

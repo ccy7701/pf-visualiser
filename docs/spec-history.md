@@ -71,6 +71,17 @@ Income categories:
 * Petty Cash
 * Bonus
 * Loans
+* Payments
+* Deposit
+* Money Pot Share
+* Cash Assistance
+* Interest
+* EPF
+* Fees
+* Snacktime
+* Others
+
+Transaction subcategories do not alter History storage: month-level income and expense breakdowns remain aggregated by these parent categories.
 
 ---
 

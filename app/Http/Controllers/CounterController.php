@@ -11,9 +11,7 @@ use Illuminate\View\View;
 
 class CounterController extends Controller
 {
-    public function __construct(private readonly CounterService $counterService)
-    {
-    }
+    public function __construct(private readonly CounterService $counterService) {}
 
     public function index(): View
     {
@@ -25,13 +23,13 @@ class CounterController extends Controller
             'theme' => $theme,
             'categories' => Category::query()->orderBy('type')->orderBy('name')->get(),
             'transactions' => Transaction::query()
-                ->with('category')
+                ->with(['category', 'subcategory'])
                 ->latest('datetime')
                 ->limit(20)
                 ->get(),
         ]);
     }
-    
+
     public function snapshot(): JsonResponse
     {
         return response()->json($this->counterService->snapshot());

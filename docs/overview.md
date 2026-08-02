@@ -88,6 +88,8 @@ Key characteristics:
 * snapshot API returns `counter`, `increment_per_second`, and related breakdown fields
 * optional system notification displays incrementing Expected COH and refreshes every 60 seconds while the Counter page remains open
 * dedicated Settings page hosts General settings, Workday Calendar, and Salary Schedules
+* Transaction Log supports optional category-specific subcategories for entry, editing, display, and hierarchical filtering
+* History and Projection remain intentionally aggregated at parent-category level
 
 ### Module B: COH Projection (`coh-projection`)
 
@@ -205,7 +207,7 @@ Key characteristics:
 
 * Expense CRUD
 * Income CRUD
-* Category assignment
+* Category and optional subcategory assignment
 * Validation
 * Transaction listing
 

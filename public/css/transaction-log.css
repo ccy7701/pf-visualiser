@@ -258,6 +258,19 @@ body {
     min-height: 1.2rem;
 }
 
+.recent-transaction-subcategory-options {
+    display: grid;
+    gap: 0.15rem;
+    margin: 0.2rem 0 0.3rem 0.45rem;
+    padding-left: 0.6rem;
+    border-left: 1px solid #dee2e6;
+}
+
+.recent-transaction-subcategory-options .form-check {
+    color: #6c757d;
+    font-size: 0.75rem;
+}
+
 .recent-transaction-filters {
     display: inline-flex;
     align-items: center;
@@ -476,6 +489,14 @@ body {
 
 [data-bs-theme="dark"] .counter-equation-item {
     border-color: #333;
+}
+
+[data-bs-theme="dark"] .recent-transaction-subcategory-options {
+    border-left-color: #444;
+}
+
+[data-bs-theme="dark"] .recent-transaction-subcategory-options .form-check {
+    color: #adb5bd;
 }
 
 [data-bs-theme="dark"] .counter-live-incrementing {

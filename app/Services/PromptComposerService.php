@@ -17,7 +17,7 @@ class PromptComposerService
         $start = CarbonImmutable::parse($input['start_date'])->startOfDay();
         $end = CarbonImmutable::parse($input['end_date'])->endOfDay();
         $transactions = Transaction::query()
-            ->with('category:id,name')
+            ->with(['category:id,name', 'subcategory:id,category_id,name'])
             ->whereBetween('datetime', [$start, $end])
             ->orderBy('datetime')
             ->orderBy('id')
@@ -185,6 +185,44 @@ class PromptComposerService
             ->sortByDesc('total')
             ->map(function (array $group) use ($sign): string {
                 $entries = $group['entries'];
+                $hasSubcategories = $entries->contains(fn (Transaction $entry): bool => $entry->subcategory !== null);
+                if ($hasSubcategories) {
+                    $subcategories = $entries
+                        ->groupBy(fn (Transaction $entry): string => $entry->subcategory_id !== null
+                            ? (string) $entry->subcategory_id
+                            : 'none')
+                        ->map(function (Collection $subcategoryEntries): array {
+                            return [
+                                'name' => $subcategoryEntries->first()?->subcategory?->name ?? 'No subcategory',
+                                'total' => (float) $subcategoryEntries->sum('amount'),
+                                'entries' => $subcategoryEntries,
+                            ];
+                        })
+                        ->sortByDesc('total')
+                        ->map(function (array $subcategory) use ($sign): string {
+                            $entries = $subcategory['entries'];
+                            if ($entries->count() === 1) {
+                                $entry = $entries->first();
+                                $note = trim((string) $entry->note);
+                                $suffix = $note !== '' ? " — {$note}" : '';
+
+                                return "\t{$sign}RM{$this->money($subcategory['total'])} from {$subcategory['name']}{$suffix}";
+                            }
+
+                            $details = $entries->map(function (Transaction $entry) use ($sign): string {
+                                $note = trim((string) $entry->note);
+                                $detail = $note !== '' ? $note : 'entry on '.$entry->datetime->format('j/n');
+
+                                return "\t\t{$sign}RM{$this->money($entry->amount)} — {$detail}";
+                            })->implode("\n");
+
+                            return "\t{$sign}RM{$this->money($subcategory['total'])} from {$subcategory['name']}, of which\n{$details}";
+                        })
+                        ->implode("\n");
+
+                    return "{$sign}RM{$this->money($group['total'])} from {$group['name']}, of which\n{$subcategories}";
+                }
+
                 if ($entries->count() === 1) {
                     $entry = $entries->first();
                     $note = trim((string) $entry->note);

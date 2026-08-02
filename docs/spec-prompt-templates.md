@@ -150,15 +150,14 @@ Expense and income summaries are calculated independently.
 
 For each transaction type:
 
-1. Group transactions by category.
-2. Sum each category.
-3. Sort category groups by total amount descending.
-4. Show a single transaction on one line, appending its note when present.
-5. For multiple transactions in one category, show the category total followed by each transaction amount and note, indented with one literal tab character.
-6. Use the transaction date as fallback detail when a grouped transaction has no note.
-7. Render `None recorded.` when the period contains no transactions of that type.
-
-The composer does not infer formal subcategories. Detail such as Food → Dinner or Transportation → Fuel is available only when represented by transaction notes or other manually supplied context.
+1. Group transactions by parent category and sum each category.
+2. Sort category groups by total amount descending.
+3. When a category contains formal subcategories, render the category total followed by subcategory totals sorted descending and indented with one literal tab character.
+4. When a subcategory contains multiple transactions, render its transactions one level deeper using two literal tab characters.
+5. Preserve category-only transactions under a `No subcategory` component when mixed with subcategorised entries.
+6. For categories without formal subcategories, retain the compact single-transaction or category-plus-transaction-detail format.
+7. Append transaction notes when present and use the transaction date as fallback detail when a grouped entry has no note.
+8. Render `None recorded.` when the period contains no transactions of that type.
 
 ---
 
@@ -270,7 +269,6 @@ Changing unsaved template text does not change the stored template used for gene
 
 This iteration intentionally does not include:
 
-* formal transaction subcategories
 * historical weekly COH/ELR/EPF snapshots
 * automatic Projection or Variance Analysis blocks
 * follow-up templates specifically modeled on weekly revision or month-end question prompts

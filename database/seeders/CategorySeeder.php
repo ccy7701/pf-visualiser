@@ -45,7 +45,8 @@ class CategorySeeder extends Seeder
             'Interest',
             'EPF',
             'Fees',
-            'Other',
+            'Snacktime',
+            'Others',
         ];
 
         foreach ($expenseCategories as $name) {

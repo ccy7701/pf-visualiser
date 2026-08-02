@@ -2,6 +2,7 @@
 
 use App\Models\Category;
 use App\Models\Setting;
+use App\Models\Subcategory;
 use App\Models\Transaction;
 use App\Services\CounterService;
 use Carbon\Carbon;
@@ -30,7 +31,13 @@ new class extends Component
 
     public array $allCategories = [];
 
+    public array $subcategories = [];
+
+    public array $allSubcategories = [];
+
     public array $selectedCategoryIds = [];
+
+    public array $selectedSubcategoryIds = [];
 
     public bool $categoryFiltersInitialized = false;
 
@@ -51,6 +58,8 @@ new class extends Component
     public string $datetime = '';
 
     public string $category_id = '';
+
+    public string $subcategory_id = '';
 
     public string $amount = '';
 
@@ -73,18 +82,26 @@ new class extends Component
         $this->snapshot = $counterService->snapshot();
 
         $this->allCategories = Category::query()
+            ->with(['subcategories' => fn ($query) => $query->orderBy('name')])
             ->orderBy('type')
             ->orderBy('name')
             ->get()
             ->toArray();
 
         $allCategoryIds = array_map(fn ($category) => (string) $category['id'], $this->allCategories);
+        $this->allSubcategories = array_values(array_merge(...array_map(
+            fn ($category) => $category['subcategories'] ?? [],
+            $this->allCategories,
+        )));
+        $allSubcategoryIds = array_map(fn ($subcategory) => (string) $subcategory['id'], $this->allSubcategories);
 
         if (! $this->categoryFiltersInitialized) {
             $this->selectedCategoryIds = $allCategoryIds;
+            $this->selectedSubcategoryIds = $allSubcategoryIds;
             $this->categoryFiltersInitialized = true;
         } else {
             $this->selectedCategoryIds = array_values(array_intersect($this->selectedCategoryIds, $allCategoryIds));
+            $this->selectedSubcategoryIds = array_values(array_intersect($this->selectedSubcategoryIds, $allSubcategoryIds));
         }
 
         $this->loadTransactions();
@@ -110,6 +127,13 @@ new class extends Component
         $this->loadTransactions();
     }
 
+    public function updatedSelectedSubcategoryIds(): void
+    {
+        $validSubcategoryIds = array_map(fn ($subcategory) => (string) $subcategory['id'], $this->allSubcategories);
+        $this->selectedSubcategoryIds = array_values(array_intersect($this->selectedSubcategoryIds, $validSubcategoryIds));
+        $this->loadTransactions();
+    }
+
     public function toggleNoteSearch(): void
     {
         if ($this->showNoteSearch) {
@@ -130,6 +154,7 @@ new class extends Component
     {
         $this->noteSearch = '';
         $this->selectedCategoryIds = array_map(fn ($category) => (string) $category['id'], $this->allCategories);
+        $this->selectedSubcategoryIds = array_map(fn ($subcategory) => (string) $subcategory['id'], $this->allSubcategories);
         $this->loadTransactions();
     }
 
@@ -143,10 +168,19 @@ new class extends Component
             fn ($category) => (string) $category['id'],
             array_filter($this->allCategories, fn ($category) => $category['type'] === $type),
         );
+        $groupSubcategoryIds = array_map(
+            fn ($subcategory) => (string) $subcategory['id'],
+            array_filter($this->allSubcategories, function ($subcategory) use ($groupCategoryIds): bool {
+                return in_array((string) $subcategory['category_id'], $groupCategoryIds, true);
+            }),
+        );
 
         $this->selectedCategoryIds = $selected
             ? array_values(array_unique([...$this->selectedCategoryIds, ...$groupCategoryIds]))
             : array_values(array_diff($this->selectedCategoryIds, $groupCategoryIds));
+        $this->selectedSubcategoryIds = $selected
+            ? array_values(array_unique([...$this->selectedSubcategoryIds, ...$groupSubcategoryIds]))
+            : array_values(array_diff($this->selectedSubcategoryIds, $groupSubcategoryIds));
 
         $this->loadTransactions();
     }
@@ -154,7 +188,8 @@ new class extends Component
     public function hasActiveTransactionFilters(): bool
     {
         return trim($this->noteSearch) !== ''
-            || count($this->selectedCategoryIds) !== count($this->allCategories);
+            || count($this->selectedCategoryIds) !== count($this->allCategories)
+            || count($this->selectedSubcategoryIds) !== count($this->allSubcategories);
     }
 
     public function setRecentTransactionPeriod(string $period): void
@@ -242,7 +277,13 @@ new class extends Component
         $filteredQuery = Transaction::query()
             ->whereBetween('datetime', $range)
             ->when($noteSearch !== '', fn ($query) => $query->whereLike('note', '%'.$noteSearch.'%'))
-            ->whereIn('category_id', $this->selectedCategoryIds);
+            ->whereIn('category_id', $this->selectedCategoryIds)
+            ->where(function ($query): void {
+                $query->whereNull('subcategory_id');
+                if ($this->selectedSubcategoryIds !== []) {
+                    $query->orWhereIn('subcategory_id', $this->selectedSubcategoryIds);
+                }
+            });
 
         $this->periodIncomeTotal = (float) (clone $filteredQuery)
             ->where('type', 'income')
@@ -252,7 +293,7 @@ new class extends Component
             ->sum('amount');
 
         $this->transactions = $filteredQuery
-            ->with('category')
+            ->with(['category', 'subcategory'])
             ->latest('datetime')
             ->get()
             ->toArray();
@@ -300,11 +341,30 @@ new class extends Component
         $this->filterCategoriesByType();
     }
 
+    public function updatedCategoryId(): void
+    {
+        $this->filterSubcategoriesByCategory();
+    }
+
     public function filterCategoriesByType(): void
     {
         $this->categories = array_values(array_filter($this->allCategories, fn ($cat) => ! $cat['type'] || $cat['type'] === $this->type));
         if (count($this->categories) > 0 && ! in_array($this->category_id, array_column($this->categories, 'id'))) {
             $this->category_id = (string) $this->categories[0]['id'];
+        }
+        $this->filterSubcategoriesByCategory();
+    }
+
+    public function filterSubcategoriesByCategory(): void
+    {
+        $category = collect($this->categories)->first(
+            fn ($category) => (string) $category['id'] === (string) $this->category_id,
+        );
+        $this->subcategories = array_values($category['subcategories'] ?? []);
+        $validIds = array_map(fn ($subcategory) => (string) $subcategory['id'], $this->subcategories);
+
+        if (! in_array($this->subcategory_id, $validIds, true)) {
+            $this->subcategory_id = '';
         }
     }
 
@@ -316,12 +376,13 @@ new class extends Component
 
     public function edit(int $transactionId): void
     {
-        $transaction = Transaction::with('category')->findOrFail($transactionId);
+        $transaction = Transaction::with(['category', 'subcategory'])->findOrFail($transactionId);
 
         $this->editingTransactionId = $transaction->id;
         $this->type = $transaction->type;
         $this->datetime = Carbon::parse($transaction->datetime)->setTimezone('Asia/Kuala_Lumpur')->format('d/m/Y H:i');
         $this->category_id = (string) $transaction->category_id;
+        $this->subcategory_id = $transaction->subcategory_id ? (string) $transaction->subcategory_id : '';
         $this->amount = (string) $transaction->amount;
         $this->note = $transaction->note ?? '';
 
@@ -332,7 +393,7 @@ new class extends Component
     public function cancelEdit(): void
     {
         $this->editingTransactionId = null;
-        $this->reset(['amount', 'note', 'errors']);
+        $this->reset(['amount', 'note', 'subcategory_id', 'errors']);
         $this->setInitialDatetime();
         $this->type = 'income';
         $this->filterCategoriesByType();
@@ -373,12 +434,14 @@ new class extends Component
             'type' => $this->type,
             'datetime' => $this->datetime,
             'category_id' => $this->category_id,
+            'subcategory_id' => $this->subcategory_id,
             'amount' => $this->amount,
             'note' => $this->note,
         ], [
             'type' => ['required', 'in:income,expense'],
             'datetime' => ['required', 'date_format:d/m/Y H:i'],
             'category_id' => ['required', 'exists:categories,id'],
+            'subcategory_id' => ['nullable', 'exists:subcategories,id'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'note' => ['nullable', 'string'],
         ]);
@@ -397,6 +460,20 @@ new class extends Component
             return;
         }
 
+        if ($validated['subcategory_id'] !== null && $validated['subcategory_id'] !== '') {
+            $subcategoryBelongsToCategory = Subcategory::query()
+                ->whereKey($validated['subcategory_id'])
+                ->where('category_id', $category->id)
+                ->exists();
+            if (! $subcategoryBelongsToCategory) {
+                $this->errors['subcategory_id'] = ['Subcategory does not belong to the selected category.'];
+
+                return;
+            }
+        } else {
+            $validated['subcategory_id'] = null;
+        }
+
         $validated['datetime'] = Carbon::createFromFormat('d/m/Y H:i', $validated['datetime'], 'Asia/Kuala_Lumpur');
 
         if ($this->editingTransactionId) {
@@ -411,7 +488,7 @@ new class extends Component
 
         $this->dispatch('transaction-toast', message: $successMessage);
 
-        $this->reset(['amount', 'note']);
+        $this->reset(['amount', 'note', 'subcategory_id']);
         $this->setInitialDatetime();
         $this->type = 'income';
         $this->filterCategoriesByType();
@@ -463,16 +540,26 @@ new class extends Component
                     </div>
                 </div>
                 <div class="row g-2 mb-3">
-                    <div class="col-12 col-md-6">
+                    <div class="col-12 col-md-4">
                         <label class="form-label" for="category_id">Category</label>
-                        <select wire:model="category_id" class="form-select" id="category_id" required>
+                        <select wire:model.live="category_id" class="form-select" id="category_id" required>
                             @foreach ($categories as $category)
                                 <option value="{{ $category['id'] }}">{{ $category['name'] }}</option>
                             @endforeach
                         </select>
                         @if (isset($errors['category_id'])) <div class="text-danger">{{ implode(' ', $errors['category_id']) }}</div> @endif
                     </div>
-                    <div class="col-12 col-md-6">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label" for="subcategory_id">Subcategory</label>
+                        <select wire:model="subcategory_id" class="form-select" id="subcategory_id" @disabled($subcategories === [])>
+                            <option value="">{{ $subcategories === [] ? 'No subcategories' : 'No subcategory' }}</option>
+                            @foreach ($subcategories as $subcategory)
+                                <option value="{{ $subcategory['id'] }}">{{ $subcategory['name'] }}</option>
+                            @endforeach
+                        </select>
+                        @if (isset($errors['subcategory_id'])) <div class="text-danger">{{ implode(' ', $errors['subcategory_id']) }}</div> @endif
+                    </div>
+                    <div class="col-12 col-md-4">
                         <label class="form-label" for="amount">Amount</label>
                         <input wire:model="amount" class="form-control" type="number" min="0.01" step="0.01" id="amount" required>
                         @if (isset($errors['amount'])) <div class="text-danger">{{ implode(' ', $errors['amount']) }}</div> @endif
@@ -609,7 +696,7 @@ new class extends Component
                                             <div class="recent-transaction-category-options">
                                                 @foreach ($allCategories as $filterCategory)
                                                     @if ($filterCategory['type'] === $categoryType)
-                                                        <div class="form-check">
+                                                        <div class="form-check recent-transaction-category-option">
                                                             <input
                                                                 wire:model.live="selectedCategoryIds"
                                                                 class="form-check-input"
@@ -620,6 +707,24 @@ new class extends Component
                                                             <label class="form-check-label" for="transactionCategoryFilter{{ $filterCategory['id'] }}">
                                                                 {{ $filterCategory['name'] }}
                                                             </label>
+                                                            @if (($filterCategory['subcategories'] ?? []) !== [])
+                                                                <div class="recent-transaction-subcategory-options">
+                                                                    @foreach ($filterCategory['subcategories'] as $filterSubcategory)
+                                                                        <div class="form-check">
+                                                                            <input
+                                                                                wire:model.live="selectedSubcategoryIds"
+                                                                                class="form-check-input"
+                                                                                type="checkbox"
+                                                                                value="{{ $filterSubcategory['id'] }}"
+                                                                                id="transactionSubcategoryFilter{{ $filterSubcategory['id'] }}"
+                                                                            >
+                                                                            <label class="form-check-label" for="transactionSubcategoryFilter{{ $filterSubcategory['id'] }}">
+                                                                                {{ $filterSubcategory['name'] }}
+                                                                            </label>
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
                                                         </div>
                                                     @endif
                                                 @endforeach
@@ -684,7 +789,12 @@ new class extends Component
                                 class="{{ $editingTransactionId === $tx['id'] ? 'table-active' : '' }}"
                             >
                                 <td>{{ $tx['datetime'] ? \Carbon\Carbon::parse($tx['datetime'])->setTimezone('Asia/Kuala_Lumpur')->format('d/m/Y H:i') : '' }}</td>
-                                <td>{{ $tx['category']['name'] ?? '' }}</td>
+                                <td title="{{ $tx['category']['name'] ?? '' }}{{ ! empty($tx['subcategory']['name']) ? ' · '.$tx['subcategory']['name'] : '' }}">
+                                    {{ $tx['category']['name'] ?? '' }}
+                                    @if (! empty($tx['subcategory']['name']))
+                                        <span class="text-secondary"> · {{ $tx['subcategory']['name'] }}</span>
+                                    @endif
+                                </td>
                                 <td>{{ $tx['note'] ?? '' }}</td>
                                 <td class="text-end">
                                     @if ($tx['type'] === 'income')

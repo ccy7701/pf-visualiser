@@ -2,7 +2,7 @@
 
 ## Functional Specification
 
-Implementation status: verified against the application on 2026-08-01.
+Implementation status: verified against the application on 2026-08-02.
 
 Related high-level project specification: `overview.md`
 
@@ -85,6 +85,7 @@ The system shall support expense logging with:
 
 * datetime
 * category
+* optional subcategory belonging to the selected category
 * note
 * amount
 
@@ -96,6 +97,7 @@ The system shall support income logging with:
 
 * datetime
 * category
+* optional subcategory belonging to the selected category
 * note
 * amount
 
@@ -104,6 +106,10 @@ Income increases Actual COH.
 Income transactions categorized as `Salary` also reconcile against scheduled salary accrual using oldest-unpaid-month-first allocation, so a salary paid in the following month can settle the prior month's accrued salary without clearing the current month's accrual.
 
 Successful transaction create, update, and delete actions shall use the page-level bottom-right status toast rather than an inline form success alert.
+
+The transaction form shall filter the optional Subcategory selector by the chosen Category. Categories without configured subcategories remain valid and display a disabled `No subcategories` selector. A submitted subcategory must belong to the selected parent category.
+
+The transaction table shall display a selected subcategory alongside its parent category. Transaction filters shall support parent categories and their nested subcategories while retaining category-only transactions.
 
 ### 3.5 Transaction Log Period Navigation
 
@@ -264,6 +270,7 @@ Hover counter: RM2327.80 + July unpaid accrual
 | type        | enum          |
 | datetime    | datetime      |
 | category_id | foreign key   |
+| subcategory_id | nullable foreign key |
 | note        | text          |
 | amount      | decimal(12,2) |
 | created_at  | timestamp     |
@@ -286,7 +293,21 @@ Recommendation: store `amount` as positive and derive sign from `type`.
 | created_at | timestamp     |
 | updated_at | timestamp     |
 
-### 5.3 salary_schedules
+The shared catalogue uses `Others` for both income and expense. `Other`, `Others`, and `Modified Bal.` category aliases are consolidated into the type-appropriate `Others` parent.
+
+### 5.3 subcategories
+
+| Field       | Type        |
+| ----------- | ----------- |
+| id          | bigint      |
+| category_id | foreign key |
+| name        | string      |
+| created_at  | timestamp   |
+| updated_at  | timestamp   |
+
+Subcategory names are unique within a parent category. Deleting a subcategory sets existing transactions' `subcategory_id` to null; deleting a category cascades to its subcategories.
+
+### 5.4 salary_schedules
 
 | Field              | Type          |
 | ------------------ | ------------- |
@@ -298,7 +319,7 @@ Recommendation: store `amount` as positive and derive sign from `type`.
 | created_at         | timestamp     |
 | updated_at         | timestamp     |
 
-### 5.4 workdays
+### 5.5 workdays
 
 | Field      | Type          |
 | ---------- | ------------- |
@@ -322,7 +343,7 @@ Notes:
 
 Workday definitions support manual override.
 
-### 5.5 settings
+### 5.6 settings
 
 | Field      | Type          |
 | ---------- | ------------- |
