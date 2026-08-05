@@ -13,7 +13,7 @@ class SubcategorySeeder extends Seeder
         $catalog = [
             'expense' => [
                 'Food' => ['Brunch', 'Ingredients', 'Beverages', 'Snacks', 'Candies', 'Pastries', 'Supper', 'Dessert', 'Dinner', 'Breakfast', 'Lunch'],
-                'Household' => ['Utilities', 'Gardening Tools', 'Home Fragrances', 'Home Tools', 'Appliances', 'Furniture', 'Kitchen', 'Toiletries', 'Chores', 'Cleaning'],
+                'Household' => ['Utilities', 'Gardening Tools', 'Home Fragrances', 'Home Tools', 'Appliances', 'Furniture', 'Kitchen', 'Toiletries', 'Chandlery', 'Pet Supplies'],
                 'Health' => ['Clinic', 'Gym', 'Prescriptions', 'Supplements', 'Health', 'Hospital', 'Medicine', 'Sports'],
                 'Personal Care' => ['Body Care', 'Skincare', 'Hair Care'],
                 'IT Product' => ['Hardware', 'Accessories', 'Software', 'Peripherals', 'Devices', 'Maintenance'],
