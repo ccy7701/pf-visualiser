@@ -88,8 +88,11 @@ The system shall support expense logging with:
 * optional subcategory belonging to the selected category
 * note
 * amount
+* whether the expense is a BNPL payment
 
 Expenses decrease Actual COH.
+
+BNPL can only be set for expense transactions. The Transaction Log identifies flagged rows with a `BNPL` badge.
 
 ### 3.4 Income Logging
 
@@ -273,6 +276,7 @@ Hover counter: RM2327.80 + July unpaid accrual
 | subcategory_id | nullable foreign key |
 | note        | text          |
 | amount      | decimal(12,2) |
+| is_bnpl     | boolean       |
 | created_at  | timestamp     |
 | updated_at  | timestamp     |
 
@@ -282,6 +286,7 @@ Hover counter: RM2327.80 + July unpaid accrual
 * expense
 
 Recommendation: store `amount` as positive and derive sign from `type`.
+`is_bnpl` defaults to `false` and is forced to `false` for income transactions.
 
 ### 5.2 categories
 

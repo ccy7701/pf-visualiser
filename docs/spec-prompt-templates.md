@@ -93,7 +93,7 @@ Template bodies support these placeholders:
 | `{{positions}}` | COH, ELR, EPF, derived LFP, and derived TFP |
 | `{{positions_comparison}}` | End-month positions compared with the immediately preceding History month |
 | `{{expense_total}}` | Period expense total with two decimal places |
-| `{{expense_breakdown}}` | Expense category totals with optional subcategory totals |
+| `{{expense_breakdown}}` | Non-BNPL expense category totals with optional subcategory totals, followed by a separate combined BNPL payment line when applicable |
 | `{{income_total}}` | Period income total with two decimal places |
 | `{{income_breakdown}}` | Income category totals with optional subcategory totals |
 | `{{additional_context}}` | User-entered situational notes |
@@ -150,6 +150,8 @@ The composer reads `transactions` whose `datetime` falls within the inclusive st
 
 Expense and income summaries are calculated independently.
 
+The expense total includes all expense transactions. Expense transactions flagged as BNPL are omitted from category and subcategory groups, combined into one amount, and reported as a separate BNPL line after the ordinary expense breakdown.
+
 For each transaction type:
 
 1. Group transactions by parent category and sum each category.
@@ -159,6 +161,7 @@ For each transaction type:
 5. For categories without formal subcategories, render only the category total.
 6. Do not include individual transaction amounts, purchase descriptions, dates, or notes in generated breakdowns.
 7. Render `None recorded.` when the period contains no transactions of that type.
+8. Exclude BNPL-flagged expenses from category/subcategory groups and combine their amounts into one separate BNPL line; retain them in the overall expense total.
 
 ---
 

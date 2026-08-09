@@ -130,7 +130,7 @@ class PromptTemplateTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('period.status', 'complete');
         $prompt = $response->json('prompt');
-        $this->assertStringContainsString('The month July 2026 is over.', $prompt);
+        $this->assertStringContainsString('The month of July 2026 is over.', $prompt);
         $this->assertStringContainsString('EOTM JULY 2026 POSITIONS, COMPARED WITH JUNE 2026:', $prompt);
         $this->assertStringContainsString('TFP RM1797.17 (up from RM941.85)', $prompt);
         $this->assertStringContainsString('LFP RM1365.17 (up from RM941.85)', $prompt);
@@ -187,6 +187,52 @@ class PromptTemplateTest extends TestCase
         $this->assertStringNotContainsString("\t\t", $prompt);
     }
 
+    public function test_bnpl_expenses_are_combined_separately_from_the_expense_breakdown(): void
+    {
+        $food = Category::query()->create(['name' => 'Food', 'type' => 'expense']);
+        Transaction::query()->create([
+            'type' => 'expense',
+            'datetime' => '2026-07-21 12:00:00',
+            'category_id' => $food->id,
+            'note' => 'Ordinary lunch',
+            'amount' => 25.00,
+        ]);
+        Transaction::query()->create([
+            'type' => 'expense',
+            'datetime' => '2026-07-22 19:00:00',
+            'category_id' => $food->id,
+            'note' => 'Instalment one',
+            'amount' => 40.00,
+            'is_bnpl' => true,
+        ]);
+        Transaction::query()->create([
+            'type' => 'expense',
+            'datetime' => '2026-07-23 19:00:00',
+            'category_id' => $food->id,
+            'note' => 'Instalment two',
+            'amount' => 15.00,
+            'is_bnpl' => true,
+        ]);
+        $template = PromptTemplate::query()->where('period_type', 'weekly')->firstOrFail();
+
+        $response = $this->postJson(route('prompt-studio.compose'), [
+            'template_id' => $template->id,
+            'start_date' => '2026-07-20',
+            'end_date' => '2026-07-26',
+            'period_status' => 'complete',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('totals.expenses', 80)
+            ->assertJsonPath('totals.bnpl', 55);
+        $prompt = $response->json('prompt');
+        $this->assertStringContainsString('-RM25.00 from Food', $prompt);
+        $this->assertStringNotContainsString('-RM80.00 from Food', $prompt);
+        $this->assertStringContainsString('-RM55.00 in BNPL payments (recorded separately)', $prompt);
+        $this->assertStringNotContainsString('Instalment one', $prompt);
+        $this->assertStringNotContainsString('Instalment two', $prompt);
+    }
+
     public function test_current_week_positions_use_history_coh_instead_of_the_counter(): void
     {
         Carbon::setTestNow('2026-08-02 10:00:00');
@@ -235,7 +281,7 @@ class PromptTemplateTest extends TestCase
         $response->assertOk();
         $prompt = $response->json('prompt');
         $this->assertStringContainsString(
-            'The month August 2026 is still ongoing. I will give you the data first',
+            'The month of August 2026 is still ongoing. I will give you the data first',
             $prompt,
         );
         $this->assertStringNotContainsString('Breakdown so far:', $prompt);

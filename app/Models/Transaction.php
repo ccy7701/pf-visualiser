@@ -17,6 +17,7 @@ class Transaction extends Model
         'subcategory_id',
         'note',
         'amount',
+        'is_bnpl',
     ];
 
     protected function casts(): array
@@ -24,6 +25,7 @@ class Transaction extends Model
         return [
             'datetime' => 'datetime',
             'amount' => 'decimal:2',
+            'is_bnpl' => 'boolean',
         ];
     }
 

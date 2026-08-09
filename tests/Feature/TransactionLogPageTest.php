@@ -140,6 +140,7 @@ class TransactionLogPageTest extends TestCase
 
         $component = Livewire::test('transaction-log')
             ->set('type', 'expense')
+            ->assertSee('This expense is part of a BNPL payment')
             ->set('category_id', (string) $food->id)
             ->assertSee('No subcategory')
             ->assertSee('Lunch')
@@ -147,6 +148,7 @@ class TransactionLogPageTest extends TestCase
             ->set('subcategory_id', (string) $lunch->id)
             ->set('datetime', '15/07/2026 12:30')
             ->set('amount', '22.70')
+            ->set('is_bnpl', true)
             ->set('note', 'Workday meal')
             ->call('save')
             ->assertSet('errors', []);
@@ -154,6 +156,7 @@ class TransactionLogPageTest extends TestCase
         $transaction = Transaction::query()->where('note', 'Workday meal')->firstOrFail();
         $this->assertSame($food->id, $transaction->category_id);
         $this->assertSame($lunch->id, $transaction->subcategory_id);
+        $this->assertTrue($transaction->is_bnpl);
 
         $component
             ->call('setRecentTransactionPeriod', 'custom')
@@ -163,6 +166,7 @@ class TransactionLogPageTest extends TestCase
             ->assertSee('Lunch')
             ->call('edit', $transaction->id)
             ->assertSet('subcategory_id', (string) $lunch->id)
+            ->assertSet('is_bnpl', true)
             ->set('selectedCategoryIds', [(string) $food->id])
             ->set('selectedSubcategoryIds', [(string) $dinner->id])
             ->assertDontSee('Workday meal')
@@ -204,6 +208,23 @@ class TransactionLogPageTest extends TestCase
             ->assertSet('errors.subcategory_id.0', 'Subcategory does not belong to the selected category.');
 
         $this->assertDatabaseCount('transactions', 0);
+    }
+
+    public function test_income_transactions_cannot_be_flagged_as_bnpl(): void
+    {
+        $salary = Category::query()->create(['name' => 'Salary', 'type' => 'income']);
+
+        Livewire::test('transaction-log')
+            ->assertDontSee('This expense is part of a BNPL payment')
+            ->set('type', 'income')
+            ->set('category_id', (string) $salary->id)
+            ->set('datetime', '15/07/2026 17:30')
+            ->set('amount', '100.00')
+            ->set('is_bnpl', true)
+            ->call('save')
+            ->assertSet('errors', []);
+
+        $this->assertFalse(Transaction::query()->firstOrFail()->is_bnpl);
     }
 
     public function test_counter_no_longer_contains_the_settings_popup(): void

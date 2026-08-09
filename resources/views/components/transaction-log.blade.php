@@ -63,6 +63,8 @@ new class extends Component
 
     public string $amount = '';
 
+    public bool $is_bnpl = false;
+
     public string $note = '';
 
     public array $errors = [];
@@ -338,6 +340,10 @@ new class extends Component
 
     public function updatedType(): void
     {
+        if ($this->type !== 'expense') {
+            $this->is_bnpl = false;
+        }
+
         $this->filterCategoriesByType();
     }
 
@@ -384,6 +390,7 @@ new class extends Component
         $this->category_id = (string) $transaction->category_id;
         $this->subcategory_id = $transaction->subcategory_id ? (string) $transaction->subcategory_id : '';
         $this->amount = (string) $transaction->amount;
+        $this->is_bnpl = $transaction->type === 'expense' && (bool) $transaction->is_bnpl;
         $this->note = $transaction->note ?? '';
 
         $this->filterCategoriesByType();
@@ -393,7 +400,7 @@ new class extends Component
     public function cancelEdit(): void
     {
         $this->editingTransactionId = null;
-        $this->reset(['amount', 'note', 'subcategory_id', 'errors']);
+        $this->reset(['amount', 'note', 'subcategory_id', 'is_bnpl', 'errors']);
         $this->setInitialDatetime();
         $this->type = 'income';
         $this->filterCategoriesByType();
@@ -436,6 +443,7 @@ new class extends Component
             'category_id' => $this->category_id,
             'subcategory_id' => $this->subcategory_id,
             'amount' => $this->amount,
+            'is_bnpl' => $this->is_bnpl,
             'note' => $this->note,
         ], [
             'type' => ['required', 'in:income,expense'],
@@ -443,6 +451,7 @@ new class extends Component
             'category_id' => ['required', 'exists:categories,id'],
             'subcategory_id' => ['nullable', 'exists:subcategories,id'],
             'amount' => ['required', 'numeric', 'min:0.01'],
+            'is_bnpl' => ['required', 'boolean'],
             'note' => ['nullable', 'string'],
         ]);
 
@@ -452,6 +461,7 @@ new class extends Component
         }
 
         $validated = $v->validated();
+        $validated['is_bnpl'] = $validated['type'] === 'expense' && (bool) $validated['is_bnpl'];
 
         $category = Category::query()->findOrFail($validated['category_id']);
 
@@ -488,7 +498,7 @@ new class extends Component
 
         $this->dispatch('transaction-toast', message: $successMessage);
 
-        $this->reset(['amount', 'note', 'subcategory_id']);
+        $this->reset(['amount', 'note', 'subcategory_id', 'is_bnpl']);
         $this->setInitialDatetime();
         $this->type = 'income';
         $this->filterCategoriesByType();
@@ -565,6 +575,24 @@ new class extends Component
                         @if (isset($errors['amount'])) <div class="text-danger">{{ implode(' ', $errors['amount']) }}</div> @endif
                     </div>
                 </div>
+                @if ($type === 'expense')
+                    <div class="row g-2 mb-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input wire:model="is_bnpl" class="form-check-input" type="checkbox" id="is_bnpl">
+                                <label class="form-check-label" for="is_bnpl">This expense is part of a BNPL payment</label>
+                                <span
+                                    class="transaction-bnpl-hint"
+                                    tabindex="0"
+                                    title="Prompt Studio will report it separately from the category expense breakdown."
+                                    aria-label="Prompt Studio will report it separately from the category expense breakdown."
+                                >
+                                    <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                @endif
                 <div class="mb-3">
                     <label class="form-label" for="note">Note</label>
                     <textarea wire:model="note" class="form-control" id="note" rows="4"></textarea>
@@ -793,6 +821,9 @@ new class extends Component
                                     {{ $tx['category']['name'] ?? '' }}
                                     @if (! empty($tx['subcategory']['name']))
                                         <span class="text-secondary"> · {{ $tx['subcategory']['name'] }}</span>
+                                    @endif
+                                    @if ($tx['is_bnpl'] ?? false)
+                                        <span class="badge text-bg-secondary ms-1">BNPL</span>
                                     @endif
                                 </td>
                                 <td>{{ $tx['note'] ?? '' }}</td>

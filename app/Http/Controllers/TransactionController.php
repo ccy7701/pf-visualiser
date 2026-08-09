@@ -21,10 +21,12 @@ class TransactionController extends Controller
             'subcategory_id' => ['nullable', 'exists:subcategories,id'],
             'note' => ['nullable', 'string'],
             'amount' => ['required', 'numeric', 'min:0.01'],
+            'is_bnpl' => ['nullable', 'boolean'],
         ]);
 
         $validated['datetime'] = Carbon::createFromFormat('d/m/Y H:i', $validated['datetime'], 'Asia/Kuala_Lumpur');
         $validated['subcategory_id'] = $validated['subcategory_id'] ?? null;
+        $validated['is_bnpl'] = $validated['type'] === 'expense' && (bool) ($validated['is_bnpl'] ?? false);
 
         $category = Category::query()->findOrFail($validated['category_id']);
 
@@ -56,10 +58,12 @@ class TransactionController extends Controller
             'subcategory_id' => ['nullable', 'exists:subcategories,id'],
             'note' => ['nullable', 'string'],
             'amount' => ['required', 'numeric', 'min:0.01'],
+            'is_bnpl' => ['nullable', 'boolean'],
         ]);
 
         $validated['datetime'] = Carbon::createFromFormat('d/m/Y H:i', $validated['datetime'], 'Asia/Kuala_Lumpur');
         $validated['subcategory_id'] = $validated['subcategory_id'] ?? null;
+        $validated['is_bnpl'] = $validated['type'] === 'expense' && (bool) ($validated['is_bnpl'] ?? false);
 
         $category = Category::query()->findOrFail($validated['category_id']);
 

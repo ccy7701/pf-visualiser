@@ -36,7 +36,7 @@ class PromptComposerService
             'positions' => $this->formatPositions($positions),
             'positions_comparison' => $this->formatPositionsComparison($positions, $previousPositions, $end),
             'expense_total' => $this->money($expenses->sum('amount')),
-            'expense_breakdown' => $this->formatBreakdown($expenses, '-'),
+            'expense_breakdown' => $this->formatExpenseBreakdown($expenses),
             'income_total' => $this->money($incomes->sum('amount')),
             'income_breakdown' => $this->formatBreakdown($incomes, '+'),
             'additional_context' => trim((string) ($input['additional_context'] ?? '')),
@@ -61,6 +61,7 @@ class PromptComposerService
             ],
             'totals' => [
                 'expenses' => round((float) $expenses->sum('amount'), 2),
+                'bnpl' => round((float) $expenses->where('is_bnpl', true)->sum('amount'), 2),
                 'incomes' => round((float) $incomes->sum('amount'), 2),
             ],
         ];
@@ -202,6 +203,22 @@ class PromptComposerService
                 return "{$sign}RM{$this->money($group['total'])} from {$group['name']}";
             })
             ->implode("\n");
+    }
+
+    private function formatExpenseBreakdown(Collection $expenses): string
+    {
+        $bnplExpenses = $expenses->where('is_bnpl', true)->values();
+        if ($bnplExpenses->isEmpty()) {
+            return $this->formatBreakdown($expenses, '-');
+        }
+
+        $ordinaryExpenses = $expenses->where('is_bnpl', false)->values();
+        $ordinaryBreakdown = $ordinaryExpenses->isEmpty()
+            ? 'No non-BNPL expenses recorded.'
+            : $this->formatBreakdown($ordinaryExpenses, '-');
+        $bnplTotal = $this->money($bnplExpenses->sum('amount'));
+
+        return "{$ordinaryBreakdown}\n-RM{$bnplTotal} in BNPL payments (recorded separately)";
     }
 
     private function periodLabel(CarbonImmutable $start, CarbonImmutable $end, string $periodType): string

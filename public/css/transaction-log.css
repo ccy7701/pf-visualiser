@@ -403,6 +403,18 @@ body {
     cursor: pointer;
 }
 
+.transaction-bnpl-hint {
+    color: #6c757d;
+    cursor: help;
+    display: inline-flex;
+    margin-left: 0.25rem;
+    vertical-align: text-bottom;
+}
+
+[data-bs-theme="dark"] .transaction-bnpl-hint {
+    color: #adb5bd;
+}
+
 @media (max-width: 1199.98px) {
     .transaction-log-grid {
         grid-template-columns: 1fr;
