@@ -1,3 +1,5 @@
+import { detectVehicleBrand } from './vehicle-brand-logos.js';
+
 (function () {
     const PRICE_BUDI95 = 1.99;
     const PRICE_RON95 = 2.05;
@@ -70,6 +72,15 @@
         const normalized = String(value ?? '').replace(/,/g, '').trim();
         const parsed = Number(normalized);
         return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     function normalizeVehicle(vehicle) {
@@ -367,6 +378,20 @@
     function vehicleName(vehicleId) {
         const vehicle = state.vehicles.find((v) => v.id === String(vehicleId));
         return vehicle ? vehicle.name : 'Unknown';
+    }
+
+    function vehicleBrandMark(vehicleId) {
+        const name = vehicleName(vehicleId);
+        const safeName = escapeHtml(name);
+        const brand = detectVehicleBrand(name);
+
+        if (!brand) {
+            return `<span class="vehicle-brand-mark" role="img" aria-label="${safeName}" title="${safeName}"><i class="fa-solid fa-car-side" title="${safeName}" aria-hidden="true"></i></span>`;
+        }
+
+        const logoBaseUrl = String(config.vehicleBrandLogoBaseUrl || '/images/vehicle-brands').replace(/\/$/, '');
+        const logoUrl = escapeHtml(`${logoBaseUrl}/${brand.logoFile}`);
+        return `<span class="vehicle-brand-mark" role="img" aria-label="${brand.label}: ${safeName}" title="${safeName}"><img class="vehicle-brand-logo" src="${logoUrl}" alt="" title="${safeName}" aria-hidden="true"></span>`;
     }
 
     function formatDateTime(dateLike) {
@@ -731,12 +756,14 @@
 
         tbody.innerHTML = '';
         if (!rows.length) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-secondary py-4">${period.emptyDriveMessage}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-secondary py-4">${period.emptyDriveMessage}</td></tr>`;
             return;
         }
 
         rows.forEach((row) => {
             const tr = document.createElement('tr');
+            const origin = escapeHtml(row.origin);
+            const destination = escapeHtml(row.destination);
             tr.setAttribute('data-commute-log-id', row.id);
             tr.style.cursor = 'pointer';
             if (editingCommuteLogId && row.id === editingCommuteLogId) {
@@ -747,11 +774,16 @@
                     <div class="log-cell-main">${formatDateOnly(row.driven_at)}</div>
                     <div class="log-cell-sub">${formatTimeOnly(row.driven_at)} - ${row.ended_at ? formatTimeOnly(row.ended_at) : '-'}</div>
                 </td>
-                <td>${vehicleName(row.vehicle_id)}</td>
+                <td class="drive-vehicle-cell">${vehicleBrandMark(row.vehicle_id)}</td>
                 <td>
-                    <div class="log-cell-main">${row.origin} - ${row.destination}</div>
-                    <div class="log-cell-sub">${row.commute_type === 'work_commute' ? 'Work Commute' : 'Personal Drive'}</div>
+                    <div class="log-cell-main drive-route">
+                        <span class="drive-route-icon" title="Origin" aria-hidden="true"><i class="fa-solid fa-location-dot"></i></span>
+                        <span class="drive-route-place" title="${origin}">${origin}</span>
+                        <span class="drive-route-icon" title="Destination" aria-hidden="true"><i class="fa-solid fa-flag-checkered"></i></span>
+                        <span class="drive-route-place" title="${destination}">${destination}</span>
+                    </div>
                 </td>
+                <td>${row.commute_type === 'work_commute' ? 'Work Commute' : 'Personal Drive'}</td>
                 <td class="text-end">${money.format(toNumber(row.distance_km, 0))} km</td>
                 <td class="text-end">
                     <div class="log-cell-main">${row.estimated_fuel_litres === null ? '-' : money.format(row.estimated_fuel_litres)} L</div>
@@ -774,7 +806,7 @@
 
         tbody.innerHTML = '';
         if (!rows.length) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-secondary py-4">${period.emptyParkingMessage}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-secondary py-4">${period.emptyParkingMessage}</td></tr>`;
             return;
         }
 
@@ -792,7 +824,8 @@
                     <div class="log-cell-sub">${isMonthlyPass ? `Purchased ${formatDateOnly(row.parking_date)}` : `${formatHour(row.start_hour)} - ${formatHour(row.end_hour)}`}</div>
                 </td>
                 <td>${isMonthlyPass ? 'Monthly Pass' : 'Casual Parking'}</td>
-                <td>${row.location || '-'}</td>
+                <td>${escapeHtml(row.location || '-')}</td>
+                <td>${escapeHtml(row.notes || '-')}</td>
                 <td class="text-end">${money.format(toNumber(row.total_amount, 0))}</td>
             `;
             tbody.appendChild(tr);

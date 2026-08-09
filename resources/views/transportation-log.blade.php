@@ -368,6 +368,7 @@
                                     <th>Trip Timing</th>
                                     <th>Vehicle</th>
                                     <th>Route</th>
+                                    <th>Drive Type</th>
                                     <th class="text-end">Distance</th>
                                     <th class="text-end">Fuel Used</th>
                                     <th class="text-end">Cost</th>
@@ -375,7 +376,7 @@
                                 </thead>
                                 <tbody id="commuteLogRows">
                                 <tr>
-                                    <td colspan="6" class="text-center text-secondary py-4">No drive logs yet.</td>
+                                    <td colspan="7" class="text-center text-secondary py-4">No drive logs yet.</td>
                                 </tr>
                                 </tbody>
                             </table>
@@ -391,12 +392,13 @@
                                     <th>Period</th>
                                     <th>Type</th>
                                     <th>Location</th>
+                                    <th>Notes</th>
                                     <th class="text-end">Cost (RM)</th>
                                 </tr>
                                 </thead>
                                 <tbody id="parkingLogRows">
                                 <tr>
-                                    <td colspan="4" class="text-center text-secondary py-4">No parking logs yet.</td>
+                                    <td colspan="5" class="text-center text-secondary py-4">No parking logs yet.</td>
                                 </tr>
                                 </tbody>
                             </table>
@@ -422,6 +424,7 @@
         parkingLogsEndpoint: '{{ route('transportation-log.parking-logs.store') }}',
         parkingLogsBaseUrl: '{{ url('/transportation-log/parking-logs') }}',
         vehiclesBaseUrl: '{{ url('/transportation-log/vehicles') }}',
+        vehicleBrandLogoBaseUrl: '{{ asset('images/vehicle-brands') }}',
     };
 </script>
 <script type="module" src="{{ asset('js/edge-nav.js') }}"></script>

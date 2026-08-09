@@ -28,6 +28,20 @@ class TransportationLogPageTest extends TestCase
             'Refuel Logs',
             '<th>Location</th>',
         ], false);
+        $response->assertSeeInOrder([
+            'Parking Logs',
+            '<th>Location</th>',
+            '<th>Notes</th>',
+            '<th class="text-end">Cost (RM)</th>',
+        ], false);
+        $response->assertSee('<td colspan="5" class="text-center text-secondary py-4">No parking logs yet.</td>', false);
+        $response->assertSee('vehicleBrandLogoBaseUrl', false);
+        $response->assertSeeInOrder([
+            '<th>Route</th>',
+            '<th>Drive Type</th>',
+            '<th class="text-end">Distance</th>',
+        ], false);
+        $response->assertSee('<td colspan="7" class="text-center text-secondary py-4">No drive logs yet.</td>', false);
     }
 
     public function test_transportation_export_downloads_the_selected_period_as_json(): void
