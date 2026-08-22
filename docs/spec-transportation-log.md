@@ -128,6 +128,7 @@ Commute type values:
 
 The system shall compute and expose:
 
+* ending and starting odometer readings as whole-number secondary information within the distance column; the start comes from the immediately preceding drive log for the same vehicle
 * estimated fuel used (L)
 * estimated fuel cost
 * estimated cost per km

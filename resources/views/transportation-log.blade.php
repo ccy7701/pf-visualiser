@@ -85,7 +85,7 @@
                                 <div class="row g-2 mb-2">
                                     <div class="col-6">
                                         <label for="fuelOdometerKm" class="form-label form-label-sm">Odometer (km)</label>
-                                        <input id="fuelOdometerKm" type="number" min="0" step="0.01" class="form-control compact-input" value="0">
+                                        <input id="fuelOdometerKm" type="number" min="0" step="1" class="form-control compact-input" value="0">
                                     </div>
                                     <div class="col-6">
                                         <label for="fuelLitres" class="form-label form-label-sm">Fuel (L)</label>
@@ -186,8 +186,8 @@
                                 </div>
                                 <div class="row g-2 mb-2">
                                     <div class="col-6">
-                                        <label for="commuteFinalOdometerKm" class="form-label form-label-sm">Final Odometer Reading (km)</label>
-                                        <input id="commuteFinalOdometerKm" type="number" min="0" class="form-control compact-input" value="0">
+                                        <label for="commuteFinalOdometerKm" class="form-label form-label-sm">Ending Odometer Reading (km)</label>
+                                        <input id="commuteFinalOdometerKm" type="number" min="0" step="1" class="form-control compact-input" value="0">
                                     </div>
                                 </div>
                                 <div class="row g-2 mb-2">

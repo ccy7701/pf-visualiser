@@ -137,7 +137,7 @@ Key characteristics:
 * backend-connected snapshot + CRUD endpoints for vehicle, refuel, drive, and parking logs
 * monthly, weekly, since-refuel, and custom dashboards for fuel spend, drive estimate, weighted average mileage, commute distance, and parking cost
 * row-click edit workflow for refuel and drive logs (populate input tab + edit/delete actions)
-* drive logs support an optional final odometer reading for the end of each trip
+* drive logs show compact whole-number ending and starting odometer detail beneath distance, deriving the start from the preceding drive for the same vehicle
 * casual and monthly-pass parking records with billing-month handling
 * JSON export for monthly, weekly, since-refuel, and custom periods
 * 24-hour datetime input/display consistency for refuel and drive records

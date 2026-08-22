@@ -301,6 +301,25 @@
             color: #6c757d;
             line-height: 1.2;
         }
+        .drive-odometer-readings {
+            display: grid;
+            justify-items: end;
+            gap: 0.18rem;
+            margin-top: 0.3rem;
+            font-style: normal;
+            white-space: nowrap;
+        }
+        .drive-odometer-reading {
+            display: inline-grid;
+            grid-template-columns: 0.75rem auto;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .drive-odometer-reading i {
+            width: 0.75rem;
+            text-align: center;
+            font-size: 0.65rem;
+        }
         [data-bs-theme="dark"] .log-cell-sub {
             color: #adb5bd;
         }

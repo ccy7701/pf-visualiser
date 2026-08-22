@@ -24,6 +24,8 @@ class TransportationLogPageTest extends TestCase
         $response->assertSee('id="transportationSummaryCustomPeriod"', false);
         $response->assertSee('id="transportationSummaryStartDate"', false);
         $response->assertSee('id="transportationSummaryEndDate"', false);
+        $response->assertSee('id="fuelOdometerKm" type="number" min="0" step="1"', false);
+        $response->assertSee('id="commuteFinalOdometerKm" type="number" min="0" step="1"', false);
         $response->assertSeeInOrder([
             'Refuel Logs',
             '<th>Location</th>',
@@ -36,6 +38,7 @@ class TransportationLogPageTest extends TestCase
         ], false);
         $response->assertSee('<td colspan="5" class="text-center text-secondary py-4">No parking logs yet.</td>', false);
         $response->assertSee('vehicleBrandLogoBaseUrl', false);
+        $response->assertSee('Ending Odometer Reading (km)');
         $response->assertSeeInOrder([
             '<th>Route</th>',
             '<th>Drive Type</th>',

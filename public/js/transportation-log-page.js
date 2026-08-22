@@ -7,6 +7,7 @@ import { detectVehicleBrand } from './vehicle-brand-logos.js';
     const config = window.transportationLogConfig || {};
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     const money = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const odometerNumber = new Intl.NumberFormat('en-MY', { maximumFractionDigits: 0 });
 
     let statusTimer = null;
     let editingVehicleId = null;
@@ -360,9 +361,7 @@ import { detectVehicleBrand } from './vehicle-brand-logos.js';
 
     function transportationRowsForScope(periodScope) {
         const fuelRows = deriveFuelRows();
-        const driveRows = state.commuteLogs
-            .map(deriveDriveRow)
-            .sort((a, b) => new Date(b.driven_at).getTime() - new Date(a.driven_at).getTime());
+        const driveRows = deriveDriveRows();
         const parkingRows = state.parkingLogs
             .slice()
             .sort((a, b) => new Date(parkingScopeDate(b)).getTime() - new Date(parkingScopeDate(a)).getTime());
@@ -560,6 +559,42 @@ import { detectVehicleBrand } from './vehicle-brand-logos.js';
             estimated_fuel_cost: estimatedCost,
             estimated_cost_per_km: estimatedCostPerKm,
         };
+    }
+
+    function deriveDriveRows() {
+        const byVehicle = new Map();
+
+        state.commuteLogs.forEach((log) => {
+            const logs = byVehicle.get(log.vehicle_id) || [];
+            logs.push(log);
+            byVehicle.set(log.vehicle_id, logs);
+        });
+
+        const derived = [];
+        byVehicle.forEach((logs) => {
+            logs.sort(compareDriveLogs);
+
+            logs.forEach((log, index) => {
+                const previousLog = index > 0 ? logs[index - 1] : null;
+                derived.push(deriveDriveRow({
+                    ...log,
+                    starting_odometer_km: optionalOdometer(previousLog?.final_odometer_km),
+                }));
+            });
+        });
+
+        return derived.sort((a, b) => compareDriveLogs(b, a));
+    }
+
+    function compareDriveLogs(a, b) {
+        const timeDifference = new Date(a.driven_at).getTime() - new Date(b.driven_at).getTime();
+        if (timeDifference !== 0) return timeDifference;
+        return toNumber(a.id, 0) - toNumber(b.id, 0);
+    }
+
+    function optionalOdometer(value) {
+        if (value === null || value === undefined || value === '') return null;
+        return toNumber(value, null);
     }
 
     function summarizeTransportationRows(fuelRows, driveRows, parkingRows) {
@@ -764,6 +799,9 @@ import { detectVehicleBrand } from './vehicle-brand-logos.js';
             const tr = document.createElement('tr');
             const origin = escapeHtml(row.origin);
             const destination = escapeHtml(row.destination);
+            const startingOdometer = row.starting_odometer_km === null ? '—' : `${odometerNumber.format(row.starting_odometer_km)} km`;
+            const endingOdometerValue = optionalOdometer(row.final_odometer_km);
+            const endingOdometer = endingOdometerValue === null ? '—' : `${odometerNumber.format(endingOdometerValue)} km`;
             tr.setAttribute('data-commute-log-id', row.id);
             tr.style.cursor = 'pointer';
             if (editingCommuteLogId && row.id === editingCommuteLogId) {
@@ -784,7 +822,21 @@ import { detectVehicleBrand } from './vehicle-brand-logos.js';
                     </div>
                 </td>
                 <td>${row.commute_type === 'work_commute' ? 'Work Commute' : 'Personal Drive'}</td>
-                <td class="text-end">${money.format(toNumber(row.distance_km, 0))} km</td>
+                <td class="text-end">
+                    <div class="log-cell-main">${money.format(toNumber(row.distance_km, 0))} km</div>
+                    <div class="log-cell-sub drive-odometer-readings">
+                        <div class="drive-odometer-reading" title="Ending odometer">
+                            <i class="fa-solid fa-flag-checkered" aria-hidden="true"></i>
+                            <span class="visually-hidden">Ending odometer:</span>
+                            <span>${endingOdometer}</span>
+                        </div>
+                        <div class="drive-odometer-reading" title="Starting odometer">
+                            <i class="fa-solid fa-flag" aria-hidden="true"></i>
+                            <span class="visually-hidden">Starting odometer:</span>
+                            <span>${startingOdometer}</span>
+                        </div>
+                    </div>
+                </td>
                 <td class="text-end">
                     <div class="log-cell-main">${row.estimated_fuel_litres === null ? '-' : money.format(row.estimated_fuel_litres)} L</div>
                     <div class="log-cell-sub">(${money.format(toNumber(row.mileageLPer100Km, 0))} L/100km)</div>
@@ -1064,7 +1116,7 @@ import { detectVehicleBrand } from './vehicle-brand-logos.js';
         const notes = document.getElementById('fuelNote');
 
         if (vehicle) vehicle.value = log?.vehicle_id || (state.vehicles[0]?.id || '');
-        if (odometer) odometer.value = String(toNumber(log?.odometer_km, 0));
+        if (odometer) odometer.value = String(Math.round(toNumber(log?.odometer_km, 0)));
         if (litres) litres.value = String(toNumber(log?.fuel_litres, 0));
         if (mode) mode.value = log?.fuel_price_mode || 'budi95';
         if (price) price.value = String(toNumber(log?.price_per_litre, PRICE_BUDI95));
@@ -1130,7 +1182,10 @@ import { detectVehicleBrand } from './vehicle-brand-logos.js';
         if (origin) origin.value = log?.origin || 'Home';
         if (destination) destination.value = log?.destination || 'Work';
         if (distance) distance.value = String(toNumber(log?.distance_km, 0));
-        if (finalOdometer) finalOdometer.value = log?.final_odometer_km ?? '';
+        if (finalOdometer) {
+            const value = optionalOdometer(log?.final_odometer_km);
+            finalOdometer.value = value === null ? '' : String(Math.round(value));
+        }
         if (consumption) consumption.value = String(toNumber(log?.consumption_value, 0));
         if (date) date.value = dateTime.date;
         if (time) time.value = dateTime.time;
