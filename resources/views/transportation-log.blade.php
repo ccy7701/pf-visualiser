@@ -302,8 +302,8 @@
             </div>
         </div>
 
-        <div class="col-xl-8">
-            <div class="card panel-card">
+        <div class="col-xl-8 transportation-log-output-column">
+            <section class="card panel-card transportation-output-card" id="transportationSummaryCard">
                 <div class="card-header transportation-summary-shell-header">
                     <div class="summary-title-actions">
                         <div id="transportationSummaryTitle">Summary for {{ now()->format('F Y') }}</div>
@@ -332,34 +332,40 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-3">
                     <div class="row g-2" id="fuelDashboardCards"></div>
+                </div>
+            </section>
 
-                    <div id="refuelLogsSection">
-                        <h2 class="section-subtitle my-3">Refuel Logs</h2>
-                        <div class="results-wrap transportation-section-table">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-sm mb-0 projection-table">
-                                    <thead class="table-light sticky-top">
-                                    <tr>
-                                        <th>Date &amp; Time</th>
-                                        <th>Vehicle</th>
-                                        <th>Location</th>
-                                        <th class="text-end">Litres</th>
-                                        <th class="text-end">Total (RM)</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody id="fuelLogRows">
-                                    <tr>
-                                        <td colspan="5" class="text-center text-secondary py-4">No refuel logs yet.</td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+            <section class="card panel-card transportation-output-card" id="refuelLogsSection">
+                <div class="card-header">Refuel Logs</div>
+                <div class="card-body p-3">
+                    <div class="results-wrap transportation-section-table">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-sm mb-0 projection-table">
+                                <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Date &amp; Time</th>
+                                    <th>Vehicle</th>
+                                    <th>Location</th>
+                                    <th class="text-end">Litres</th>
+                                    <th class="text-end">Total (RM)</th>
+                                </tr>
+                                </thead>
+                                <tbody id="fuelLogRows">
+                                <tr>
+                                    <td colspan="5" class="text-center text-secondary py-4">No refuel logs yet.</td>
+                                </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
+                </div>
+            </section>
 
-                    <h2 class="section-subtitle my-3">Drive Logs</h2>
+            <section class="card panel-card transportation-output-card" id="driveLogsSection">
+                <div class="card-header">Drive Logs</div>
+                <div class="card-body p-3">
                     <div class="results-wrap transportation-section-table transportation-drive-logs-table">
                         <div class="table-responsive">
                             <table class="table table-striped table-sm mb-0 projection-table">
@@ -382,8 +388,12 @@
                             </table>
                         </div>
                     </div>
+                </div>
+            </section>
 
-                    <h2 class="section-subtitle my-3">Parking Logs</h2>
+            <section class="card panel-card transportation-output-card" id="parkingLogsSection">
+                <div class="card-header">Parking Logs</div>
+                <div class="card-body p-3">
                     <div class="results-wrap transportation-section-table">
                         <div class="table-responsive">
                             <table class="table table-striped table-sm mb-0 projection-table">
@@ -405,7 +415,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
     </div>
 </div>

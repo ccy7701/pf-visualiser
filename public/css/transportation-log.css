@@ -1,3 +1,13 @@
+        .transportation-log-output-column {
+            display: grid;
+            gap: 1rem;
+        }
+        .transportation-output-card {
+            min-width: 0;
+        }
+        .transportation-output-card > .card-header {
+            padding: 0.75rem 1rem;
+        }
         .dashboard-card {
             border: 1px solid #dee2e6;
             border-radius: 0.65rem;

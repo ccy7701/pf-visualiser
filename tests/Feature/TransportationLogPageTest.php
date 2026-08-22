@@ -47,6 +47,27 @@ class TransportationLogPageTest extends TestCase
         $response->assertSee('<td colspan="7" class="text-center text-secondary py-4">No drive logs yet.</td>', false);
     }
 
+    public function test_summary_and_each_log_table_are_rendered_in_separate_cards(): void
+    {
+        $response = $this->get(route('transportation-log.index'));
+
+        $response->assertOk();
+        $response->assertSeeInOrder([
+            'id="transportationSummaryCard"',
+            'id="transportationSummaryTitle"',
+            'id="refuelLogsSection"',
+            '<div class="card-header">Refuel Logs</div>',
+            'id="driveLogsSection"',
+            '<div class="card-header">Drive Logs</div>',
+            'id="parkingLogsSection"',
+            '<div class="card-header">Parking Logs</div>',
+        ], false);
+        $this->assertSame(
+            4,
+            substr_count($response->getContent(), 'class="card panel-card transportation-output-card"'),
+        );
+    }
+
     public function test_transportation_export_downloads_the_selected_period_as_json(): void
     {
         $response = $this->post(route('transportation-log.export'), [
