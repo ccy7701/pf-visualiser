@@ -39,6 +39,7 @@ class CategorySeeder extends Seeder
             'Bonus',
             'Loans',
             'Payments',
+            'Reimbursement',
             'Deposit',
             'Money Pot Share',
             'Cash Assistance',

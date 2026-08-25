@@ -34,6 +34,7 @@ class SubcategorySeeder extends Seeder
                 'Salary' => ['Blaze Tech', 'EPF'],
                 'EPF' => ['Blaze Tech'],
                 'Interest' => ['GO+', 'Bank'],
+                'Reimbursement' => ['Blaze Tech'],
             ],
         ];
 
