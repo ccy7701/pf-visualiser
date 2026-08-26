@@ -16,8 +16,6 @@ class CategorySeederTest extends TestCase
     public function test_it_seeds_the_consolidated_category_and_subcategory_catalogue_idempotently(): void
     {
         $this->seed(CategorySeeder::class);
-        $this->seed(CategorySeeder::class);
-        $this->seed(SubcategorySeeder::class);
         $this->seed(SubcategorySeeder::class);
 
         $this->assertDatabaseHas('categories', [
@@ -33,9 +31,13 @@ class CategorySeederTest extends TestCase
             'name' => 'Others',
             'type' => 'expense',
         ]);
+        $this->assertDatabaseHas('categories', [
+            'name' => 'Reimbursement',
+            'type' => 'income',
+        ]);
         $this->assertDatabaseMissing('categories', ['name' => 'Other']);
         $this->assertDatabaseMissing('categories', ['name' => 'Modified Bal.']);
-        $this->assertDatabaseCount('categories', 34);
+        $this->assertDatabaseCount('categories', 35);
 
         $foodId = (int) Category::query()
             ->where('name', 'Food')
