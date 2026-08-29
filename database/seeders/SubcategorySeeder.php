@@ -33,7 +33,7 @@ class SubcategorySeeder extends Seeder
                 'Allowance' => ['Family', 'Blaze Tech', 'GAMUDA'],
                 'Salary' => ['Blaze Tech', 'EPF'],
                 'EPF' => ['Blaze Tech'],
-                'Interest' => ['GO+', 'Bank'],
+                'Interest' => ['GO+', 'Bank', 'Ryt'],
                 'Reimbursement' => ['Blaze Tech'],
             ],
         ];

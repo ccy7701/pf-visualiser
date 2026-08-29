@@ -51,5 +51,14 @@ class CategorySeederTest extends TestCase
             1,
             Subcategory::query()->where('category_id', $foodId)->where('name', 'Lunch')->count(),
         );
+
+        $interestId = (int) Category::query()
+            ->where('name', 'Interest')
+            ->where('type', 'income')
+            ->value('id');
+        $this->assertDatabaseHas('subcategories', [
+            'category_id' => $interestId,
+            'name' => 'Ryt',
+        ]);
     }
 }
