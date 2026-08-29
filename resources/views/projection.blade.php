@@ -156,26 +156,31 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <label for="employeeEpfRatePercent" class="form-label form-label-sm">Employee EPF (%)</label>
-                                        <input id="employeeEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="11.00">
+                                <div class="mb-3">
+                                    <h3 class="section-subtitle d-flex justify-content-between align-items-center">
+                                        Contributions
+                                        <button id="addSalaryContributionBtn" type="button" class="btn btn-sm btn-outline-secondary">Add</button>
+                                    </h3>
+                                    <div>
+                                        <table class="table table-sm salary-contribution-table mb-0">
+                                            <thead>
+                                            <tr>
+                                                <th>Contribution</th>
+                                                <th>Rate / Amount</th>
+                                                <th class="text-end">Monthly Amount (RM)</th>
+                                                <th></th>
+                                            </tr>
+                                            </thead>
+                                            <tbody id="salaryContributionRows"></tbody>
+                                        </table>
                                     </div>
-                                    <div class="col-6">
-                                        <label for="employerEpfRatePercent" class="form-label form-label-sm">Employer EPF (%)</label>
-                                        <input id="employerEpfRatePercent" type="number" step="0.01" class="form-control compact-input" value="13.00">
-                                    </div>
+                                    <div id="emptySalaryContributions" class="text-center text-secondary small py-2">No contributions added.</div>
                                 </div>
-                                <div class="row g-2 mt-1 mb-3">
+                                <div class="row g-2 mb-3">
                                     <div class="col-12">
                                         <div class="form-check mt-1">
                                             <input id="salaryPaidInArrears" class="form-check-input" type="checkbox" checked>
                                             <label class="form-check-label" for="salaryPaidInArrears">Salary paid in arrears the month after</label>
-                                        </div>
-                                        <div class="form-check mt-2">
-                                            <input id="socsoL24Enabled" class="form-check-input" type="checkbox">
-                                            <label class="form-check-label" for="socsoL24Enabled">Include SOCSO L24 from June 2026</label>
-                                            <div class="form-text">Optional deduction. Months before June 2026 are always excluded.</div>
                                         </div>
                                     </div>
                                 </div>

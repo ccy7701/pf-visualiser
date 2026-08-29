@@ -4,26 +4,22 @@ namespace App\Services;
 
 use App\Services\Projection\BNPLCalculator;
 use App\Services\Projection\ELRCalculator;
-use App\Services\Projection\EPFCalculator;
 use App\Services\Projection\ExpenseCalculator;
 use App\Services\Projection\MonthHelper;
 use App\Services\Projection\PTPTNCalculator;
 use App\Services\Projection\ProjectionResultBuilder;
 use App\Services\Projection\SalaryCalculator;
-use App\Services\Projection\StatutoryDeductionResolver;
+use App\Services\Projection\SalaryContributionCalculator;
 
 class ProjectionService
 {
-    private const SOCSO_L24_EFFECTIVE_MONTH = '2026-06';
-
     public function __construct(
         private readonly SalaryCalculator $salaryCalculator,
         private readonly ExpenseCalculator $expenseCalculator,
         private readonly BNPLCalculator $bnplCalculator,
         private readonly PTPTNCalculator $ptptnCalculator,
         private readonly ELRCalculator $elrCalculator,
-        private readonly EPFCalculator $epfCalculator,
-        private readonly StatutoryDeductionResolver $statutoryDeductionResolver,
+        private readonly SalaryContributionCalculator $salaryContributionCalculator,
         private readonly ProjectionResultBuilder $projectionResultBuilder,
     ) {
     }
@@ -39,7 +35,6 @@ class ProjectionService
         $bnpl = $normalized['bnpl'];
         $events = $normalized['events'];
         $elr = $normalized['elr'];
-        $epf = $normalized['epf'];
 
         $months = MonthHelper::sequence($scenario['start_month'], $scenario['end_month']);
 
@@ -54,16 +49,18 @@ class ProjectionService
 
             $salarySchedule = $this->salaryCalculator->scheduleForMonth($month, $employment);
             $grossIncome = (float) ($salarySchedule['monthly_gross_salary'] ?? 0);
-            $monthEpf = $this->epfForSalarySchedule($epf, $salarySchedule);
-            $employeeEpf = $this->epfCalculator->employeeContribution($grossIncome, $monthEpf);
-            $employerEpf = $this->epfCalculator->employerContribution($grossIncome, $monthEpf);
-            $statutory = $this->statutoryDeductionResolver->resolve($grossIncome);
-            $socso = (float) ($statutory['socso'] ?? 0);
-            $socsoL24 = $employment['socso_l24_enabled'] && $month >= self::SOCSO_L24_EFFECTIVE_MONTH
-                ? (float) ($statutory['socso_l24'] ?? 0)
-                : 0.0;
-            $eis = (float) ($statutory['eis'] ?? 0);
-            $netIncome = $grossIncome - $employeeEpf - $socso - $socsoL24 - $eis;
+            $salaryContributions = $this->salaryContributionCalculator->calculate(
+                $grossIncome,
+                $month,
+                $salarySchedule['contributions'] ?? [],
+            );
+            $employeeEpf = $salaryContributions['employee_epf'];
+            $employerEpf = $salaryContributions['employer_epf'];
+            $socso = $salaryContributions['socso'];
+            $socsoL24 = $salaryContributions['socso_l24'];
+            $eis = $salaryContributions['eis'];
+            $customContributions = $salaryContributions['custom'];
+            $netIncome = $grossIncome - $salaryContributions['deductions'];
 
             $allowances = $this->sumEventsByType($monthEvents, 'allowance');
             $household = $this->sumEventsByType($monthEvents, 'household');
@@ -115,6 +112,7 @@ class ProjectionService
                 'socso' => round($socso, 2),
                 'socso_l24' => round($socsoL24, 2),
                 'eis' => round($eis, 2),
+                'custom_contributions' => round($customContributions, 2),
             ];
 
             $openingCoh = $closingCoh;
@@ -127,7 +125,7 @@ class ProjectionService
             'end_month' => $scenario['end_month'],
             'months_count' => count($months),
             'salary_paid_in_arrears' => (bool) $employment['salary_paid_in_arrears'],
-            'socso_l24_enabled' => (bool) $employment['socso_l24_enabled'],
+            'socso_l24_enabled' => $this->hasSalaryContributionType($employment, 'socso_l24'),
             'ptptn_waiver_granted' => (bool) $ptptn['waiver_granted'],
         ];
 
@@ -154,7 +152,7 @@ class ProjectionService
                 'starting_epf' => (float) ($scenario['starting_epf'] ?? 0),
             ],
             'employment' => [
-                'salary_schedules' => $this->normalizeSalarySchedules($employment),
+                'salary_schedules' => $this->normalizeSalarySchedules($employment, $epf),
                 'salary_paid_in_arrears' => filter_var($employment['salary_paid_in_arrears'] ?? false, FILTER_VALIDATE_BOOL),
                 'socso_l24_enabled' => filter_var($employment['socso_l24_enabled'] ?? false, FILTER_VALIDATE_BOOL),
             ],
@@ -218,7 +216,7 @@ class ProjectionService
         return MonthHelper::normalize($month);
     }
 
-    private function normalizeSalarySchedules(array $employment): array
+    private function normalizeSalarySchedules(array $employment, array $epf): array
     {
         $rawSchedules = array_filter($employment['salary_schedules'] ?? [], fn ($schedule) => is_array($schedule));
 
@@ -226,13 +224,16 @@ class ProjectionService
             $rawSchedules = $this->legacySalarySchedules($employment);
         }
 
-        $schedules = array_values(array_map(function (array $schedule): array {
+        $schedules = array_values(array_map(function (array $schedule) use ($employment, $epf): array {
+            $contributions = array_key_exists('contributions', $schedule)
+                ? $this->normalizeSalaryContributions($schedule['contributions'] ?? [])
+                : $this->legacySalaryContributions($schedule, $employment, $epf);
+
             return [
                 'start_month' => MonthHelper::normalize((string) $schedule['start_month']),
                 'end_month' => $this->normalizeOptionalMonth($schedule['end_month'] ?? null),
                 'monthly_gross_salary' => (float) ($schedule['monthly_gross_salary'] ?? 0),
-                'employee_epf_rate_percent' => $this->normalizeOptionalPercent($schedule['employee_epf_rate_percent'] ?? null),
-                'employer_epf_rate_percent' => $this->normalizeOptionalPercent($schedule['employer_epf_rate_percent'] ?? null),
+                'contributions' => $contributions,
                 'note' => (string) ($schedule['note'] ?? ''),
             ];
         }, $rawSchedules));
@@ -272,25 +273,67 @@ class ProjectionService
         return $schedules;
     }
 
-    private function epfForSalarySchedule(array $epf, ?array $salarySchedule): array
+    private function normalizeSalaryContributions(mixed $contributions): array
     {
-        if ($salarySchedule === null) {
-            return $epf;
-        }
+        $allowedTypes = ['employee_epf', 'employer_epf', 'socso', 'socso_l24', 'eis', 'custom'];
 
-        return [
-            'employee_rate_percent' => $salarySchedule['employee_epf_rate_percent'] ?? $epf['employee_rate_percent'],
-            'employer_rate_percent' => $salarySchedule['employer_epf_rate_percent'] ?? $epf['employer_rate_percent'],
-        ];
+        return array_values(array_map(function (array $contribution): array {
+            $type = (string) $contribution['type'];
+
+            return match ($type) {
+                'employee_epf', 'employer_epf' => [
+                    'type' => $type,
+                    'rate_percent' => max(0, (float) ($contribution['rate_percent'] ?? 0)),
+                ],
+                'custom' => [
+                    'type' => $type,
+                    'name' => trim((string) ($contribution['name'] ?? '')) ?: 'Custom',
+                    'amount' => max(0, (float) ($contribution['amount'] ?? 0)),
+                ],
+                default => ['type' => $type],
+            };
+        }, array_filter(
+            is_array($contributions) ? $contributions : [],
+            fn ($contribution) => is_array($contribution)
+                && in_array((string) ($contribution['type'] ?? ''), $allowedTypes, true),
+        )));
     }
 
-    private function normalizeOptionalPercent(mixed $value): ?float
+    private function legacySalaryContributions(array $schedule, array $employment, array $epf): array
     {
-        if ($value === null || $value === '') {
-            return null;
+        $employeeRate = $schedule['employee_epf_rate_percent']
+            ?? $epf['employee_rate_percent']
+            ?? $employment['employee_epf_rate_percent']
+            ?? 0;
+        $employerRate = $schedule['employer_epf_rate_percent']
+            ?? $epf['employer_rate_percent']
+            ?? $employment['employer_epf_rate_percent']
+            ?? 0;
+        $contributions = [
+            ['type' => 'employee_epf', 'rate_percent' => max(0, (float) $employeeRate)],
+            ['type' => 'employer_epf', 'rate_percent' => max(0, (float) $employerRate)],
+            ['type' => 'socso'],
+            ['type' => 'eis'],
+        ];
+
+        if (filter_var($employment['socso_l24_enabled'] ?? false, FILTER_VALIDATE_BOOL)) {
+            $contributions[] = ['type' => 'socso_l24'];
         }
 
-        return (float) $value;
+        return $contributions;
+    }
+
+    private function hasSalaryContributionType(array $employment, string $type): bool
+    {
+        foreach ($employment['salary_schedules'] as $schedule) {
+            foreach ($schedule['contributions'] ?? [] as $contribution) {
+                if (($contribution['type'] ?? null) === $type) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private function normalizeCostOfLivingBudgets(array $costOfLiving): array

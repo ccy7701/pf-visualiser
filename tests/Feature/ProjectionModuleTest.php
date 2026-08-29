@@ -29,6 +29,11 @@ class ProjectionModuleTest extends TestCase
         $this->get(route('projection.index'))
             ->assertOk()
             ->assertSee('Scenario Comparison')
+            ->assertSee('Contributions')
+            ->assertSee('id="addSalaryContributionBtn"', false)
+            ->assertDontSee('Include SOCSO L24 from June 2026')
+            ->assertDontSee('Employee EPF (%)')
+            ->assertDontSee('Employer EPF (%)')
             ->assertDontSee('Shared-range final TFP')
             ->assertDontSee('<th>Advantage</th>', false);
 
@@ -41,6 +46,20 @@ class ProjectionModuleTest extends TestCase
             'summary.final_tfp',
             $runResponse->json('summary.final_coh') + $runResponse->json('summary.final_elr') + $runResponse->json('summary.final_epf')
         );
+
+        $contributionPayload = $payload;
+        unset($contributionPayload['epf'], $contributionPayload['employment']['socso_l24_enabled']);
+        $contributionPayload['employment']['salary_schedules'][0]['contributions'] = [
+            ['type' => 'employee_epf', 'rate_percent' => 11],
+            ['type' => 'employer_epf', 'rate_percent' => 13],
+            ['type' => 'socso'],
+            ['type' => 'eis'],
+            ['type' => 'custom', 'name' => 'Company insurance', 'amount' => 85],
+        ];
+        $contributionPayload['employment']['salary_schedules'][1]['contributions'] = [];
+        $this->postJson(route('projection.run'), $contributionPayload)
+            ->assertOk()
+            ->assertJsonPath('months.1.custom_contributions', 85);
 
         $waivedPayload = $payload;
         $waivedPayload['ptptn'] = [

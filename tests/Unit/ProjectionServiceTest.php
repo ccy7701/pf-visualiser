@@ -86,6 +86,12 @@ class ProjectionServiceTest extends TestCase
             ],
         ];
 
+        $normalized = $service->normalizePayload($payload);
+        $this->assertSame(
+            ['employee_epf', 'employer_epf', 'socso', 'eis', 'socso_l24'],
+            array_column($normalized['employment']['salary_schedules'][0]['contributions'], 'type'),
+        );
+
         $result = $service->project($payload);
         $month = $result['months'][0];
 
@@ -114,6 +120,99 @@ class ProjectionServiceTest extends TestCase
 
         $this->assertSame(0.0, $optedOutResult['months'][1]['socso_l24']);
         $this->assertSame(943.35, $optedOutResult['months'][1]['net_income']);
+    }
+
+    public function test_projection_uses_editable_salary_contributions_and_custom_deductions(): void
+    {
+        $service = app(ProjectionService::class);
+        $payload = [
+            'scenario' => [
+                'start_month' => '2026-07',
+                'end_month' => '2026-08',
+                'starting_coh' => 0,
+                'starting_elr' => 0,
+                'starting_epf' => 0,
+            ],
+            'employment' => [
+                'salary_schedules' => [
+                    [
+                        'start_month' => '2026-07',
+                        'end_month' => '2026-07',
+                        'monthly_gross_salary' => 1000,
+                        'contributions' => [
+                            ['type' => 'employee_epf', 'rate_percent' => 5],
+                            ['type' => 'employer_epf', 'rate_percent' => 7],
+                            ['type' => 'socso'],
+                            ['type' => 'socso_l24'],
+                            ['type' => 'eis'],
+                        ],
+                        'note' => 'Before insurance change',
+                    ],
+                    [
+                        'start_month' => '2026-08',
+                        'end_month' => null,
+                        'monthly_gross_salary' => 1000,
+                        'contributions' => [
+                            ['type' => 'employee_epf', 'rate_percent' => 5],
+                            ['type' => 'employer_epf', 'rate_percent' => 7],
+                            ['type' => 'socso'],
+                            ['type' => 'eis'],
+                            ['type' => 'custom', 'name' => 'Company insurance', 'amount' => 42.50],
+                        ],
+                        'note' => 'Company insurance',
+                    ],
+                ],
+                'salary_paid_in_arrears' => false,
+            ],
+            'cost_of_living' => [
+                'budgets' => ['bcol' => ['category_allocations' => []]],
+                'monthly_budget_selection' => [],
+            ],
+            'ptptn' => [
+                'waiver_granted' => false,
+                'monthly_repayment' => 0,
+                'repayment_start_month' => null,
+            ],
+            'bnpl' => [],
+            'events' => [],
+            'elr' => [
+                'schedules' => [],
+                'note' => '',
+                'compound_interest_enabled' => false,
+                'annual_interest_rate_percent' => 0,
+            ],
+        ];
+
+        $normalized = $service->normalizePayload($payload);
+        $this->assertSame(
+            'Company insurance',
+            $normalized['employment']['salary_schedules'][1]['contributions'][4]['name'],
+        );
+
+        $months = $service->project($payload)['months'];
+
+        $this->assertSame(7.15, $months[0]['socso_l24']);
+        $this->assertSame(0.0, $months[0]['custom_contributions']);
+        $this->assertSame(936.2, $months[0]['net_income']);
+        $this->assertSame(0.0, $months[1]['socso_l24']);
+        $this->assertSame(42.5, $months[1]['custom_contributions']);
+        $this->assertSame(900.85, $months[1]['net_income']);
+        $this->assertSame(240.0, $months[1]['closing_epf']);
+
+        $payload['scenario']['end_month'] = '2026-07';
+        $payload['employment']['salary_schedules'] = [[
+            'start_month' => '2026-07',
+            'end_month' => null,
+            'monthly_gross_salary' => 1000,
+            'contributions' => [],
+            'note' => 'No contributions',
+        ]];
+        $emptyContributionMonth = $service->project($payload)['months'][0];
+
+        $this->assertSame(1000.0, $emptyContributionMonth['net_income']);
+        $this->assertSame(0.0, $emptyContributionMonth['closing_epf']);
+        $this->assertSame(0.0, $emptyContributionMonth['socso']);
+        $this->assertSame(0.0, $emptyContributionMonth['eis']);
     }
 
     public function test_projection_respects_locked_rules(): void

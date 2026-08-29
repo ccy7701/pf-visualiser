@@ -28,6 +28,14 @@
         { id: 'fcol_lite', name: 'FCOL Lite' },
         { id: 'fcol_max', name: 'FCOL Max' },
     ];
+    const salaryContributionTypes = {
+        employee_epf: 'Employee EPF',
+        employer_epf: 'Employer EPF',
+        socso: 'SOCSO',
+        socso_l24: 'SOCSO L24',
+        eis: 'EIS',
+        custom: 'Custom',
+    };
 
     const money = new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const monthLabelFormatter = new Intl.DateTimeFormat('en-MY', { month: 'short', year: 'numeric' });
@@ -508,26 +516,23 @@
         return null;
     }
 
-    function resolveStatutoryDeductions(grossSalary, month = null) {
+    function resolveStatutoryDeductions(grossSalary) {
         if (grossSalary <= 0) {
             return { employerSocso: 0, socso: 0, socsoL24: 0, eis: 0 };
         }
 
         const socsoBracket = findStatutoryBracket(statutoryBrackets.socso, grossSalary);
         const eisBracket = findStatutoryBracket(statutoryBrackets.eis, grossSalary);
-        const includeSocsoL24 = Boolean(document.getElementById('socsoL24Enabled')?.checked)
-            && Boolean(month)
-            && month >= socsoL24EffectiveMonth;
-
         return {
             employerSocso: toNumber(socsoBracket?.employer_share ?? 0, 0),
             socso: toNumber(socsoBracket?.employee_INV ?? 0, 0),
-            socsoL24: includeSocsoL24 ? toNumber(socsoBracket?.employee_NEI ?? 0, 0) : 0,
+            socsoL24: toNumber(socsoBracket?.employee_NEI ?? 0, 0),
             eis: toNumber(eisBracket?.employee ?? 0, 0),
         };
     }
 
     function updateEmploymentContributionSummary() {
+        refreshSalaryContributionRows();
         renderSalaryScheduleCards();
     }
 
@@ -657,42 +662,133 @@
             confirmed_salary: 2200,
             employee_epf_rate_percent: 11,
             employer_epf_rate_percent: 13,
+        }).map((schedule) => ({ ...schedule, contributions: [] }));
+    }
+
+    function legacySalaryContributions(schedule = {}, context = {}) {
+        const employment = context.employment || {};
+        const epf = context.epf || {};
+        const contributions = [
+            {
+                type: 'employee_epf',
+                rate_percent: toNumber(
+                    schedule.employee_epf_rate_percent
+                        ?? epf.employee_rate_percent
+                        ?? employment.employee_epf_rate_percent,
+                    0,
+                ),
+            },
+            {
+                type: 'employer_epf',
+                rate_percent: toNumber(
+                    schedule.employer_epf_rate_percent
+                        ?? epf.employer_rate_percent
+                        ?? employment.employer_epf_rate_percent,
+                    0,
+                ),
+            },
+            { type: 'socso' },
+            { type: 'eis' },
+        ];
+
+        if (employment.socso_l24_enabled) {
+            contributions.push({ type: 'socso_l24' });
+        }
+
+        return contributions;
+    }
+
+    function normalizeSalaryContribution(contribution = {}) {
+        const type = Object.hasOwn(salaryContributionTypes, contribution.type)
+            ? contribution.type
+            : 'employee_epf';
+
+        if (type === 'employee_epf' || type === 'employer_epf') {
+            return { type, rate_percent: Math.max(0, toNumber(contribution.rate_percent, 0)) };
+        }
+
+        if (type === 'custom') {
+            const name = Object.hasOwn(contribution, 'name')
+                ? String(contribution.name || '').trim()
+                : 'Custom';
+
+            return { type, name, amount: Math.max(0, toNumber(contribution.amount, 0)) };
+        }
+
+        return { type };
+    }
+
+    function salaryContributionMonth(schedule) {
+        const scheduleSpansEffectiveMonth = schedule.start_month <= socsoL24EffectiveMonth
+            && (!schedule.end_month || schedule.end_month >= socsoL24EffectiveMonth);
+
+        return scheduleSpansEffectiveMonth ? socsoL24EffectiveMonth : schedule.start_month;
+    }
+
+    function salaryContributionAmount(contribution, grossSalary, month) {
+        const statutory = resolveStatutoryDeductions(grossSalary);
+
+        return matchSalaryContributionType(contribution.type, {
+            employee_epf: () => grossSalary * (toNumber(contribution.rate_percent, 0) / 100),
+            employer_epf: () => grossSalary * (toNumber(contribution.rate_percent, 0) / 100),
+            socso: () => statutory.socso,
+            socso_l24: () => month >= socsoL24EffectiveMonth ? statutory.socsoL24 : 0,
+            eis: () => statutory.eis,
+            custom: () => Math.max(0, toNumber(contribution.amount, 0)),
         });
+    }
+
+    function matchSalaryContributionType(type, handlers) {
+        return handlers[type] ? handlers[type]() : 0;
     }
 
     function salaryScheduleDeductions(schedule) {
         const grossSalary = toNumber(schedule.monthly_gross_salary, 0);
-        const employeeEpfRatePercent = toNumber(schedule.employee_epf_rate_percent, 0);
-        const employerEpfRatePercent = toNumber(schedule.employer_epf_rate_percent, 0);
-        const scheduleSpansEffectiveMonth = schedule.start_month <= socsoL24EffectiveMonth
-            && (!schedule.end_month || schedule.end_month >= socsoL24EffectiveMonth);
-        const deductionMonth = scheduleSpansEffectiveMonth ? socsoL24EffectiveMonth : schedule.start_month;
-        const statutory = resolveStatutoryDeductions(grossSalary, deductionMonth);
-        const employeeEpf = grossSalary * (employeeEpfRatePercent / 100);
-        const employerEpf = grossSalary * (employerEpfRatePercent / 100);
+        const contributionMonth = salaryContributionMonth(schedule);
+        const totals = {
+            employeeEpf: 0,
+            employerEpf: 0,
+            socso: 0,
+            socsoL24: 0,
+            eis: 0,
+            custom: 0,
+        };
+        const lines = (schedule.contributions || []).map((contribution) => {
+            const amount = salaryContributionAmount(contribution, grossSalary, contributionMonth);
+            const totalKey = {
+                employee_epf: 'employeeEpf',
+                employer_epf: 'employerEpf',
+                socso: 'socso',
+                socso_l24: 'socsoL24',
+                eis: 'eis',
+                custom: 'custom',
+            }[contribution.type];
+            if (totalKey) totals[totalKey] += amount;
+
+            return { ...contribution, amount };
+        });
+        const deductions = totals.employeeEpf + totals.socso + totals.socsoL24 + totals.eis + totals.custom;
 
         return {
             grossSalary,
-            employeeEpf,
-            employerEpf,
-            employerSocso: statutory.employerSocso,
-            socso: statutory.socso,
-            socsoL24: statutory.socsoL24,
-            includesSocsoL24: statutory.socsoL24 > 0,
-            eis: statutory.eis,
-            net: grossSalary - employeeEpf - statutory.socso - statutory.socsoL24 - statutory.eis,
+            ...totals,
+            lines,
+            net: grossSalary - deductions,
         };
     }
 
-    function normalizeSalarySchedule(schedule = {}) {
+    function normalizeSalarySchedule(schedule = {}, legacyContext = {}) {
+        const contributions = Array.isArray(schedule.contributions)
+            ? schedule.contributions.map(normalizeSalaryContribution)
+            : legacySalaryContributions(schedule, legacyContext).map(normalizeSalaryContribution);
+
         return {
             id: schedule.id || `salary-schedule-${nextSalaryScheduleId++}`,
             start_month: toMonthOrNull(schedule.start_month) || '',
             end_month: toMonthOrNull(schedule.end_month) || '',
             note: String(schedule.note || '').trim(),
             monthly_gross_salary: toNumber(schedule.monthly_gross_salary, 0),
-            employee_epf_rate_percent: toNumber(schedule.employee_epf_rate_percent ?? 11, 11),
-            employer_epf_rate_percent: toNumber(schedule.employer_epf_rate_percent ?? 13, 13),
+            contributions,
         };
     }
 
@@ -726,8 +822,10 @@
         setMonthPickerValue('salaryScheduleUntil', schedule?.end_month);
         document.getElementById('salaryScheduleNote').value = schedule?.note || '';
         document.getElementById('salaryScheduleGross').value = formatToTwoDp(schedule?.monthly_gross_salary ?? 0);
-        document.getElementById('employeeEpfRatePercent').value = formatToTwoDp(schedule?.employee_epf_rate_percent ?? 11);
-        document.getElementById('employerEpfRatePercent').value = formatToTwoDp(schedule?.employer_epf_rate_percent ?? 13);
+        document.getElementById('salaryContributionRows').innerHTML = '';
+        (schedule?.contributions || []).forEach(createSalaryContributionRow);
+        updateEmptySalaryContributionsState();
+        refreshSalaryContributionTypeOptions();
     }
 
     function renderSalaryScheduleCards() {
@@ -750,6 +848,19 @@
                 const startLabel = schedule.start_month ? formatCompactMonthLabel(schedule.start_month) : '-';
                 const endLabel = schedule.end_month ? formatCompactMonthLabel(schedule.end_month) : 'Ongoing';
                 const note = schedule.note || '&nbsp;';
+                const contributionRows = deductions.lines.map((contribution) => {
+                    const rate = contribution.type === 'employee_epf' || contribution.type === 'employer_epf'
+                        ? ` (${money.format(contribution.rate_percent)}%)`
+                        : '';
+                    const label = contribution.type === 'custom'
+                        ? contribution.name || salaryContributionTypes.custom
+                        : salaryContributionTypes[contribution.type];
+
+                    return `<dt>${escapeHtml(label)}${rate}</dt><dd>RM ${money.format(contribution.amount)}</dd>`;
+                }).join('');
+                const contributionList = contributionRows
+                    ? `<dl class="salary-schedule-deduction-grid">${contributionRows}</dl>`
+                    : '';
 
                 item.innerHTML = `
                     <button type="button" class="salary-schedule-list-card is-clickable ${editingSalaryScheduleId === schedule.id ? 'is-active' : ''}" data-salary-schedule-id="${schedule.id}" aria-label="Edit salary schedule from ${startLabel} to ${endLabel}">
@@ -760,25 +871,145 @@
                             </div>
                             <div class="salary-schedule-list-right">
                                 <div><strong>Gross: RM ${money.format(deductions.grossSalary)}</strong></div>
-                                <div>Net${deductions.includesSocsoL24 ? ' (incl. L24)' : ''}: RM ${money.format(deductions.net)}</div>
+                                <div>Net: RM ${money.format(deductions.net)}</div>
                             </div>
                         </div>
-                        <dl class="salary-schedule-deduction-grid">
-                            <dt>Employee EPF</dt>
-                            <dd>RM ${money.format(deductions.employeeEpf)}</dd>
-                            <dt>Employer EPF</dt>
-                            <dd>RM ${money.format(deductions.employerEpf)}</dd>
-                            <dt>SOCSO</dt>
-                            <dd>RM ${money.format(deductions.socso)}</dd>
-                            <dt>SOCSO L24</dt>
-                            <dd>RM ${money.format(deductions.socsoL24)}</dd>
-                            <dt>EIS</dt>
-                            <dd>RM ${money.format(deductions.eis)}</dd>
-                        </dl>
+                        ${contributionList}
                     </button>
                 `;
                 container.appendChild(item);
             });
+    }
+
+    function updateEmptySalaryContributionsState() {
+        const hasRows = document.querySelectorAll('#salaryContributionRows tr').length > 0;
+        document.getElementById('emptySalaryContributions')?.classList.toggle('d-none', hasRows);
+    }
+
+    function refreshSalaryContributionTypeOptions() {
+        const selects = Array.from(document.querySelectorAll('#salaryContributionRows [data-salary-contribution="type"]'));
+        const selectedTypes = selects.map((select) => select.value);
+
+        selects.forEach((select) => {
+            Array.from(select.options).forEach((option) => {
+                option.disabled = option.value !== select.value && selectedTypes.includes(option.value);
+            });
+        });
+
+        const addButton = document.getElementById('addSalaryContributionBtn');
+        if (addButton) {
+            addButton.disabled = Object.keys(salaryContributionTypes).every((type) => selectedTypes.includes(type));
+        }
+    }
+
+    function salaryContributionFromRow(row) {
+        return normalizeSalaryContribution({
+            type: row.querySelector('[data-salary-contribution="type"]')?.value,
+            name: row.querySelector('[data-salary-contribution="name"]')?.value,
+            rate_percent: row.querySelector('[data-salary-contribution="rate_percent"]')?.value,
+            amount: row.querySelector('[data-salary-contribution="amount"]')?.value,
+        });
+    }
+
+    function currentSalaryScheduleDraft() {
+        return {
+            start_month: toMonthOrNull(document.getElementById('salaryScheduleFrom').value) || '',
+            end_month: toMonthOrNull(document.getElementById('salaryScheduleUntil').value) || '',
+            monthly_gross_salary: toNumber(document.getElementById('salaryScheduleGross').value, 0),
+        };
+    }
+
+    function refreshSalaryContributionRow(row) {
+        const contribution = salaryContributionFromRow(row);
+        const schedule = currentSalaryScheduleDraft();
+        const amount = salaryContributionAmount(
+            contribution,
+            schedule.monthly_gross_salary,
+            salaryContributionMonth(schedule),
+        );
+        const amountCell = row.querySelector('[data-salary-contribution-calculated]');
+        if (amountCell) amountCell.textContent = money.format(amount);
+    }
+
+    function refreshSalaryContributionRows() {
+        document.querySelectorAll('#salaryContributionRows tr').forEach(refreshSalaryContributionRow);
+    }
+
+    function renderSalaryContributionControl(row, contribution) {
+        const controlCell = row.querySelector('[data-salary-contribution-control]');
+        const nameContainer = row.querySelector('[data-salary-contribution-name]');
+        if (!controlCell || !nameContainer) return;
+
+        nameContainer.innerHTML = '';
+        if (contribution.type === 'custom') {
+            nameContainer.innerHTML = '<input type="text" class="form-control form-control-sm mt-1" data-salary-contribution="name" maxlength="120" placeholder="Contribution name" required>';
+            nameContainer.querySelector('input').value = contribution.name || '';
+        }
+
+        if (contribution.type === 'employee_epf' || contribution.type === 'employer_epf') {
+            controlCell.innerHTML = `
+                <div class="input-group input-group-sm salary-contribution-value-input">
+                    <input type="number" min="0" max="100" step="0.01" class="form-control" data-salary-contribution="rate_percent" value="${formatToTwoDp(contribution.rate_percent)}">
+                    <span class="input-group-text">%</span>
+                </div>
+            `;
+        } else if (contribution.type === 'custom') {
+            controlCell.innerHTML = `
+                <div class="input-group input-group-sm salary-contribution-value-input">
+                    <span class="input-group-text">RM</span>
+                    <input type="text" inputmode="decimal" class="form-control money-input" data-salary-contribution="amount" value="${formatToTwoDp(contribution.amount)}">
+                </div>
+            `;
+        } else {
+            controlCell.innerHTML = '<span class="text-secondary small">Automatic</span>';
+        }
+
+        controlCell.querySelector('input')?.addEventListener('input', () => refreshSalaryContributionRow(row));
+        normalizeDecimalInputs(controlCell);
+        refreshSalaryContributionRow(row);
+    }
+
+    function createSalaryContributionRow(data = {}) {
+        const contribution = normalizeSalaryContribution(data);
+        const row = document.createElement('tr');
+        const typeOptions = Object.entries(salaryContributionTypes)
+            .map(([value, label]) => `<option value="${value}">${label}</option>`)
+            .join('');
+        row.innerHTML = `
+            <td>
+                <select class="form-select form-select-sm" data-salary-contribution="type">
+                    ${typeOptions}
+                </select>
+                <div data-salary-contribution-name></div>
+            </td>
+            <td data-salary-contribution-control></td>
+            <td class="text-end text-nowrap align-middle" data-salary-contribution-calculated>0.00</td>
+            <td class="text-end align-middle">
+                <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Remove contribution">×</button>
+            </td>
+        `;
+
+        const select = row.querySelector('[data-salary-contribution="type"]');
+        select.value = contribution.type;
+        select.addEventListener('change', () => {
+            renderSalaryContributionControl(row, normalizeSalaryContribution({ type: select.value, name: '' }));
+            refreshSalaryContributionTypeOptions();
+        });
+        row.querySelector('button').addEventListener('click', () => {
+            row.remove();
+            updateEmptySalaryContributionsState();
+            refreshSalaryContributionTypeOptions();
+        });
+
+        document.getElementById('salaryContributionRows').appendChild(row);
+        renderSalaryContributionControl(row, contribution);
+        updateEmptySalaryContributionsState();
+        refreshSalaryContributionTypeOptions();
+    }
+
+    function collectSalaryContributionsFromForm() {
+        return Array.from(document.querySelectorAll('#salaryContributionRows tr'))
+            .map(salaryContributionFromRow);
     }
 
     function createBnplRow(data = {}) {
@@ -882,12 +1113,10 @@
                     start_month: schedule.start_month,
                     end_month: schedule.end_month || null,
                     monthly_gross_salary: toNumber(schedule.monthly_gross_salary, 0),
-                    employee_epf_rate_percent: toNumber(schedule.employee_epf_rate_percent, 0),
-                    employer_epf_rate_percent: toNumber(schedule.employer_epf_rate_percent, 0),
+                    contributions: (schedule.contributions || []).map(normalizeSalaryContribution),
                     note: schedule.note || '',
                 })).filter((schedule) => schedule.start_month),
                 salary_paid_in_arrears: document.getElementById('salaryPaidInArrears').checked,
-                socso_l24_enabled: document.getElementById('socsoL24Enabled').checked,
             },
             cost_of_living: {
                 ...collectCostOfLivingPayload(),
@@ -908,10 +1137,6 @@
                 compound_interest_enabled: document.getElementById('elrCompoundInterestEnabled').checked,
                 annual_interest_rate_percent: toNumber(document.getElementById('elrAnnualInterestRatePercent').value, 0),
             },
-            epf: {
-                employee_rate_percent: toNumber(document.getElementById('employeeEpfRatePercent').value, 0),
-                employer_rate_percent: toNumber(document.getElementById('employerEpfRatePercent').value, 0),
-            },
         };
     }
 
@@ -929,13 +1154,13 @@
         document.getElementById('startingElr').value = scenario.starting_elr ?? 0;
         document.getElementById('startingEpf').value = scenario.starting_epf ?? 0;
 
-        salarySchedules = (employment.salary_schedules || legacySalarySchedules(employment)).map(normalizeSalarySchedule);
+        salarySchedules = (employment.salary_schedules || legacySalarySchedules(employment))
+            .map((schedule) => normalizeSalarySchedule(schedule, { employment, epf }));
         editingSalaryScheduleId = null;
         setSalaryScheduleFormMode(false);
         fillSalaryScheduleForm(null);
         renderSalaryScheduleCards();
         document.getElementById('salaryPaidInArrears').checked = Boolean(employment.salary_paid_in_arrears);
-        document.getElementById('socsoL24Enabled').checked = Boolean(employment.socso_l24_enabled);
         updateEmploymentContributionSummary();
 
         const legacyCost = {
@@ -974,9 +1199,6 @@
         setMonthPickerValue('ptptnRepaymentStartMonth', ptptn.repayment_start_month);
         document.getElementById('ptptnInterimPaymentMonths').value = ptptn.interim_payment_months ?? 1;
         updatePtptnWaiverFields();
-
-        document.getElementById('employeeEpfRatePercent').value = epf.employee_rate_percent ?? 0;
-        document.getElementById('employerEpfRatePercent').value = epf.employer_rate_percent ?? 0;
 
         document.getElementById('bnplRows').innerHTML = '';
         (payload.bnpl || []).forEach(createBnplRow);
@@ -1396,13 +1618,12 @@
         document.getElementById('startingElr').value = '0.00';
         document.getElementById('startingEpf').value = '0.00';
 
-        salarySchedules = defaultSalarySchedules(startMonth).map(normalizeSalarySchedule);
+        salarySchedules = defaultSalarySchedules(startMonth).map((schedule) => normalizeSalarySchedule(schedule));
         editingSalaryScheduleId = null;
         setSalaryScheduleFormMode(false);
         fillSalaryScheduleForm(null);
         renderSalaryScheduleCards();
         document.getElementById('salaryPaidInArrears').checked = true;
-        document.getElementById('socsoL24Enabled').checked = false;
 
         createCostAllocationRows();
         syncMonthlyBudgetRows();
@@ -1412,9 +1633,6 @@
         setMonthPickerValue('ptptnRepaymentStartMonth', '');
         document.getElementById('ptptnInterimPaymentMonths').value = '1';
         updatePtptnWaiverFields();
-
-        document.getElementById('employeeEpfRatePercent').value = '11.00';
-        document.getElementById('employerEpfRatePercent').value = '13.00';
 
         document.getElementById('bnplRows').innerHTML = '';
         createBnplRow({ month: startMonth || '', amount: 0, note: '' });
@@ -1459,15 +1677,37 @@
         amount: 0,
     }));
 
+    document.getElementById('addSalaryContributionBtn').addEventListener('click', () => {
+        const selectedTypes = Array.from(document.querySelectorAll('#salaryContributionRows [data-salary-contribution="type"]'))
+            .map((select) => select.value);
+        const availableType = Object.keys(salaryContributionTypes).find((type) => !selectedTypes.includes(type));
+
+        if (!availableType) {
+            setStatus('All contribution types have already been added.', true);
+            return;
+        }
+
+        createSalaryContributionRow({ type: availableType, name: '', rate_percent: 0, amount: 0 });
+    });
+
     document.getElementById('saveSalaryScheduleBtn').addEventListener('click', () => {
+        const contributions = collectSalaryContributionsFromForm();
+        const unnamedCustomContribution = contributions.find((contribution) => (
+            contribution.type === 'custom' && !contribution.name
+        ));
+        if (unnamedCustomContribution) {
+            setStatus('Custom contribution name is required.', true);
+            document.querySelector('#salaryContributionRows [data-salary-contribution="name"]')?.focus();
+            return;
+        }
+
         const schedule = normalizeSalarySchedule({
             id: editingSalaryScheduleId,
             start_month: document.getElementById('salaryScheduleFrom').value,
             end_month: document.getElementById('salaryScheduleUntil').value,
             note: document.getElementById('salaryScheduleNote').value,
             monthly_gross_salary: document.getElementById('salaryScheduleGross').value,
-            employee_epf_rate_percent: document.getElementById('employeeEpfRatePercent').value,
-            employer_epf_rate_percent: document.getElementById('employerEpfRatePercent').value,
+            contributions,
         });
 
         if (!schedule.start_month) {
@@ -1539,11 +1779,10 @@
 
     document.getElementById('startMonth').addEventListener('change', () => syncMonthlyBudgetRows());
     document.getElementById('endMonth').addEventListener('change', () => syncMonthlyBudgetRows());
-    document.getElementById('employeeEpfRatePercent').addEventListener('input', updateEmploymentContributionSummary);
-    document.getElementById('employeeEpfRatePercent').addEventListener('blur', updateEmploymentContributionSummary);
-    document.getElementById('employerEpfRatePercent').addEventListener('input', updateEmploymentContributionSummary);
-    document.getElementById('employerEpfRatePercent').addEventListener('blur', updateEmploymentContributionSummary);
-    document.getElementById('socsoL24Enabled').addEventListener('change', updateEmploymentContributionSummary);
+    document.getElementById('salaryScheduleGross').addEventListener('input', refreshSalaryContributionRows);
+    document.getElementById('salaryScheduleGross').addEventListener('blur', refreshSalaryContributionRows);
+    document.getElementById('salaryScheduleFrom').addEventListener('change', refreshSalaryContributionRows);
+    document.getElementById('salaryScheduleUntil').addEventListener('change', refreshSalaryContributionRows);
     document.getElementById('ptptnWaiverGranted').addEventListener('change', updatePtptnWaiverFields);
 
     document.getElementById('runProjectionBtn').addEventListener('click', async () => {
@@ -1698,7 +1937,8 @@
     initMonthPickers();
     normalizeDecimalInputs();
     syncMonthlyBudgetRows();
-    salarySchedules = defaultSalarySchedules(toMonthOrNull(document.getElementById('startMonth').value)).map(normalizeSalarySchedule);
+    salarySchedules = defaultSalarySchedules(toMonthOrNull(document.getElementById('startMonth').value))
+        .map((schedule) => normalizeSalarySchedule(schedule));
     fillSalaryScheduleForm(null);
     renderSalaryScheduleCards();
     updateEmploymentContributionSummary();

@@ -275,6 +275,37 @@
         .salary-schedule-form-actions .btn {
             flex: 1 1 0;
         }
+        .salary-contribution-table {
+            width: 100%;
+            table-layout: fixed;
+        }
+        .salary-contribution-table th {
+            color: #6c757d;
+            font-size: 0.76rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .salary-contribution-table th:first-child,
+        .salary-contribution-table td:first-child {
+            width: 34%;
+        }
+        .salary-contribution-table th:nth-child(2) {
+            width: 32%;
+        }
+        .salary-contribution-table th:nth-child(3) {
+            width: 26%;
+        }
+        .salary-contribution-table th:last-child {
+            width: 2.5rem;
+        }
+        .salary-contribution-table .form-select,
+        .salary-contribution-table .form-control {
+            min-width: 0;
+        }
+        .salary-contribution-value-input {
+            width: 100%;
+            min-width: 0;
+        }
         @media (max-width: 575.98px) {
             .salary-schedule-list-row,
             .salary-schedule-list-item {

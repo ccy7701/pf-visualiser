@@ -157,6 +157,11 @@ class ProjectionController extends Controller
             'employment.salary_schedules.*.start_month' => ['required', 'regex:/^\d{4}-\d{2}$/'],
             'employment.salary_schedules.*.end_month' => ['nullable', 'regex:/^\d{4}-\d{2}$/'],
             'employment.salary_schedules.*.monthly_gross_salary' => ['required', 'numeric', 'min:0'],
+            'employment.salary_schedules.*.contributions' => ['sometimes', 'array'],
+            'employment.salary_schedules.*.contributions.*.type' => ['required', 'in:employee_epf,employer_epf,socso,socso_l24,eis,custom'],
+            'employment.salary_schedules.*.contributions.*.name' => ['nullable', 'string', 'max:120'],
+            'employment.salary_schedules.*.contributions.*.rate_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'employment.salary_schedules.*.contributions.*.amount' => ['nullable', 'numeric', 'min:0'],
             'employment.salary_schedules.*.employee_epf_rate_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'employment.salary_schedules.*.employer_epf_rate_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'employment.salary_schedules.*.note' => ['nullable', 'string', 'max:200'],
@@ -201,9 +206,9 @@ class ProjectionController extends Controller
             'elr.compound_interest_enabled' => ['required', 'boolean'],
             'elr.annual_interest_rate_percent' => ['required', 'numeric', 'min:0', 'max:100'],
 
-            'epf' => ['required', 'array'],
-            'epf.employee_rate_percent' => ['required', 'numeric', 'min:0', 'max:100'],
-            'epf.employer_rate_percent' => ['required', 'numeric', 'min:0', 'max:100'],
+            'epf' => ['sometimes', 'array'],
+            'epf.employee_rate_percent' => ['required_with:epf', 'numeric', 'min:0', 'max:100'],
+            'epf.employer_rate_percent' => ['required_with:epf', 'numeric', 'min:0', 'max:100'],
         ];
     }
 }

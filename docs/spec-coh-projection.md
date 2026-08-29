@@ -56,13 +56,17 @@ The system shall support:
 * schedule start month
 * optional schedule end month
 * schedule monthly gross salary
-* optional schedule-specific employee EPF rate percent
-* optional schedule-specific employer EPF rate percent
+* an editable contribution list for each salary schedule
+* contribution types: Employee EPF, Employer EPF, SOCSO, SOCSO L24, EIS, and Custom
+* percentage input and calculated amounts for Employee EPF and Employer EPF
+* bracket-derived amounts for SOCSO, SOCSO L24, and EIS
+* name and fixed amount inputs for Custom contributions
 * schedule note
 * salary paid-in-arrears toggle
-* opt-in SOCSO L24 toggle, effective from June 2026
 
 Employment settings are scenario-local.
+
+Saved scenarios without contribution lists are migrated when normalized: their schedule-specific or global EPF rates become Employee EPF and Employer EPF entries, SOCSO and EIS entries are added, and the legacy `socso_l24_enabled` flag controls whether SOCSO L24 is added.
 
 ### 3.3 Budget Profiles Configuration
 
@@ -129,12 +133,14 @@ The system shall support:
 * compound interest toggle
 * annual interest rate percent
 
-### 3.9 EPF Configuration
+### 3.9 Salary Contribution Configuration
 
 The system shall support:
 
-* employee EPF rate percent
-* employer EPF rate percent
+* zero or more contributions per salary schedule
+* contribution-specific percentage or fixed amount inputs
+* automatic statutory amount resolution against the schedule's gross salary
+* adding, editing, and removing contribution rows
 
 ### 3.10 Projection Output
 
@@ -147,6 +153,7 @@ The system shall return monthly rows containing core balances and breakdown fiel
 * expenses and debt servicing
 * ELR contribution and ELR interest
 * statutory deductions (`socso`, `socso_l24`, `eis`)
+* total fixed custom salary deductions (`custom_contributions`)
 
 `closing_coh` may be negative.
 
@@ -310,9 +317,7 @@ SOCSO Act 4 bracket fields:
 * `employee_INV`: employee invalidity contribution, exposed in projection rows as `socso`
 * `employee_NEI`: employee employment injury contribution, exposed in projection rows as `socso_l24`
 
-SOCSO L24 is optional at scenario level through `employment.socso_l24_enabled`. It is deducted only when enabled and the projection month is June 2026 or later. Projection months before June 2026 always expose `socso_l24` as `0`, regardless of the option.
-
-The checkbox and normalized payload default to `false` when the field is absent, including for older saved scenarios.
+SOCSO L24 is included when the active salary schedule contains a `socso_l24` contribution. Projection months before June 2026 always expose `socso_l24` as `0`.
 
 EIS Act 800 bracket fields:
 
@@ -328,9 +333,12 @@ base_net_salary
 - socso
 - socso_l24
 - eis
+- custom_contributions
 ```
 
-`socso_l24` is `0` unless `employment.socso_l24_enabled` is true and the projection month is June 2026 or later. This effective-month rule is applied to the payroll month being projected, including when salary schedules use the paid-in-arrears option.
+Employer EPF increases the EPF balance but is not deducted from gross salary. Custom contributions are deducted from gross salary but do not increase the EPF balance.
+
+`socso_l24` is `0` unless the active salary schedule contains that contribution and the projection month is June 2026 or later. This effective-month rule is applied to the payroll month being projected, including when salary schedules use the paid-in-arrears option.
 
 The monthly row field `net_income` includes base net salary plus income-style monthly additions:
 
@@ -431,21 +439,30 @@ Cache is written on save/load/compare paths when needed.
         "start_month": "2026-06",
         "end_month": "2026-08",
         "monthly_gross_salary": 1800,
-        "employee_epf_rate_percent": null,
-        "employer_epf_rate_percent": null,
+        "contributions": [
+          { "type": "employee_epf", "rate_percent": 11 },
+          { "type": "employer_epf", "rate_percent": 13 },
+          { "type": "socso" },
+          { "type": "socso_l24" },
+          { "type": "eis" }
+        ],
         "note": "Probation"
       },
       {
         "start_month": "2026-09",
         "end_month": null,
         "monthly_gross_salary": 2200,
-        "employee_epf_rate_percent": null,
-        "employer_epf_rate_percent": null,
+        "contributions": [
+          { "type": "employee_epf", "rate_percent": 11 },
+          { "type": "employer_epf", "rate_percent": 13 },
+          { "type": "socso" },
+          { "type": "eis" },
+          { "type": "custom", "name": "Company insurance", "amount": 85 }
+        ],
         "note": "Confirmed"
       }
     ],
-    "salary_paid_in_arrears": true,
-    "socso_l24_enabled": true
+    "salary_paid_in_arrears": true
   },
   "cost_of_living": {
     "budgets": {
@@ -487,10 +504,6 @@ Cache is written on save/load/compare paths when needed.
     "note": "Optional note",
     "compound_interest_enabled": false,
     "annual_interest_rate_percent": 0
-  },
-  "epf": {
-    "employee_rate_percent": 11,
-    "employer_rate_percent": 13
   }
 }
 ```
@@ -636,7 +649,9 @@ The following decisions are finalized:
 * closing COH may be negative
 * salary arrears means exact one-month lag
 * EPF is based on gross salary only
-* SOCSO L24 is scenario-local, opt-in, and never applies before June 2026
+* salary contributions are schedule-local and an explicit empty list means no deductions
+* SOCSO L24 is schedule-local, opt-in, and never applies before June 2026
+* legacy EPF fields and the scenario-level SOCSO L24 flag are normalized into contribution rows
 * budget selection is month-specific via `monthly_budget_selection`
 * budget profiles are arbitrary saved plans keyed by profile ID
 * if a month has no valid selected budget profile, the first saved profile is used
