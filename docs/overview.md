@@ -2,7 +2,7 @@
 
 ## High-Level Project Specification
 
-Implementation status: verified against the application on 2026-08-02.
+Implementation status: verified against the application on 2026-08-29.
 
 ---
 
@@ -104,7 +104,9 @@ Key characteristics:
 * result caching through `projection_results_cache`
 * ELR schedule support with optional compound-interest progression
 * cost-of-living handled via saved budget profiles and month-specific budget selection
-* optional SOCSO L24 deduction, effective no earlier than June 2026
+* schedule-local editable salary contributions: Employee EPF, Employer EPF, SOCSO, SOCSO L24, EIS, and named Custom deductions
+* automatic EPF percentage and statutory-bracket amount previews, with SOCSO L24 effective no earlier than June 2026
+* backward-compatible normalization of saved scenarios that use legacy EPF-rate fields and the former scenario-level SOCSO L24 flag
 * monthly scenario comparison across COH, ELR, EPF, and TFP, with higher shared-month values highlighted and non-shared months greyed out
 
 ### Module C: Variance Analysis (`variance-analysis`)

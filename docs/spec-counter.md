@@ -2,7 +2,7 @@
 
 ## Functional Specification
 
-Implementation status: verified against the application on 2026-08-02.
+Implementation status: verified against the application on 2026-08-29.
 
 Related high-level project specification: `overview.md`
 
@@ -112,7 +112,15 @@ Successful transaction create, update, and delete actions shall use the page-lev
 
 The transaction form shall filter the optional Subcategory selector by the chosen Category. Categories without configured subcategories remain valid and display a disabled `No subcategories` selector. A submitted subcategory must belong to the selected parent category.
 
-The transaction table shall display a selected subcategory alongside its parent category. Transaction filters shall support parent categories and their nested subcategories while retaining category-only transactions.
+The transaction table shall display a selected subcategory alongside its parent category. Transaction filters shall support parent categories and their nested subcategories while retaining category-only transactions whenever their parent remains selected.
+
+Parent-category filters with subcategories shall use three visual states:
+
+* checked when every child is selected
+* indeterminate (`-`) when some children are selected
+* unchecked when no children are selected
+
+Changing a parent checkbox shall select or clear all of its children. Changing child selections shall update the parent state, and the Income/Expense `All` and `None` actions shall cascade across both levels.
 
 ### 3.5 Transaction Log Period Navigation
 
@@ -311,6 +319,8 @@ The shared catalogue uses `Others` for both income and expense. `Other`, `Others
 | updated_at  | timestamp   |
 
 Subcategory names are unique within a parent category. Deleting a subcategory sets existing transactions' `subcategory_id` to null; deleting a category cascades to its subcategories.
+
+The seeded income hierarchy includes `Interest // GO+`, `Interest // Bank`, and `Interest // Ryt`.
 
 ### 5.4 salary_schedules
 

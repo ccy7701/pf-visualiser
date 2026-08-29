@@ -2,7 +2,7 @@
 
 ## Functional Specification
 
-Implementation status: verified against the application on 2026-08-01.
+Implementation status: verified against the application on 2026-08-29.
 
 Related high-level project specification: `overview.md`
 
@@ -72,6 +72,7 @@ Income categories:
 * Bonus
 * Loans
 * Payments
+* Reimbursement
 * Deposit
 * Money Pot Share
 * Cash Assistance

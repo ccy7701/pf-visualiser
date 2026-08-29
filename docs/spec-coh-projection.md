@@ -2,7 +2,7 @@
 
 ## Functional Specification
 
-Implementation status: verified against the application on 2026-07-18.
+Implementation status: verified against the application on 2026-08-29.
 
 Related high-level project specification: `overview.md`
 
@@ -29,7 +29,7 @@ Given identical inputs, the engine must produce identical outputs.
 The following constraints apply:
 
 * no hidden UI-side assumptions
-* no frontend-side financial computations
+* backend projection results remain authoritative; frontend contribution calculations are previews derived from the same explicit inputs and bracket data
 * all projection assumptions must be inside payload
 * projection must not derive assumptions from live counter transactions
 * projection must not derive unpaid salary accrual or salary receipt reconciliation state from the live Counter module
@@ -61,6 +61,8 @@ The system shall support:
 * percentage input and calculated amounts for Employee EPF and Employer EPF
 * bracket-derived amounts for SOCSO, SOCSO L24, and EIS
 * name and fixed amount inputs for Custom contributions
+* one contribution row per type in the UI; types already selected are disabled in other dropdowns
+* `Monthly Amount (RM)` previews without a repeated `RM` prefix in each table cell
 * schedule note
 * salary paid-in-arrears toggle
 
@@ -141,6 +143,11 @@ The system shall support:
 * contribution-specific percentage or fixed amount inputs
 * automatic statutory amount resolution against the schedule's gross salary
 * adding, editing, and removing contribution rows
+* automatic selection of the first unused contribution type when Add is pressed
+* disabling Add when all six contribution types are present
+* a required name in the UI for Custom contributions
+
+Salary schedule summary cards show a faint divider before their contribution rows and always label calculated take-home salary as `Net`; SOCSO L24 does not alter that label.
 
 ### 3.10 Projection Output
 
@@ -163,7 +170,7 @@ The system shall also return metadata fields including:
 * `end_month`
 * `months_count`
 * `salary_paid_in_arrears`
-* `socso_l24_enabled`
+* `socso_l24_enabled` (compatibility indicator derived from whether any schedule contains SOCSO L24)
 * `ptptn_waiver_granted`
 
 ### 3.11 Saved Scenarios and Comparison
@@ -256,7 +263,7 @@ Schedules should be configured as non-overlapping ranges. If overlapping ranges 
 
 If no schedule matches a month, gross salary is 0.
 
-Schedule-specific EPF rates override the scenario-level EPF rates for months resolved to that schedule. If a schedule EPF rate is blank, the scenario-level rate is used.
+The active schedule's `contributions` list determines which EPF, statutory, and Custom amounts apply. An explicit empty list means gross salary has no salary contributions or deductions. The UI permits each contribution type at most once per schedule.
 
 ### 4.6 Salary Arrears Rule
 
@@ -294,7 +301,7 @@ If an `elr_override` event exists for a month, it overrides that month’s resol
 
 ### 4.11 EPF Basis Rule
 
-EPF contributions are computed from gross salary only using configured percent rates.
+Employee and Employer EPF contribution rows are computed from gross salary only using their configured percentage rates.
 
 ### 4.12 Statutory Deduction and Net Salary Rule
 
@@ -549,7 +556,8 @@ Cache is written on save/load/compare paths when needed.
       "employer_epf": 0,
       "socso": 0,
       "socso_l24": 0,
-      "eis": 0
+      "eis": 0,
+      "custom_contributions": 0
     }
   ]
 }
@@ -560,8 +568,9 @@ Frontend responsibilities:
 * collect projection inputs
 * call projection endpoints
 * render tables/charts
+* preview contribution amounts from gross salary and the bracket JSON supplied with the page
 * derive display-only TFP sums and pairwise comparison highlights from backend-returned closing balances
-* perform no source projection or statutory-deduction computation
+* treat backend projection and statutory-deduction results as authoritative
 
 ### 6.4 Saved Scenario Contract
 
@@ -603,8 +612,14 @@ The endpoint accepts two to four IDs; the current UI sends two distinct scenario
 
 * salary schedule matching
 * schedule-specific gross salary selection
-* schedule-specific EPF rate override support
 * arrears handling
+
+### SalaryContributionCalculator
+
+* calculate the active schedule's EPF, statutory, and named Custom contributions
+* include Employee and Employer EPF in the EPF balance
+* deduct Employee EPF, SOCSO, SOCSO L24, EIS, and Custom amounts from gross salary
+* enforce the June 2026 SOCSO L24 effective month
 
 ### ExpenseCalculator
 
