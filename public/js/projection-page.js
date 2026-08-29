@@ -368,6 +368,12 @@
         const container = document.getElementById('budgetPlanListCards');
         if (!container) return;
 
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            container.querySelectorAll('[data-budget-plan-action]').forEach((button) => {
+                bootstrap.Tooltip.getInstance(button)?.dispose();
+            });
+        }
+
         container.innerHTML = '';
         if (!budgetProfiles.length) {
             container.innerHTML = '<div class="text-center text-secondary py-3">No budget plans added yet.</div>';
