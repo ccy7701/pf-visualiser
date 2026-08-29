@@ -763,13 +763,18 @@
                                 <div>Net${deductions.includesSocsoL24 ? ' (incl. L24)' : ''}: RM ${money.format(deductions.net)}</div>
                             </div>
                         </div>
-                        <div class="salary-schedule-deduction-grid">
-                            <div>Employee EPF<br><strong>RM ${money.format(deductions.employeeEpf)}</strong></div>
-                            <div>Employer EPF<br><strong>RM ${money.format(deductions.employerEpf)}</strong></div>
-                            <div>SOCSO<br><strong>RM ${money.format(deductions.socso)}</strong></div>
-                            <div>SOCSO L24<br><strong>RM ${money.format(deductions.socsoL24)}</strong></div>
-                            <div>EIS<br><strong>RM ${money.format(deductions.eis)}</strong></div>
-                        </div>
+                        <dl class="salary-schedule-deduction-grid">
+                            <dt>Employee EPF</dt>
+                            <dd>RM ${money.format(deductions.employeeEpf)}</dd>
+                            <dt>Employer EPF</dt>
+                            <dd>RM ${money.format(deductions.employerEpf)}</dd>
+                            <dt>SOCSO</dt>
+                            <dd>RM ${money.format(deductions.socso)}</dd>
+                            <dt>SOCSO L24</dt>
+                            <dd>RM ${money.format(deductions.socsoL24)}</dd>
+                            <dt>EIS</dt>
+                            <dd>RM ${money.format(deductions.eis)}</dd>
+                        </dl>
                     </button>
                 `;
                 container.appendChild(item);
