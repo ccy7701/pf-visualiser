@@ -133,7 +133,78 @@ new class extends Component
     {
         $validSubcategoryIds = array_map(fn ($subcategory) => (string) $subcategory['id'], $this->allSubcategories);
         $this->selectedSubcategoryIds = array_values(array_intersect($this->selectedSubcategoryIds, $validSubcategoryIds));
+        $this->syncParentCategorySelections();
         $this->loadTransactions();
+    }
+
+    public function setCategoryFilterSelection(int $categoryId, bool $selected): void
+    {
+        $category = collect($this->allCategories)->first(
+            fn ($category) => (int) $category['id'] === $categoryId,
+        );
+        if ($category === null) {
+            return;
+        }
+
+        $categoryId = (string) $categoryId;
+        $subcategoryIds = array_map(
+            fn ($subcategory) => (string) $subcategory['id'],
+            $category['subcategories'] ?? [],
+        );
+
+        $this->selectedCategoryIds = $this->updateSelection(
+            $this->selectedCategoryIds,
+            [$categoryId],
+            $selected,
+        );
+        $this->selectedSubcategoryIds = $this->updateSelection(
+            $this->selectedSubcategoryIds,
+            $subcategoryIds,
+            $selected,
+        );
+
+        $this->loadTransactions();
+    }
+
+    public function setSubcategoryFilterSelection(int $subcategoryId, bool $selected): void
+    {
+        $subcategory = collect($this->allSubcategories)->first(
+            fn ($subcategory) => (int) $subcategory['id'] === $subcategoryId,
+        );
+        if ($subcategory === null) {
+            return;
+        }
+
+        $this->selectedSubcategoryIds = $this->updateSelection(
+            $this->selectedSubcategoryIds,
+            [(string) $subcategoryId],
+            $selected,
+        );
+        $this->syncParentCategorySelections();
+
+        $this->loadTransactions();
+    }
+
+    public function categoryFilterState(int $categoryId): string
+    {
+        $category = collect($this->allCategories)->first(
+            fn ($category) => (int) $category['id'] === $categoryId,
+        );
+        if ($category === null || ! in_array((string) $categoryId, $this->selectedCategoryIds, true)) {
+            return 'unchecked';
+        }
+
+        $subcategoryIds = array_map(
+            fn ($subcategory) => (string) $subcategory['id'],
+            $category['subcategories'] ?? [],
+        );
+        if ($subcategoryIds === []) {
+            return 'checked';
+        }
+
+        $selectedCount = count(array_intersect($subcategoryIds, $this->selectedSubcategoryIds));
+
+        return $selectedCount === count($subcategoryIds) ? 'checked' : 'mixed';
     }
 
     public function toggleNoteSearch(): void
@@ -185,6 +256,32 @@ new class extends Component
             : array_values(array_diff($this->selectedSubcategoryIds, $groupSubcategoryIds));
 
         $this->loadTransactions();
+    }
+
+    private function syncParentCategorySelections(): void
+    {
+        foreach ($this->allCategories as $category) {
+            $subcategoryIds = array_map(
+                fn ($subcategory) => (string) $subcategory['id'],
+                $category['subcategories'] ?? [],
+            );
+            if ($subcategoryIds === []) {
+                continue;
+            }
+
+            $this->selectedCategoryIds = $this->updateSelection(
+                $this->selectedCategoryIds,
+                [(string) $category['id']],
+                array_intersect($subcategoryIds, $this->selectedSubcategoryIds) !== [],
+            );
+        }
+    }
+
+    private function updateSelection(array $selection, array $ids, bool $selected): array
+    {
+        return $selected
+            ? array_values(array_unique([...$selection, ...$ids]))
+            : array_values(array_diff($selection, $ids));
     }
 
     public function hasActiveTransactionFilters(): bool
@@ -724,13 +821,16 @@ new class extends Component
                                             <div class="recent-transaction-category-options">
                                                 @foreach ($allCategories as $filterCategory)
                                                     @if ($filterCategory['type'] === $categoryType)
+                                                        @php($categoryFilterState = $this->categoryFilterState((int) $filterCategory['id']))
                                                         <div class="form-check recent-transaction-category-option">
                                                             <input
-                                                                wire:model.live="selectedCategoryIds"
+                                                                wire:click="setCategoryFilterSelection({{ $filterCategory['id'] }}, $event.target.checked)"
                                                                 class="form-check-input"
                                                                 type="checkbox"
-                                                                value="{{ $filterCategory['id'] }}"
                                                                 id="transactionCategoryFilter{{ $filterCategory['id'] }}"
+                                                                data-category-filter-state="{{ $categoryFilterState }}"
+                                                                aria-checked="{{ $categoryFilterState === 'mixed' ? 'mixed' : ($categoryFilterState === 'checked' ? 'true' : 'false') }}"
+                                                                @checked($categoryFilterState === 'checked')
                                                             >
                                                             <label class="form-check-label" for="transactionCategoryFilter{{ $filterCategory['id'] }}">
                                                                 {{ $filterCategory['name'] }}
@@ -740,11 +840,11 @@ new class extends Component
                                                                     @foreach ($filterCategory['subcategories'] as $filterSubcategory)
                                                                         <div class="form-check">
                                                                             <input
-                                                                                wire:model.live="selectedSubcategoryIds"
+                                                                                wire:click="setSubcategoryFilterSelection({{ $filterSubcategory['id'] }}, $event.target.checked)"
                                                                                 class="form-check-input"
                                                                                 type="checkbox"
-                                                                                value="{{ $filterSubcategory['id'] }}"
                                                                                 id="transactionSubcategoryFilter{{ $filterSubcategory['id'] }}"
+                                                                                @checked(in_array((string) $filterSubcategory['id'], $selectedSubcategoryIds, true))
                                                                             >
                                                                             <label class="form-check-label" for="transactionSubcategoryFilter{{ $filterSubcategory['id'] }}">
                                                                                 {{ $filterSubcategory['name'] }}
@@ -853,3 +953,21 @@ new class extends Component
     </div>
     </div>
 </div>
+
+@script
+<script>
+    function syncTransactionCategoryFilterStates() {
+        $wire.$el.querySelectorAll('[data-category-filter-state]').forEach((checkbox) => {
+            checkbox.indeterminate = checkbox.dataset.categoryFilterState === 'mixed';
+        });
+    }
+
+    syncTransactionCategoryFilterStates();
+
+    Livewire.hook('morph.updated', ({ component }) => {
+        if (component.id !== $wire.$id) return;
+
+        syncTransactionCategoryFilterStates();
+    });
+</script>
+@endscript

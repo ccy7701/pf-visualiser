@@ -98,6 +98,46 @@ class TransactionLogPageTest extends TestCase
             ->assertSet('periodExpenseTotal', 0.0);
     }
 
+    public function test_category_filters_cascade_and_reflect_partial_subcategory_selection(): void
+    {
+        $allowance = Category::query()->create(['name' => 'Allowance', 'type' => 'income']);
+        $blazeTech = Subcategory::query()->create(['category_id' => $allowance->id, 'name' => 'Blaze Tech']);
+        $family = Subcategory::query()->create(['category_id' => $allowance->id, 'name' => 'Family']);
+        $gamuda = Subcategory::query()->create(['category_id' => $allowance->id, 'name' => 'GAMUDA']);
+
+        $component = Livewire::test('transaction-log')
+            ->assertSet('selectedCategoryIds', [(string) $allowance->id])
+            ->assertSet('selectedSubcategoryIds', [
+                (string) $blazeTech->id,
+                (string) $family->id,
+                (string) $gamuda->id,
+            ]);
+
+        $this->assertSame('checked', $component->instance()->categoryFilterState($allowance->id));
+
+        $component->call('setSubcategoryFilterSelection', $blazeTech->id, false);
+        $this->assertSame('mixed', $component->instance()->categoryFilterState($allowance->id));
+
+        $component
+            ->call('setSubcategoryFilterSelection', $family->id, false)
+            ->call('setSubcategoryFilterSelection', $gamuda->id, false)
+            ->assertSet('selectedCategoryIds', [])
+            ->assertSet('selectedSubcategoryIds', []);
+        $this->assertSame('unchecked', $component->instance()->categoryFilterState($allowance->id));
+
+        $component
+            ->call('setCategoryFilterSelection', $allowance->id, true)
+            ->assertSet('selectedCategoryIds', [(string) $allowance->id])
+            ->assertSet('selectedSubcategoryIds', [
+                (string) $blazeTech->id,
+                (string) $family->id,
+                (string) $gamuda->id,
+            ])
+            ->call('setCategoryFilterSelection', $allowance->id, false)
+            ->assertSet('selectedCategoryIds', [])
+            ->assertSet('selectedSubcategoryIds', []);
+    }
+
     public function test_transactions_can_be_filtered_by_a_custom_period(): void
     {
         $category = Category::query()->create([
