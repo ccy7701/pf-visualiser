@@ -42,6 +42,24 @@ class ProjectionModuleTest extends TestCase
             $runResponse->json('summary.final_coh') + $runResponse->json('summary.final_elr') + $runResponse->json('summary.final_epf')
         );
 
+        $waivedPayload = $payload;
+        $waivedPayload['ptptn'] = [
+            'waiver_granted' => true,
+            'monthly_repayment' => 120,
+            'repayment_start_month' => '2026-06',
+            'interim_payment_months' => 2,
+        ];
+        $this->postJson(route('projection.run'), $waivedPayload)
+            ->assertOk()
+            ->assertJsonPath('months.0.ptptn', 120)
+            ->assertJsonPath('months.1.ptptn', 120)
+            ->assertJsonPath('months.2.ptptn', 0);
+
+        unset($waivedPayload['ptptn']['interim_payment_months']);
+        $this->postJson(route('projection.run'), $waivedPayload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('ptptn.interim_payment_months');
+
         $saveResponse = $this->postJson(route('projection.scenarios.save'), array_merge([
             'name' => 'Scenario A',
             'notes' => 'Base case',
@@ -155,6 +173,7 @@ class ProjectionModuleTest extends TestCase
                 'waiver_granted' => false,
                 'monthly_repayment' => 120,
                 'repayment_start_month' => '2026-08',
+                'interim_payment_months' => null,
             ],
             'bnpl' => [
                 [

@@ -92,6 +92,7 @@ The system shall support:
 * waiver granted flag
 * monthly repayment amount
 * repayment start month
+* anticipated interim payment months when a waiver is granted
 
 ### 3.6 BNPL Configuration
 
@@ -264,7 +265,7 @@ Salary arrears in this module is a scenario-planning rule only. It does not cons
 
 ### 4.7 PTPTN Logic
 
-If waiver granted, PTPTN repayment is 0.
+If waiver is granted, repayments still apply from the repayment start month for the configured number of anticipated interim payment months. The waiver applies after that period.
 
 If waiver is not granted and repayment start month is reached, repayment uses configured monthly amount.
 
@@ -470,7 +471,8 @@ Cache is written on save/load/compare paths when needed.
   "ptptn": {
     "waiver_granted": false,
     "monthly_repayment": 120,
-    "repayment_start_month": "2026-08"
+    "repayment_start_month": "2026-08",
+    "interim_payment_months": null
   },
   "bnpl": [
     { "month": "2026-06", "amount": 150, "note": "Phone" }

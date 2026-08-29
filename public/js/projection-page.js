@@ -838,6 +838,7 @@
     }
 
     function collectPayload() {
+        const ptptnWaiverGranted = document.getElementById('ptptnWaiverGranted').checked;
         const bnpl = Array.from(document.querySelectorAll('#bnplRows tr')).map((row) => ({
             month: toMonthOrNull(row.querySelector('[data-bnpl="month"]').value),
             amount: toNumber(row.querySelector('[data-bnpl="amount"]').value, 0),
@@ -881,9 +882,12 @@
                 ...collectCostOfLivingPayload(),
             },
             ptptn: {
-                waiver_granted: document.getElementById('ptptnWaiverGranted').checked,
+                waiver_granted: ptptnWaiverGranted,
                 monthly_repayment: toNumber(document.getElementById('ptptnMonthlyRepayment').value, 0),
                 repayment_start_month: toMonthOrNull(document.getElementById('ptptnRepaymentStartMonth').value),
+                interim_payment_months: ptptnWaiverGranted
+                    ? toNumber(document.getElementById('ptptnInterimPaymentMonths').value, 1)
+                    : null,
             },
             bnpl,
             events,
@@ -957,6 +961,8 @@
         document.getElementById('ptptnWaiverGranted').checked = Boolean(ptptn.waiver_granted);
         document.getElementById('ptptnMonthlyRepayment').value = ptptn.monthly_repayment ?? 0;
         setMonthPickerValue('ptptnRepaymentStartMonth', ptptn.repayment_start_month);
+        document.getElementById('ptptnInterimPaymentMonths').value = ptptn.interim_payment_months ?? 1;
+        updatePtptnWaiverFields();
 
         document.getElementById('employeeEpfRatePercent').value = epf.employee_rate_percent ?? 0;
         document.getElementById('employerEpfRatePercent').value = epf.employer_rate_percent ?? 0;
@@ -1357,6 +1363,15 @@
         }
     }
 
+    function updatePtptnWaiverFields() {
+        const waiverGranted = document.getElementById('ptptnWaiverGranted').checked;
+        const field = document.getElementById('ptptnInterimPaymentMonthsField');
+        const input = document.getElementById('ptptnInterimPaymentMonths');
+
+        field.classList.toggle('d-none', !waiverGranted);
+        input.required = waiverGranted;
+    }
+
     function clearAllInputsAndSelections() {
         const startMonth = toMonthOrNull(document.getElementById('startMonth').defaultValue) || toMonthOrNull(document.getElementById('startMonth').value);
         const endMonth = toMonthOrNull(document.getElementById('endMonth').defaultValue) || toMonthOrNull(document.getElementById('endMonth').value);
@@ -1384,6 +1399,8 @@
         document.getElementById('ptptnWaiverGranted').checked = false;
         document.getElementById('ptptnMonthlyRepayment').value = '120.00';
         setMonthPickerValue('ptptnRepaymentStartMonth', '');
+        document.getElementById('ptptnInterimPaymentMonths').value = '1';
+        updatePtptnWaiverFields();
 
         document.getElementById('employeeEpfRatePercent').value = '11.00';
         document.getElementById('employerEpfRatePercent').value = '13.00';
@@ -1516,6 +1533,7 @@
     document.getElementById('employerEpfRatePercent').addEventListener('input', updateEmploymentContributionSummary);
     document.getElementById('employerEpfRatePercent').addEventListener('blur', updateEmploymentContributionSummary);
     document.getElementById('socsoL24Enabled').addEventListener('change', updateEmploymentContributionSummary);
+    document.getElementById('ptptnWaiverGranted').addEventListener('change', updatePtptnWaiverFields);
 
     document.getElementById('runProjectionBtn').addEventListener('click', async () => {
         setStatus('Running projection...');

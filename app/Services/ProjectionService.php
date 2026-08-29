@@ -171,6 +171,9 @@ class ProjectionService
                 'waiver_granted' => filter_var($ptptn['waiver_granted'] ?? false, FILTER_VALIDATE_BOOL),
                 'monthly_repayment' => (float) ($ptptn['monthly_repayment'] ?? 0),
                 'repayment_start_month' => $this->normalizeOptionalMonth($ptptn['repayment_start_month'] ?? null),
+                'interim_payment_months' => filter_var($ptptn['waiver_granted'] ?? false, FILTER_VALIDATE_BOOL)
+                    ? max(1, (int) ($ptptn['interim_payment_months'] ?? 1))
+                    : null,
             ],
             'bnpl' => array_values(array_map(function (array $item) {
                 return [

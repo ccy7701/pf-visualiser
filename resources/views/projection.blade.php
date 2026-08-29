@@ -268,6 +268,14 @@
                                             <label class="form-check-label" for="ptptnWaiverGranted">PTPTN waiver granted (permanent)</label>
                                         </div>
                                     </div>
+                                    <div id="ptptnInterimPaymentMonthsField" class="col-12 d-none">
+                                        <label for="ptptnInterimPaymentMonths" class="form-label form-label-sm">Anticipated Interim Payment Period</label>
+                                        <div class="input-group input-group-sm">
+                                            <input id="ptptnInterimPaymentMonths" type="number" min="1" step="1" class="form-control compact-input" value="1">
+                                            <span class="input-group-text">months</span>
+                                        </div>
+                                        <div class="form-text">Repayments continue for this many months from the repayment start month before the waiver takes effect.</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

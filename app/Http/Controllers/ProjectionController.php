@@ -179,6 +179,7 @@ class ProjectionController extends Controller
             'ptptn.waiver_granted' => ['required', 'boolean'],
             'ptptn.monthly_repayment' => ['required', 'numeric', 'min:0'],
             'ptptn.repayment_start_month' => ['nullable', 'regex:/^\d{4}-\d{2}$/'],
+            'ptptn.interim_payment_months' => ['required_if:ptptn.waiver_granted,true', 'nullable', 'integer', 'min:1'],
 
             'bnpl' => ['required', 'array'],
             'bnpl.*.month' => ['required', 'regex:/^\d{4}-\d{2}$/'],
