@@ -24,4 +24,9 @@ class Category extends Model
     {
         return $this->hasMany(Subcategory::class);
     }
+
+    public function historyOverrides(): HasMany
+    {
+        return $this->hasMany(HistoryCategoryOverride::class);
+    }
 }
