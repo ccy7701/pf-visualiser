@@ -12,7 +12,7 @@ Related high-level project specification: `overview.md`
 
 `history` is a historical trend visualisation module for month-by-month personal finance tracking.
 
-The system visualises a rolling 12-month window of historical values for:
+The system visualises a rolling 13-month window of historical values for:
 
 * Cash on Hand (COH)
 * Emergency Liquidity Reserve (ELR)
@@ -114,7 +114,7 @@ The layout collapses responsively at narrower viewport widths.
 
 ### 3.2 Month Window
 
-The system shall display a 12-month historical window.
+The system shall display a 13-month historical window.
 
 Display order:
 
@@ -185,7 +185,7 @@ The visualisation selector shall provide:
 * **Expense Category Grid**: 10x10 square waffle chart for the selected month
 * **Expense Category Trend**: line graph of one selected expense category over time
 
-The visualisation shall use the 12-month window described in section 3.2.
+The visualisation shall use the 13-month window described in section 3.2.
 
 TFP Trend rules:
 
@@ -224,7 +224,7 @@ Expense-category trend rules:
 
 * provide a category dropdown populated from the same expense categories as Monthly Inputs
 * display the dropdown only while the expense-category trend view is active
-* plot the selected category's monthly expense amount across the active 12-month window
+* plot the selected category's monthly expense amount across the active 13-month window
 * render straight line segments between points
 * display month label and category amount below the x-axis
 
@@ -250,7 +250,7 @@ Month selection shall automatically load the currently saved values for that mon
 
 ### 4.1 Historical Window Resolution
 
-The system resolves the visible month range as 12 consecutive months ending at the selected latest month.
+The system resolves the visible month range as 13 consecutive months ending at the selected latest month.
 
 If no latest month is selected, the latest month defaults to the current calendar month.
 
@@ -258,10 +258,10 @@ If no latest month is selected, the latest month defaults to the current calenda
 
 Months are displayed in ascending chronological order.
 
-For a 12-month window:
+For a 13-month window:
 
 ```text
-visible_months = [latest_month - 11 months, ..., latest_month]
+visible_months = [latest_month - 12 months, ..., latest_month]
 ```
 
 When the user navigates the history window:
@@ -385,7 +385,7 @@ The view also receives the active theme.
 
 ### 6.3 Month Data Response
 
-`GET /history/months` returns 12-month history data for the requested latest month.
+`GET /history/months` returns 13-month history data for the requested latest month.
 
 Response fields:
 

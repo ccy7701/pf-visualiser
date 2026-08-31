@@ -154,10 +154,10 @@
                                     <option value="expense-category-trend">Expense Category Trend</option>
                                 </select>
                                 <div class="history-window-controls" aria-label="History month window controls">
-                                    <button id="previousWindowBtn" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Show previous 12 months">
+                                    <button id="previousWindowBtn" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Show previous 13 months">
                                         <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
                                     </button>
-                                    <button id="nextWindowBtn" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Show next 12 months">
+                                    <button id="nextWindowBtn" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Show next 13 months">
                                         <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
                                     </button>
                                 </div>

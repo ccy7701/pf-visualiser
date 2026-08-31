@@ -9,7 +9,7 @@ It combines:
 - scenario-based projection (COH, ELR, EPF, TFP, salary schedules with editable EPF/statutory/custom contribution lists, budget profiles, month-specific budget selection, and monthly scenario comparison),
 - variance analysis (saved projections versus read-only History actuals by month),
 - transportation tracking (vehicles, refuel, drive, and parking logs; monthly, weekly, since-refuel, and custom summaries; JSON export),
-- history tracking (month-end COH/ELR/EPF, derived TFP, income/expense breakdowns, selectable visualisations, and an optional unpaid-accrual overlay across rolling 12-month windows),
+- history tracking (month-end COH/ELR/EPF, derived TFP, income/expense breakdowns, selectable visualisations, and an optional unpaid-accrual overlay across rolling 13-month windows),
 - Prompt Studio (saved weekly/monthly/custom templates, transaction breakdown generation, editable context, preview, and clipboard copying for use with an external LLM; no AI integration).
 
 Detailed, implementation-verified specifications are in [`docs/overview.md`](docs/overview.md) and the module specifications under [`docs/`](docs/).

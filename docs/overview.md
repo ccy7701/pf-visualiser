@@ -150,7 +150,7 @@ Key characteristics:
 Purpose:
 
 * track historical month-end COH, ELR, EPF, monthly income, and monthly expenses
-* visualise historical trend movement across rolling 12-month windows
+* visualise historical trend movement across rolling 13-month windows
 
 Key characteristics:
 
@@ -158,7 +158,7 @@ Key characteristics:
 * manual month-end COH, ELR, and EPF entry, with derived TFP
 * income and expense totals derived from category-level monthly breakdowns
 * month picker with automatic month load behavior
-* rolling 12-month navigation with one-month backward/forward window movement
+* rolling 13-month navigation with one-month backward/forward window movement
 * selectable visualisations for TFP trend, stacked COH/ELR/EPF, income/expenses, expense-category composition, and a selected expense category's trend
 * optional current-month unpaid-accrual overlay on TFP Trend
 
@@ -279,7 +279,7 @@ Key characteristics:
 * Historical month persistence model
 * Month-based save/load workflow
 * Category-level income and expense breakdown inputs
-* Rolling 12-month selectable TFP, balance-breakdown, income/expense, expense-category grid, and selected-category trend visualisations
+* Rolling 13-month selectable TFP, balance-breakdown, income/expense, expense-category grid, and selected-category trend visualisations
 
 ## PHASE 13 - Prompt Studio
 

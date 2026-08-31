@@ -27,9 +27,9 @@ class HistoryModuleTest extends TestCase
 
         $windowResponse = $this->getJson(route('history.months', ['latest_month' => '2026-06']));
         $windowResponse->assertOk();
-        $windowResponse->assertJsonCount(12, 'months');
-        $windowResponse->assertJsonPath('months.0.month', '2025-07');
-        $windowResponse->assertJsonPath('months.11.month', '2026-06');
+        $windowResponse->assertJsonCount(13, 'months');
+        $windowResponse->assertJsonPath('months.0.month', '2025-06');
+        $windowResponse->assertJsonPath('months.12.month', '2026-06');
 
         $saveResponse = $this->postJson(route('history.months.save'), [
             'month' => '2026-06',
@@ -61,8 +61,8 @@ class HistoryModuleTest extends TestCase
 
         $reloadResponse = $this->getJson(route('history.months', ['latest_month' => '2026-06']));
         $reloadResponse->assertOk();
-        $reloadResponse->assertJsonPath('months.11.has_record', true);
-        $reloadResponse->assertJsonPath('months.11.total_expenses', 321.10);
-        $reloadResponse->assertJsonPath('months.11.total_income', 2200);
+        $reloadResponse->assertJsonPath('months.12.has_record', true);
+        $reloadResponse->assertJsonPath('months.12.total_expenses', 321.10);
+        $reloadResponse->assertJsonPath('months.12.total_income', 2200);
     }
 }

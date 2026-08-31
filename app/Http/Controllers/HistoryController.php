@@ -106,7 +106,7 @@ class HistoryController extends Controller
     {
         $latest = CarbonImmutable::createFromFormat('Y-m-d', "{$latestMonth}-01")->startOfMonth();
 
-        return collect(range(11, 1))
+        return collect(range(12, 1))
             ->map(fn (int $offset): string => $latest->subMonths($offset)->format('Y-m'))
             ->push($latest->format('Y-m'))
             ->values()
