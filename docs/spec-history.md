@@ -182,7 +182,8 @@ The visualisation selector shall provide:
 * **TFP Trend**: line graph of `COH + ELR + EPF`
 * **COH, ELR and EPF**: stacked balance bars
 * **Income and Expenses**: grouped income/expense bars
-* **Expenses by Category**: 10x10 square waffle chart for the selected month
+* **Expense Category Grid**: 10x10 square waffle chart for the selected month
+* **Expense Category Trend**: line graph of one selected expense category over time
 
 The visualisation shall use the 12-month window described in section 3.2.
 
@@ -218,6 +219,14 @@ Expense-category rules:
 * fade deselected cells and legend entries without removing them from the 100-cell allocation
 * suppress category cells and legend entries when the selected month has no expense total
 * display `Showing:` rather than `Latest:` in the visualisation subtitle while this view is active
+
+Expense-category trend rules:
+
+* provide a category dropdown populated from the same expense categories as Monthly Inputs
+* display the dropdown only while the expense-category trend view is active
+* plot the selected category's monthly expense amount across the active 12-month window
+* render straight line segments between points
+* display month label and category amount below the x-axis
 
 ### 3.7 Save Inputs
 
@@ -433,5 +442,5 @@ Expected desktop view:
 * category input cells arranged in a two-column grid
 * one selected visualisation displayed at a time
 * TFP rendered as the default line series
-* stacked COH/ELR/EPF, grouped income/expenses, and expense-category waffle alternatives
+* stacked COH/ELR/EPF, grouped income/expenses, expense-category grid, and expense-category trend alternatives
 * previous and next buttons for one-month history window paging

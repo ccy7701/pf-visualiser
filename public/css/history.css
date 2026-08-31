@@ -134,6 +134,10 @@
     flex: 0 0 220px;
 }
 
+.history-expense-category-trend-controls select {
+    width: 180px;
+}
+
 .history-waffle-chart-wrap {
     min-height: 430px;
     display: flex;
@@ -287,6 +291,11 @@
     .history-visualisation-select {
         width: 100%;
         flex: 1 1 auto;
+    }
+
+    .history-expense-category-trend-controls,
+    .history-expense-category-trend-controls select {
+        width: 100%;
     }
 
     .history-waffle-chart-wrap {

@@ -17,6 +17,11 @@ class HistoryModuleTest extends TestCase
 
         $this->get(route('history.index'))
             ->assertOk()
+            ->assertSee('Expense Category Grid')
+            ->assertSee('Expense Category Trend')
+            ->assertSee('<select id="expenseCategoryTrendSelect"', false)
+            ->assertSee('<option value="'.$food->id.'">Food</option>', false)
+            ->assertSee('<canvas id="historyExpenseCategoryTrendChart"', false)
             ->assertSee('class="history-waffle-chart"', false)
             ->assertDontSee('<canvas id="historyExpenseCategoryChart"', false);
 

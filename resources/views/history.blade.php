@@ -137,12 +137,21 @@
                                 <input class="btn-check" type="radio" name="expenseWaffleValueMode" id="expenseWaffleModeRm" value="rm">
                                 <label class="btn btn-outline-secondary" for="expenseWaffleModeRm">RM</label>
                             </div>
+                            <div id="expenseCategoryTrendControls" class="history-expense-category-trend-controls d-none">
+                                <label class="visually-hidden" for="expenseCategoryTrendSelect">Expense category</label>
+                                <select id="expenseCategoryTrendSelect" class="form-select form-select-sm" aria-label="Expense category">
+                                    @foreach ($expenseCategories as $category)
+                                        <option value="{{ $category['id'] }}">{{ $category['name'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <div class="history-visualisation-switcher">
                                 <select id="historyVisualisationSelect" class="form-select form-select-sm history-visualisation-select" aria-label="History visualisation">
                                     <option value="coh" selected>TFP Trend</option>
                                     <option value="coh-breakdown">COH, ELR and EPF</option>
                                     <option value="income-expense">Income and Expenses</option>
-                                    <option value="expense-category">Expenses by Category</option>
+                                    <option value="expense-category">Expense Category Grid</option>
+                                    <option value="expense-category-trend">Expense Category Trend</option>
                                 </select>
                                 <div class="history-window-controls" aria-label="History month window controls">
                                     <button id="previousWindowBtn" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Show previous 12 months">
@@ -175,6 +184,11 @@
                     <div id="historyExpenseCategoryPane" class="history-visualisation-pane d-none">
                         <div class="history-waffle-chart-wrap">
                             <div id="historyExpenseCategoryChart" class="history-waffle-chart" role="group" aria-label="Expenses by category"></div>
+                        </div>
+                    </div>
+                    <div id="historyExpenseCategoryTrendPane" class="history-visualisation-pane d-none">
+                        <div class="history-chart-wrap">
+                            <canvas id="historyExpenseCategoryTrendChart"></canvas>
                         </div>
                     </div>
                 </div>

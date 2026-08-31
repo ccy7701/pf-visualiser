@@ -10,6 +10,7 @@
     let cohChart = null;
     let cohBreakdownChart = null;
     let incomeExpenseChart = null;
+    let expenseCategoryTrendChart = null;
     let months = [];
     let selectedMonth = config.latestMonth || '';
     let activeHistoryVisualisation = 'coh';
@@ -280,8 +281,12 @@
 
             input.addEventListener('input', () => {
                 updateTotals();
-                if (inputClass === 'history-expense-input' && activeHistoryVisualisation === 'expense-category') {
-                    renderExpenseCategoryChart();
+                if (inputClass === 'history-expense-input') {
+                    if (activeHistoryVisualisation === 'expense-category') {
+                        renderExpenseCategoryChart();
+                    } else if (activeHistoryVisualisation === 'expense-category-trend') {
+                        renderExpenseCategoryTrendChart();
+                    }
                 }
             });
 
@@ -681,8 +686,62 @@
         updateExpenseWaffleSelectionState(chart);
     }
 
+    function expenseCategoryAmountForRow(row, categoryId) {
+        if (!row) return 0;
+
+        const useCurrentInputs = row.month === selectedMonth
+            && document.getElementById('historyMonth')?.value === selectedMonth
+            && document.querySelectorAll('.history-expense-input').length > 0;
+        const breakdown = useCurrentInputs
+            ? collectBreakdown('history-expense-input')
+            : row.expense_breakdown || [];
+        const category = breakdown.find((item) => Number(item.category_id) === categoryId);
+
+        return toNumber(category?.amount, 0);
+    }
+
+    function renderExpenseCategoryTrendChart() {
+        const canvas = document.getElementById('historyExpenseCategoryTrendChart');
+        const categorySelect = document.getElementById('expenseCategoryTrendSelect');
+        if (!canvas || !categorySelect || typeof Chart === 'undefined') return;
+
+        if (expenseCategoryTrendChart) {
+            expenseCategoryTrendChart.destroy();
+        }
+
+        const categoryId = Number(categorySelect.value);
+        const categoryName = expenseCategories.find((category) => Number(category.id) === categoryId)?.name || 'Expense';
+        const options = applySharedXAxisOptions(baseChartOptions(), 44);
+
+        expenseCategoryTrendChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: months.map((row) => formatMonthLabel(row.month)),
+                datasets: [
+                    {
+                        label: categoryName,
+                        data: months.map((row) => expenseCategoryAmountForRow(row, categoryId)),
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.12)',
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        tension: 0,
+                        yAxisID: 'y',
+                    },
+                ],
+            },
+            options,
+            plugins: [
+                createHistoryAxisLabelPlugin('historyExpenseCategoryTrendLabels', (row) => [
+                    { text: formatMonthLabel(row.month), color: '#212529' },
+                    { text: money.format(expenseCategoryAmountForRow(row, categoryId)), color: '#dc3545' },
+                ]),
+            ],
+        });
+    }
+
     function setActiveVisualisation(value) {
-        activeHistoryVisualisation = ['coh', 'coh-breakdown', 'income-expense', 'expense-category'].includes(value) ? value : 'coh';
+        activeHistoryVisualisation = ['coh', 'coh-breakdown', 'income-expense', 'expense-category', 'expense-category-trend'].includes(value) ? value : 'coh';
 
         const subtitleLabel = document.getElementById('historyVisualisationSubtitleLabel');
         if (subtitleLabel) {
@@ -693,8 +752,10 @@
         document.getElementById('historyCohBreakdownPane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'coh-breakdown');
         document.getElementById('historyIncomeExpensePane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'income-expense');
         document.getElementById('historyExpenseCategoryPane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'expense-category');
+        document.getElementById('historyExpenseCategoryTrendPane')?.classList.toggle('d-none', activeHistoryVisualisation !== 'expense-category-trend');
         document.getElementById('currentAccrualControls')?.classList.toggle('d-none', activeHistoryVisualisation !== 'coh');
         document.getElementById('expenseWaffleValueControls')?.classList.toggle('d-none', activeHistoryVisualisation !== 'expense-category');
+        document.getElementById('expenseCategoryTrendControls')?.classList.toggle('d-none', activeHistoryVisualisation !== 'expense-category-trend');
     }
 
     function renderActiveVisualisation() {
@@ -706,8 +767,10 @@
             renderCohBreakdownChart();
         } else if (activeHistoryVisualisation === 'income-expense') {
             renderIncomeExpenseChart();
-        } else {
+        } else if (activeHistoryVisualisation === 'expense-category') {
             renderExpenseCategoryChart();
+        } else {
+            renderExpenseCategoryTrendChart();
         }
     }
 
@@ -887,6 +950,12 @@
         document.getElementById('historyVisualisationSelect')?.addEventListener('change', (event) => {
             setActiveVisualisation(event.target.value);
             renderActiveVisualisation();
+        });
+
+        document.getElementById('expenseCategoryTrendSelect')?.addEventListener('change', () => {
+            if (activeHistoryVisualisation === 'expense-category-trend') {
+                renderExpenseCategoryTrendChart();
+            }
         });
 
         document.getElementById('saveHistoryBtn')?.addEventListener('click', () => {

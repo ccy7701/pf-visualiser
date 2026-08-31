@@ -159,7 +159,7 @@ Key characteristics:
 * income and expense totals derived from category-level monthly breakdowns
 * month picker with automatic month load behavior
 * rolling 12-month navigation with one-month backward/forward window movement
-* selectable visualisations for TFP trend, stacked COH/ELR/EPF, income/expenses, and expense-category composition
+* selectable visualisations for TFP trend, stacked COH/ELR/EPF, income/expenses, expense-category composition, and a selected expense category's trend
 * optional current-month unpaid-accrual overlay on TFP Trend
 
 ### Module F: Prompt Studio (`prompt-studio`)
@@ -279,7 +279,7 @@ Key characteristics:
 * Historical month persistence model
 * Month-based save/load workflow
 * Category-level income and expense breakdown inputs
-* Rolling 12-month selectable TFP, balance-breakdown, income/expense, and expense-category visualisations
+* Rolling 12-month selectable TFP, balance-breakdown, income/expense, expense-category grid, and selected-category trend visualisations
 
 ## PHASE 13 - Prompt Studio
 
