@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\HistoryCategoryOverride;
-use App\Models\HistoryMonth;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class HistoryCategoryOverrideMigrationTest extends TestCase
@@ -33,15 +33,19 @@ class HistoryCategoryOverrideMigrationTest extends TestCase
     {
         $food = Category::query()->create(['name' => 'Food', 'type' => 'expense']);
         $salary = Category::query()->create(['name' => 'Salary', 'type' => 'income']);
-        HistoryMonth::query()->create([
+        $cleanupMigration = require database_path('migrations/2026_08_31_000024_remove_legacy_history_breakdowns.php');
+        $cleanupMigration->down();
+        DB::table('history_months')->insert([
             'month' => '2026-06',
             'closing_coh' => 1000,
-            'expense_breakdown_json' => [
+            'expense_breakdown_json' => json_encode([
                 ['category_id' => $food->id, 'name' => 'Food', 'amount' => 25.50],
-            ],
-            'income_breakdown_json' => [
+            ]),
+            'income_breakdown_json' => json_encode([
                 ['category_id' => $salary->id, 'name' => 'Salary', 'amount' => 0],
-            ],
+            ]),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         $migration = require database_path('migrations/2026_08_31_000023_create_history_category_overrides_table.php');
@@ -58,5 +62,7 @@ class HistoryCategoryOverrideMigrationTest extends TestCase
             'month' => '2026-06',
             'category_id' => $salary->id,
         ]);
+
+        $cleanupMigration->up();
     }
 }

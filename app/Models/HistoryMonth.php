@@ -14,8 +14,6 @@ class HistoryMonth extends Model
         'closing_coh',
         'closing_elr',
         'closing_epf',
-        'expense_breakdown_json',
-        'income_breakdown_json',
     ];
 
     protected function casts(): array
@@ -24,8 +22,6 @@ class HistoryMonth extends Model
             'closing_coh' => 'decimal:2',
             'closing_elr' => 'decimal:2',
             'closing_epf' => 'decimal:2',
-            'expense_breakdown_json' => 'array',
-            'income_breakdown_json' => 'array',
         ];
     }
 }
