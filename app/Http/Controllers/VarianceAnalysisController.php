@@ -6,6 +6,7 @@ use App\Models\HistoryMonth;
 use App\Models\ProjectionActualMonth;
 use App\Models\ProjectionScenario;
 use App\Models\Setting;
+use App\Services\HistoryActivityResolver;
 use App\Support\CategoryCatalog;
 use App\Services\ProjectionService;
 use Illuminate\Http\JsonResponse;
@@ -14,8 +15,10 @@ use Illuminate\View\View;
 
 class VarianceAnalysisController extends Controller
 {
-    public function __construct(private readonly ProjectionService $projectionService)
-    {
+    public function __construct(
+        private readonly ProjectionService $projectionService,
+        private readonly HistoryActivityResolver $activityResolver,
+    ) {
     }
 
     public function index(): View
@@ -57,39 +60,55 @@ class VarianceAnalysisController extends Controller
             ->pluck('month')
             ->filter()
             ->values();
-        $historyByMonth = HistoryMonth::query()
+        $incomeCategories = CategoryCatalog::forType('income');
+        $activityByMonth = $this->activityResolver->resolve(
+            $projectedMonthKeys->all(),
+            $expenseCategories,
+            $incomeCategories,
+        );
+        $historyRows = HistoryMonth::query()
             ->whereIn('month', $projectedMonthKeys)
-            ->get(['month', 'expense_breakdown_json'])
-            ->map(fn (HistoryMonth $month): array => [
-                'month' => $month->month,
-                'expense_breakdown' => CategoryCatalog::normalizeBreakdown($month->expense_breakdown_json ?? [], $expenseCategories),
+            ->get(['month', 'closing_coh', 'closing_elr', 'closing_epf'])
+            ->keyBy('month');
+        $actualMonthKeys = $projectedMonthKeys
+            ->filter(function (string $month) use ($activityByMonth, $historyRows): bool {
+                $activity = $activityByMonth[$month];
+
+                return $historyRows->has($month) || $activity['has_transactions'] || $activity['has_overrides'];
+            });
+        $historyByMonth = $actualMonthKeys
+            ->map(fn (string $month): array => [
+                'month' => $month,
+                'expense_breakdown' => $activityByMonth[$month]['expense_breakdown'],
+                'income_breakdown' => $activityByMonth[$month]['income_breakdown'],
+                'has_balance_record' => $historyRows->has($month),
+                'has_transactions' => $activityByMonth[$month]['has_transactions'],
+                'has_overrides' => $activityByMonth[$month]['has_overrides'],
             ])
             ->values();
 
-        $actualMonths = HistoryMonth::query()
-            ->whereIn('month', $projectedMonthKeys)
-            ->orderBy('month')
-            ->get([
-                'month',
-                'closing_coh',
-                'closing_elr',
-                'closing_epf',
-                'expense_breakdown_json',
-            ])
-            ->map(fn (HistoryMonth $month): array => [
-                'month' => $month->month,
-                'opening_coh' => null,
-                'net_income' => null,
-                'expenses' => CategoryCatalog::breakdownTotal(
-                    CategoryCatalog::normalizeBreakdown($month->expense_breakdown_json ?? [], $expenseCategories)
-                ),
-                'debt_servicing' => null,
-                'closing_coh' => $month->closing_coh !== null ? (float) $month->closing_coh : null,
-                'closing_elr' => $month->closing_elr !== null ? (float) $month->closing_elr : null,
-                'closing_epf' => $month->closing_epf !== null ? (float) $month->closing_epf : null,
-                'expense_breakdown' => CategoryCatalog::normalizeBreakdown($month->expense_breakdown_json ?? [], $expenseCategories),
-                'notes' => null,
-            ])
+        $actualMonths = $actualMonthKeys
+            ->sort()
+            ->map(function (string $month) use ($activityByMonth, $historyRows): array {
+                $history = $historyRows->get($month);
+                $activity = $activityByMonth[$month];
+
+                return [
+                    'month' => $month,
+                    'opening_coh' => null,
+                    'net_income' => $activity['total_income'],
+                    'expenses' => $activity['total_expenses'],
+                    'debt_servicing' => null,
+                    'closing_coh' => $history?->closing_coh !== null ? (float) $history->closing_coh : null,
+                    'closing_elr' => $history?->closing_elr !== null ? (float) $history->closing_elr : null,
+                    'closing_epf' => $history?->closing_epf !== null ? (float) $history->closing_epf : null,
+                    'expense_breakdown' => $activity['expense_breakdown'],
+                    'notes' => null,
+                    'has_balance_record' => $history !== null,
+                    'has_transactions' => $activity['has_transactions'],
+                    'has_overrides' => $activity['has_overrides'],
+                ];
+            })
             ->values();
 
         return response()->json([
