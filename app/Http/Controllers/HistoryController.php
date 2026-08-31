@@ -2,17 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
+use App\Models\HistoryCategoryOverride;
 use App\Models\HistoryMonth;
 use App\Models\Setting;
+use App\Services\HistoryActivityResolver;
 use App\Support\CategoryCatalog;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class HistoryController extends Controller
 {
+    public function __construct(private readonly HistoryActivityResolver $activityResolver)
+    {
+    }
+
     public function index(): View
     {
         return view('history', [
@@ -38,6 +48,7 @@ class HistoryController extends Controller
             ->whereIn('month', $months)
             ->get()
             ->keyBy('month');
+        $activity = $this->activityResolver->resolve($months, $expenseCategories, $incomeCategories);
 
         return response()->json([
             'latest_month' => $latestMonth,
@@ -45,8 +56,7 @@ class HistoryController extends Controller
                 fn (string $month): array => $this->monthPayload(
                     $month,
                     $historyRows->get($month),
-                    $expenseCategories,
-                    $incomeCategories
+                    $activity[$month],
                 ),
                 $months
             ),
@@ -60,14 +70,6 @@ class HistoryController extends Controller
             'closing_coh' => ['required', 'numeric'],
             'closing_elr' => ['nullable', 'numeric', 'min:0'],
             'closing_epf' => ['nullable', 'numeric', 'min:0'],
-            'expense_breakdown' => ['nullable', 'array'],
-            'expense_breakdown.*.category_id' => ['required_with:expense_breakdown', 'integer'],
-            'expense_breakdown.*.name' => ['required_with:expense_breakdown', 'string', 'max:120'],
-            'expense_breakdown.*.amount' => ['required_with:expense_breakdown', 'numeric', 'min:0'],
-            'income_breakdown' => ['nullable', 'array'],
-            'income_breakdown.*.category_id' => ['required_with:income_breakdown', 'integer'],
-            'income_breakdown.*.name' => ['required_with:income_breakdown', 'string', 'max:120'],
-            'income_breakdown.*.amount' => ['required_with:income_breakdown', 'numeric', 'min:0'],
         ])->validate();
 
         $expenseCategories = $this->categories('expense');
@@ -79,14 +81,17 @@ class HistoryController extends Controller
                 'closing_coh' => round((float) $validated['closing_coh'], 2),
                 'closing_elr' => array_key_exists('closing_elr', $validated) && $validated['closing_elr'] !== null ? round((float) $validated['closing_elr'], 2) : null,
                 'closing_epf' => array_key_exists('closing_epf', $validated) && $validated['closing_epf'] !== null ? round((float) $validated['closing_epf'], 2) : null,
-                'expense_breakdown_json' => $this->normalizeBreakdown($validated['expense_breakdown'] ?? [], $expenseCategories),
-                'income_breakdown_json' => $this->normalizeBreakdown($validated['income_breakdown'] ?? [], $incomeCategories),
             ]
         );
+        $activity = $this->activityResolver->resolve(
+            [$historyMonth->month],
+            $expenseCategories,
+            $incomeCategories,
+        )[$historyMonth->month];
 
         return response()->json([
-            'message' => 'Data saved successfully.',
-            'month' => $this->monthPayload($historyMonth->month, $historyMonth, $expenseCategories, $incomeCategories),
+            'message' => 'Balances saved successfully.',
+            'month' => $this->monthPayload($historyMonth->month, $historyMonth, $activity),
         ]);
     }
 
@@ -95,6 +100,57 @@ class HistoryController extends Controller
         $request->merge(['month' => $month]);
 
         return $this->saveMonth($request);
+    }
+
+    public function saveOverrides(Request $request, string $month, string $type): JsonResponse
+    {
+        validator(['type' => $type], ['type' => ['required', Rule::in(['income', 'expense'])]])->validate();
+        $validated = validator($request->all(), [
+            'overrides' => ['present', 'array'],
+            'overrides.*.category_id' => ['required', 'integer', 'distinct', 'exists:categories,id'],
+            'overrides.*.amount' => ['required', 'numeric', 'min:0'],
+            'overrides.*.note' => ['nullable', 'string', 'max:500'],
+        ])->validate();
+
+        if (! preg_match('/^\d{4}-\d{2}$/', $month)) {
+            throw ValidationException::withMessages(['month' => 'The month must use YYYY-MM format.']);
+        }
+
+        if ($month >= now('Asia/Kuala_Lumpur')->format('Y-m')) {
+            throw ValidationException::withMessages(['month' => 'Overrides are only available for closed months.']);
+        }
+
+        $categoryIds = collect($validated['overrides'])->pluck('category_id')->map(fn ($id): int => (int) $id);
+        $validCategoryIds = Category::query()->where('type', $type)->whereIn('id', $categoryIds)->pluck('id');
+        if ($validCategoryIds->count() !== $categoryIds->count()) {
+            throw ValidationException::withMessages(['overrides' => 'Every override category must match the selected transaction type.']);
+        }
+
+        DB::transaction(function () use ($month, $type, $validated): void {
+            $typeCategoryIds = Category::query()->where('type', $type)->pluck('id');
+            HistoryCategoryOverride::query()
+                ->where('month', $month)
+                ->whereIn('category_id', $typeCategoryIds)
+                ->delete();
+
+            foreach ($validated['overrides'] as $override) {
+                HistoryCategoryOverride::query()->create([
+                    'month' => $month,
+                    'category_id' => (int) $override['category_id'],
+                    'amount' => round((float) $override['amount'], 2),
+                    'note' => filled($override['note'] ?? null) ? trim((string) $override['note']) : null,
+                ]);
+            }
+        });
+
+        $expenseCategories = $this->categories('expense');
+        $incomeCategories = $this->categories('income');
+        $activity = $this->activityResolver->resolve([$month], $expenseCategories, $incomeCategories)[$month];
+
+        return response()->json([
+            'message' => ucfirst($type).' overrides saved successfully.',
+            'month' => $this->monthPayload($month, HistoryMonth::query()->where('month', $month)->first(), $activity),
+        ]);
     }
 
     private function categories(string $type): Collection
@@ -113,31 +169,21 @@ class HistoryController extends Controller
             ->all();
     }
 
-    private function monthPayload(string $month, ?HistoryMonth $historyMonth, Collection $expenseCategories, Collection $incomeCategories): array
+    private function monthPayload(string $month, ?HistoryMonth $historyMonth, array $activity): array
     {
-        $expenseBreakdown = $this->normalizeBreakdown($historyMonth?->expense_breakdown_json ?? [], $expenseCategories);
-        $incomeBreakdown = $this->normalizeBreakdown($historyMonth?->income_breakdown_json ?? [], $incomeCategories);
-
         return [
             'month' => $month,
             'closing_coh' => $historyMonth ? (float) $historyMonth->closing_coh : null,
             'closing_elr' => $historyMonth && $historyMonth->closing_elr !== null ? (float) $historyMonth->closing_elr : null,
             'closing_epf' => $historyMonth && $historyMonth->closing_epf !== null ? (float) $historyMonth->closing_epf : null,
-            'total_expenses' => $this->breakdownTotal($expenseBreakdown),
-            'total_income' => $this->breakdownTotal($incomeBreakdown),
-            'expense_breakdown' => $expenseBreakdown,
-            'income_breakdown' => $incomeBreakdown,
+            'total_expenses' => $activity['total_expenses'],
+            'total_income' => $activity['total_income'],
+            'expense_breakdown' => $activity['expense_breakdown'],
+            'income_breakdown' => $activity['income_breakdown'],
+            'has_balance_record' => $historyMonth !== null,
+            'has_transactions' => $activity['has_transactions'],
+            'has_overrides' => $activity['has_overrides'],
             'has_record' => $historyMonth !== null,
         ];
-    }
-
-    private function normalizeBreakdown(array $breakdown, Collection $categories): array
-    {
-        return CategoryCatalog::normalizeBreakdown($breakdown, $categories);
-    }
-
-    private function breakdownTotal(array $breakdown): float
-    {
-        return CategoryCatalog::breakdownTotal($breakdown);
     }
 }

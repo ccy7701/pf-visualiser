@@ -51,6 +51,7 @@ Route::get('/history', [HistoryController::class, 'index'])->name('history.index
 Route::get('/history/months', [HistoryController::class, 'months'])->name('history.months');
 Route::post('/history/months', [HistoryController::class, 'saveMonth'])->name('history.months.save');
 Route::put('/history/months/{month}', [HistoryController::class, 'updateMonth'])->name('history.months.update');
+Route::put('/history/months/{month}/overrides/{type}', [HistoryController::class, 'saveOverrides'])->name('history.months.overrides.save');
 
 Route::get('/counter/snapshot', [CounterController::class, 'snapshot'])->name('counter.snapshot');
 Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
