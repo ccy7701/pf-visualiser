@@ -80,17 +80,28 @@
     }
 
     function normalizeBreakdown(items, categories) {
-        const amountByCategory = new Map();
+        const itemByCategory = new Map();
 
         (Array.isArray(items) ? items : []).forEach((item) => {
-            amountByCategory.set(Number(item.category_id), toNumber(item.amount, 0));
+            itemByCategory.set(Number(item.category_id), item);
         });
 
-        return categories.map((category) => ({
-            category_id: Number(category.id),
-            name: category.name,
-            amount: amountByCategory.get(Number(category.id)) || 0,
-        }));
+        return categories.map((category) => {
+            const item = itemByCategory.get(Number(category.id)) || {};
+            const derivedAmount = toNumber(item.derived_amount ?? item.amount, 0);
+            const isOverridden = item.is_overridden === true;
+            const overrideAmount = isOverridden ? toNumber(item.override_amount, 0) : null;
+
+            return {
+                category_id: Number(category.id),
+                name: category.name,
+                amount: toNumber(item.amount, isOverridden ? overrideAmount : derivedAmount),
+                derived_amount: derivedAmount,
+                override_amount: overrideAmount,
+                override_note: item.override_note || '',
+                is_overridden: isOverridden,
+            };
+        });
     }
 
     function findMonth(month) {
@@ -246,20 +257,26 @@
         const container = document.getElementById(containerId);
         if (!container) return;
 
-        const amountByCategory = new Map();
-        normalizeBreakdown(breakdown, categories).forEach((item) => {
-            amountByCategory.set(Number(item.category_id), item.amount);
-        });
+        const items = normalizeBreakdown(breakdown, categories);
+        const closedMonth = selectedMonth < (config.currentMonth || currentMonthKey());
 
         container.innerHTML = '';
-        categories.forEach((category) => {
+        items.forEach((item) => {
+            const category = categories.find((candidate) => Number(candidate.id) === Number(item.category_id));
             const id = `${containerId}-${category.id}`;
             const cell = document.createElement('div');
             cell.className = 'history-category-cell';
 
+            const labelRow = document.createElement('div');
+            labelRow.className = 'history-category-label-row';
             const label = document.createElement('label');
             label.setAttribute('for', id);
             label.textContent = category.name;
+            const sourceBadge = document.createElement('span');
+            sourceBadge.className = `badge ${item.is_overridden ? 'text-bg-warning' : 'text-bg-secondary'} history-category-source`;
+            sourceBadge.textContent = item.is_overridden ? 'Override' : 'Derived';
+            labelRow.appendChild(label);
+            labelRow.appendChild(sourceBadge);
 
             const group = document.createElement('div');
             group.className = 'input-group input-group-sm';
@@ -276,7 +293,10 @@
             input.step = '0.01';
             input.dataset.categoryId = String(category.id);
             input.dataset.categoryName = category.name;
-            input.value = String(amountByCategory.get(Number(category.id)) || 0);
+            input.dataset.derivedAmount = String(item.derived_amount);
+            input.dataset.isOverridden = String(item.is_overridden);
+            input.value = String(item.amount);
+            input.disabled = ! item.is_overridden || ! closedMonth;
 
             input.addEventListener('input', () => {
                 updateTotals();
@@ -287,8 +307,53 @@
 
             group.appendChild(prefix);
             group.appendChild(input);
-            cell.appendChild(label);
+
+            const derived = document.createElement('div');
+            derived.className = 'history-category-derived';
+            derived.textContent = `Transaction Log: RM ${money.format(item.derived_amount)}`;
+
+            const overrideControls = document.createElement('div');
+            overrideControls.className = 'history-category-override-controls';
+            const toggle = document.createElement('input');
+            toggle.id = `${id}-override`;
+            toggle.className = 'form-check-input history-override-toggle';
+            toggle.type = 'checkbox';
+            toggle.checked = item.is_overridden;
+            toggle.disabled = ! closedMonth;
+            const toggleLabel = document.createElement('label');
+            toggleLabel.setAttribute('for', toggle.id);
+            toggleLabel.textContent = 'Override';
+            const note = document.createElement('input');
+            note.className = 'form-control form-control-sm history-override-note';
+            note.type = 'text';
+            note.maxLength = 500;
+            note.placeholder = 'Optional note';
+            note.value = item.override_note;
+            note.disabled = ! item.is_overridden || ! closedMonth;
+
+            toggle.addEventListener('change', () => {
+                input.dataset.isOverridden = String(toggle.checked);
+                input.disabled = ! toggle.checked;
+                note.disabled = ! toggle.checked;
+                sourceBadge.textContent = toggle.checked ? 'Override' : 'Derived';
+                sourceBadge.className = `badge ${toggle.checked ? 'text-bg-warning' : 'text-bg-secondary'} history-category-source`;
+                if (! toggle.checked) {
+                    input.value = input.dataset.derivedAmount;
+                    note.value = '';
+                }
+                updateTotals();
+                if (inputClass === 'history-expense-input' && activeHistoryVisualisation === 'expense-category') {
+                    renderExpenseCategoryChart();
+                }
+            });
+
+            overrideControls.appendChild(toggle);
+            overrideControls.appendChild(toggleLabel);
+            overrideControls.appendChild(note);
+            cell.appendChild(labelRow);
             cell.appendChild(group);
+            cell.appendChild(derived);
+            cell.appendChild(overrideControls);
             container.appendChild(cell);
         });
 
@@ -307,6 +372,16 @@
             name: input.dataset.categoryName || '',
             amount: Math.max(0, toNumber(input.value, 0)),
         }));
+    }
+
+    function collectOverrides(inputClass) {
+        return Array.from(document.querySelectorAll(`.${inputClass}`))
+            .filter((input) => input.dataset.isOverridden === 'true')
+            .map((input) => ({
+                category_id: Number(input.dataset.categoryId),
+                amount: Math.max(0, toNumber(input.value, 0)),
+                note: input.closest('.history-category-cell')?.querySelector('.history-override-note')?.value?.trim() || null,
+            }));
     }
 
     function updateTotals() {
@@ -787,8 +862,6 @@
                 closing_coh: Number(closingCoh),
                 closing_elr: String(closingElr || '').trim() === '' ? null : Number(closingElr),
                 closing_epf: String(closingEpf || '').trim() === '' ? null : Number(closingEpf),
-                expense_breakdown: collectBreakdown('history-expense-input'),
-                income_breakdown: collectBreakdown('history-income-input'),
             }),
         });
 
@@ -805,6 +878,41 @@
 
         selectedMonth = payload.month?.month || month;
         setStatus(payload.message || 'History month saved.');
+        renderAll();
+    }
+
+    async function saveOverrides(type) {
+        const month = document.getElementById('historyMonth')?.value || selectedMonth;
+        const currentMonth = config.currentMonth || currentMonthKey();
+        if (!month || month >= currentMonth) {
+            setStatus('Overrides are only available for closed months.', true);
+            return;
+        }
+
+        const inputClass = type === 'income' ? 'history-income-input' : 'history-expense-input';
+        const endpoint = String(config.overrideEndpointTemplate || '')
+            .replace('__MONTH__', encodeURIComponent(month))
+            .replace('__TYPE__', type);
+        const response = await fetch(endpoint, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify({ overrides: collectOverrides(inputClass) }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            setStatus(error.message || `Unable to save ${type} overrides.`, true);
+            return;
+        }
+
+        const payload = await response.json();
+        const index = months.findIndex((row) => row.month === payload.month?.month);
+        if (index >= 0) months[index] = payload.month;
+        selectedMonth = payload.month?.month || month;
+        setStatus(payload.message || `${type} overrides saved.`);
         renderAll();
     }
 
@@ -891,6 +999,12 @@
 
         document.getElementById('saveHistoryBtn')?.addEventListener('click', () => {
             saveMonth().catch((error) => setStatus(error.message, true));
+        });
+        document.getElementById('saveExpenseOverridesBtn')?.addEventListener('click', () => {
+            saveOverrides('expense').catch((error) => setStatus(error.message, true));
+        });
+        document.getElementById('saveIncomeOverridesBtn')?.addEventListener('click', () => {
+            saveOverrides('income').catch((error) => setStatus(error.message, true));
         });
 
         document.querySelectorAll('input[name="expenseWaffleValueMode"]').forEach((input) => {

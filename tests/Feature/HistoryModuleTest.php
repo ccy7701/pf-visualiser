@@ -26,6 +26,9 @@ class HistoryModuleTest extends TestCase
         $this->get(route('history.index'))
             ->assertOk()
             ->assertSee('class="history-waffle-chart"', false)
+            ->assertSee('Save Balances')
+            ->assertSee('Save Overrides')
+            ->assertSee('Amounts come from the Transaction Log.')
             ->assertDontSee('<canvas id="historyExpenseCategoryChart"', false);
 
         $windowResponse = $this->getJson(route('history.months', ['latest_month' => '2026-06']));

@@ -39,7 +39,7 @@
                             <div class="small text-secondary fw-normal">Selected Month: <span id="selectedMonthDisplay">-</span></div>
                         </div>
                         <div class="col-4 d-flex align-items-center justify-content-end">
-                            <button id="saveHistoryBtn" class="w-50 btn btn-dark btn-sm" type="button">Save</button>
+                            <button id="saveHistoryBtn" class="btn btn-dark btn-sm" type="button">Save Balances</button>
                         </div>
                     </div>
                 </div>
@@ -100,7 +100,9 @@
                             <div class="input-subcard history-category-card">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h2 class="section-subtitle mb-0">Expenses</h2>
+                                    <button id="saveExpenseOverridesBtn" class="btn btn-outline-dark btn-sm" type="button">Save Overrides</button>
                                 </div>
+                                <p class="small text-secondary mb-2">Amounts come from the Transaction Log. Overrides are available for closed months only.</p>
                                 <div id="expenseInputs" class="history-category-list"></div>
                             </div>
                         </div>
@@ -109,7 +111,9 @@
                             <div class="input-subcard history-category-card">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h2 class="section-subtitle mb-0">Income</h2>
+                                    <button id="saveIncomeOverridesBtn" class="btn btn-outline-dark btn-sm" type="button">Save Overrides</button>
                                 </div>
+                                <p class="small text-secondary mb-2">Amounts come from the Transaction Log. Overrides are available for closed months only.</p>
                                 <div id="incomeInputs" class="history-category-list"></div>
                             </div>
                         </div>
@@ -199,8 +203,10 @@
 <script>
     window.historyConfig = {
         latestMonth: @json($latestMonth),
+        currentMonth: @json(now('Asia/Kuala_Lumpur')->format('Y-m')),
         monthsEndpoint: @json(route('history.months')),
         saveEndpoint: @json(route('history.months.save')),
+        overrideEndpointTemplate: @json(url('/history/months/__MONTH__/overrides/__TYPE__')),
         counterSnapshotEndpoint: @json(route('counter.snapshot')),
         expenseCategories: @json($expenseCategoriesPayload),
         incomeCategories: @json($incomeCategoriesPayload),
