@@ -2,7 +2,7 @@
 
 ## Functional Specification
 
-Implementation status: verified against the application on 2026-07-18.
+Implementation status: verified against the application on 2026-08-31.
 
 Related high-level project specification: `overview.md`
 
@@ -28,7 +28,8 @@ Variance Analysis MUST be anchored to a saved projection scenario.
 The following constraints apply:
 
 * projected months come from scenario-local projection outputs
-* actual values come from `history_months` and remain separate from projection assumptions
+* actual balances come from `history_months`
+* actual income and expenses come from Transaction Log monthly aggregates with History overrides applied
 * variance computation is deterministic from projected vs actual values
 * actual entry is handled in the History module, not in Variance Analysis
 * module does not mutate original projection assumptions
@@ -79,19 +80,19 @@ The system shall also expose derived or nullable actual fields:
 * `debt_servicing`
 * `notes`
 
-All actual amount fields are nullable.
+Actual income and expenses are effective resolved totals. Balance fields remain nullable when a projected month has transactions or overrides but no History balance record.
 
 Variance Analysis shall render actual values as read-only values. Edits to actual values shall be made in the History module.
 
 ### 3.4 Expense Breakdown Source
 
-The system shall source per-category actual expense values from History via `expense_breakdown[]`:
+The system shall source per-category actual expense values from the shared History activity resolver via `expense_breakdown[]`:
 
 * `category_id`
 * `name`
 * `amount`
 
-Expense categories use the same category catalog as the History module. Actual `expenses` value is derived as the sum of History expense breakdown amounts.
+Expense categories use the same category catalog as the History module. Actual `expenses` is the effective expense total and actual `net_income` is the effective income total.
 
 ### 3.5 Monthly Comparison View
 
@@ -167,17 +168,13 @@ Projected values remain immutable baseline values sourced from saved scenario ou
 
 ## 5. Data Model Requirements
 
-### 5.1 history_months Actual Source
+### 5.1 Actual Sources
 
-Variance Analysis uses `history_months` as the active source for actual values:
+Variance Analysis combines:
 
-| Field                  | Use in Variance Analysis |
-| ---------------------- | ------------------------ |
-| month                  | month match against projected rows |
-| closing_coh            | actual COH |
-| closing_elr            | actual ELR |
-| closing_epf            | actual EPF |
-| expense_breakdown_json | actual expense breakdown |
+* `history_months` for closing COH, ELR, and EPF
+* `transactions` for monthly parent-category income and expense aggregates
+* `history_category_overrides` for sparse effective-amount replacements
 
 ### 5.2 projection_actual_months Legacy Table
 
@@ -255,11 +252,16 @@ Scenario delete behavior:
 * `closing_epf`
 * `expense_breakdown[]`
 * `notes`
+* `has_balance_record`
+* `has_transactions`
+* `has_overrides`
 
 `history_months[]` fields:
 
 * `month`
 * `expense_breakdown[]`
+* `income_breakdown[]`
+* source-presence flags
 
 ### 6.3 Save Actuals Request
 
@@ -295,8 +297,8 @@ Success response:
 Responsibilities:
 
 * render variance analysis page with saved scenarios
-* load scenario with projected rows and History-backed actual rows
-* expose expense categories and History expense breakdowns for read-only rendering
+* load scenario with projected rows and resolved actual rows
+* expose expense categories and effective expense breakdowns for read-only rendering
 * retain legacy actual upsert endpoint where present
 
 ### ProjectionService integration
@@ -312,9 +314,9 @@ Responsibilities in this module context:
 
 1. User opens Variance Analysis module.
 2. User selects and loads a saved projection scenario.
-3. System returns projected baseline rows plus History-backed actual rows.
+3. System returns projected baseline rows plus resolved actual rows.
 4. User selects a month row.
-5. UI displays read-only COH, ELR, EPF, and expense category values from History.
+5. UI displays read-only balances and effective transaction-derived activity.
 6. UI computes variance immediately against projected values.
 7. User edits actual values in History if the History record needs correction.
 
@@ -326,6 +328,5 @@ This module does not:
 
 * edit projection assumptions directly
 * re-run live projection on every actual input change
-* infer actuals from transaction ledger automatically
 * edit or save actual values directly in Variance Analysis
 * replace projection scenario management features

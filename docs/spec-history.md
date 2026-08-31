@@ -2,7 +2,7 @@
 
 ## Functional Specification
 
-Implementation status: verified against the application on 2026-08-29.
+Implementation status: verified against the application on 2026-08-31.
 
 Related high-level project specification: `overview.md`
 
@@ -27,18 +27,18 @@ The most recent month is displayed on the right. Moving left goes backward throu
 
 ## 2. Core Architectural Principle
 
-The History module MUST use explicit historical month entries as its source of truth.
+The Transaction Log MUST be the source of truth for History income and expense activity. History month records remain the source of truth only for month-end balances.
 
 The following constraints apply:
 
 * month-end COH is manually entered and must not be derived
 * month-end ELR is manually entered and must not be derived
 * month-end EPF is manually entered and must not be derived
-* total expenses are derived from user-entered expense category amounts
-* total income is derived from user-entered income category amounts
-* monthly inputs shall be saved and reloaded from persistent storage
-* chart values must be reproducible from stored monthly history records
-* Variance Analysis consumes History month records as its actual-values source of truth
+* monthly income and expense category amounts are aggregated from dated transactions
+* transaction subcategories roll up to their parent categories and BNPL expenses remain included
+* closed months may have sparse, absolute per-category overrides
+* an effective category amount is its override when present and its transaction aggregate otherwise
+* Variance Analysis consumes the same effective activity values and History month-end balances
 * category definitions come from the shared category catalog, with the documented category set used as fallback metadata
 
 Expense categories:
@@ -82,7 +82,7 @@ Income categories:
 * Snacktime
 * Others
 
-Transaction subcategories do not alter History storage: month-level income and expense breakdowns remain aggregated by these parent categories.
+Transaction subcategories do not alter History aggregation: month-level income and expense breakdowns remain aggregated by these parent categories.
 
 ---
 
@@ -97,7 +97,7 @@ The system shall use a two-column desktop layout:
 
 The left column shall include:
 
-* a header-level save action
+* a header-level Save Balances action
 * selected month display in the monthly inputs header
 * tabbed balance, expense, and income input sections
 * month picker inside the balance input section
@@ -137,42 +137,46 @@ Month-end COH, ELR, and EPF are not derived from Counter, transactions, projecti
 
 The balance section shall be navigable via its own tab/button, separate from income and expense entry.
 
-### 3.4 Expense Inputs
+### 3.4 Expense Activity and Overrides
 
-The system shall support manual expense entry by category for each month.
+The system shall show transaction-derived expense amounts by category for each month.
 
 The available expense categories are listed in section 2.
 
-The expense entry UI shall use a two-column grid of compact category input cells.
+The expense activity UI shall use a two-column grid of compact category cells.
 
-Each category input cell contains:
+Each category cell contains:
 
 * category name
-* `RM` prefix
-* amount input
+* effective amount
+* Transaction Log-derived amount
+* Derived or Override source badge
+* explicit override toggle and optional note
+
+Override controls are enabled only when the selected month is earlier than the current Kuala Lumpur calendar month. Disabling and saving an override deletes it and restores the live transaction-derived amount.
 
 The expense section shall include a computed total row at the bottom.
 
 The system shall derive total expenses as:
 
 ```text
-Total Expenses = sum(expense_category_amounts[].amount)
+Total Expenses = sum(effective_expense_breakdown[].amount)
 ```
 
-### 3.5 Income Inputs
+### 3.5 Income Activity and Overrides
 
-The system shall support manual income entry by category for each month.
+The system shall show transaction-derived income amounts and support the same closed-month override workflow used for expenses.
 
 The available income categories are listed in section 2.
 
-The income entry UI shall use the same two-column category-cell structure as expenses.
+The income activity UI shall use the same two-column category-cell structure as expenses.
 
 The income section shall include a computed total row at the bottom.
 
 The system shall derive total income as:
 
 ```text
-Total Income = sum(income_category_amounts[].amount)
+Total Income = sum(effective_income_breakdown[].amount)
 ```
 
 ### 3.6 Visualisation
@@ -272,6 +276,12 @@ total_expenses = sum(expense_breakdown[].amount)
 
 Missing or blank category values are treated as `0`.
 
+For each category:
+
+```text
+effective_amount = override_amount when an override exists, otherwise transaction_amount
+```
+
 ### 4.4 Income Total Rule
 
 For each month:
@@ -307,8 +317,6 @@ No fallback derivation is applied.
 | closing_coh            | decimal(12,2) |
 | closing_elr            | nullable decimal(12,2) |
 | closing_epf            | nullable decimal(12,2) |
-| expense_breakdown_json | json          |
-| income_breakdown_json  | json          |
 | created_at             | timestamp     |
 | updated_at             | timestamp     |
 
@@ -316,27 +324,21 @@ Unique constraint:
 
 * `month`
 
-### 5.2 Expense Breakdown Shape
+### 5.2 history_category_overrides
 
-`expense_breakdown_json` stores category-level monthly expense inputs.
+| Field       | Type                    |
+| ----------- | ----------------------- |
+| id          | bigint                  |
+| month       | string(7)               |
+| category_id | category foreign key    |
+| amount      | decimal(12,2)           |
+| note        | nullable string(500)    |
+| created_at  | timestamp               |
+| updated_at  | timestamp               |
 
-Each entry contains:
+Unique constraint: (`month`, `category_id`). Overrides are sparse and preserve explicit zero amounts.
 
-* `category_id`
-* `name`
-* `amount`
-
-### 5.3 Income Breakdown Shape
-
-`income_breakdown_json` stores category-level monthly income inputs.
-
-Each entry contains:
-
-* `category_id`
-* `name`
-* `amount`
-
-### 5.4 Category Source
+### 5.3 Category Source
 
 The module shall prefer existing `categories` records to determine which input rows to render.
 
@@ -358,6 +360,7 @@ Current endpoints:
 * `GET /history/months`
 * `POST /history/months`
 * `PUT /history/months/{month}`
+* `PUT /history/months/{month}/overrides/{type}`
 
 ### 6.2 History Page Payload
 
@@ -366,8 +369,10 @@ Current endpoints:
 The inline `window.historyConfig` includes:
 
 * `latestMonth`
+* `currentMonth`
 * `monthsEndpoint`
 * `saveEndpoint`
+* `overrideEndpointTemplate`
 * `counterSnapshotEndpoint`
 * `expenseCategories[]`
 * `incomeCategories[]`
@@ -393,11 +398,16 @@ Response fields:
 * `total_income`
 * `expense_breakdown[]`
 * `income_breakdown[]`
+* `has_balance_record`
+* `has_transactions`
+* `has_overrides`
 * `has_record`
+
+Each breakdown item contains `category_id`, `name`, effective `amount`, `derived_amount`, nullable `override_amount`, nullable `override_note`, and `is_overridden`.
 
 ### 6.4 Save Month Request
 
-`POST /history/months` accepts one month of historical inputs.
+`POST /history/months` accepts one month of balance inputs.
 
 Request fields:
 
@@ -405,16 +415,17 @@ Request fields:
 * `closing_coh`
 * `closing_elr`
 * `closing_epf`
-* `expense_breakdown[]`
-* `income_breakdown[]`
 
 Save operation rules:
 
 * upsert by unique key `month`
-* derive `total_expenses` from expense breakdown values
-* derive `total_income` from income breakdown values
-* preserve category IDs where available
-* persist the saved month so the page can reload the same inputs later
+* persist only month-end balances
+
+### 6.5 Save Overrides Request
+
+`PUT /history/months/{month}/overrides/{type}` accepts the complete active override set for one closed month and transaction type.
+
+Each `overrides[]` entry contains `category_id`, absolute `amount`, and optional `note`. An empty array clears all overrides for that month and type. The server rejects current/future months and categories that do not match the URL type.
 
 ---
 
@@ -426,7 +437,8 @@ Expected desktop view:
 
 * left input column for selected month values
 * right visualisation column with one selectable chart pane
-* save button in the monthly inputs header
+* Save Balances button in the monthly inputs header
+* separate Save Overrides buttons in the Income and Expenses tabs
 * selected month display in the monthly inputs header
 * month picker, COH input, ELR input, and EPF input grouped in a balance tab
 * balance, income, and expense inputs separated by tabs

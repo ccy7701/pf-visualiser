@@ -154,9 +154,10 @@ Purpose:
 
 Key characteristics:
 
-* explicit month-scoped persistence in `history_months`
+* Transaction Log source of truth for monthly income and expenses
+* explicit month-scoped balance persistence in `history_months`
 * manual month-end COH, ELR, and EPF entry, with derived TFP
-* income and expense totals derived from category-level monthly breakdowns
+* live parent-category aggregation with sparse, absolute closed-month overrides
 * month picker with automatic month load behavior
 * rolling 12-month navigation with one-month backward/forward window movement
 * selectable visualisations for TFP trend, stacked COH/ELR/EPF, income/expenses, and expense-category composition
