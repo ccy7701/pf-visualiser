@@ -57,6 +57,8 @@ new class extends Component
 
     public string $datetime = '';
 
+    public string $date = '';
+
     public string $category_id = '';
 
     public string $subcategory_id = '';
@@ -108,7 +110,9 @@ new class extends Component
 
         $this->loadTransactions();
 
-        $this->setInitialDatetime();
+        if ($this->date === '') {
+            $this->setInitialDate();
+        }
         $this->filterCategoriesByType();
     }
 
@@ -471,10 +475,9 @@ new class extends Component
         }
     }
 
-    public function setInitialDatetime(): void
+    public function setInitialDate(): void
     {
-        $now = now('Asia/Kuala_Lumpur');
-        $this->datetime = $now->format('d/m/Y H:i');
+        $this->date = now('Asia/Kuala_Lumpur')->format('d/m/Y');
     }
 
     public function edit(int $transactionId): void
@@ -498,7 +501,6 @@ new class extends Component
     {
         $this->editingTransactionId = null;
         $this->reset(['amount', 'note', 'subcategory_id', 'is_bnpl', 'errors']);
-        $this->setInitialDatetime();
         $this->type = 'income';
         $this->filterCategoriesByType();
     }
@@ -532,11 +534,14 @@ new class extends Component
     public function save(): void
     {
         $this->errors = [];
+        $datetime = $this->editingTransactionId
+            ? $this->datetime
+            : $this->date.' '.now('Asia/Kuala_Lumpur')->format('H:i');
 
         // Validate
         $v = validator([
             'type' => $this->type,
-            'datetime' => $this->datetime,
+            'datetime' => $datetime,
             'category_id' => $this->category_id,
             'subcategory_id' => $this->subcategory_id,
             'amount' => $this->amount,
@@ -550,6 +555,10 @@ new class extends Component
             'amount' => ['required', 'numeric', 'min:0.01'],
             'is_bnpl' => ['required', 'boolean'],
             'note' => ['nullable', 'string'],
+        ], [
+            'datetime.date_format' => $this->editingTransactionId
+                ? 'Enter a date and time in DD/MM/YYYY HH:MM format.'
+                : 'Enter a date in DD/MM/YYYY format.',
         ]);
 
         if ($v->fails()) {
@@ -596,7 +605,6 @@ new class extends Component
         $this->dispatch('transaction-toast', message: $successMessage);
 
         $this->reset(['amount', 'note', 'subcategory_id', 'is_bnpl']);
-        $this->setInitialDatetime();
         $this->type = 'income';
         $this->filterCategoriesByType();
 
@@ -641,8 +649,13 @@ new class extends Component
                         @if (isset($errors['type'])) <div class="text-danger">{{ implode(' ', $errors['type']) }}</div> @endif
                     </div>
                     <div class="col-12 col-md-6">
-                        <label class="form-label" for="datetime">Date &amp; Time</label>
-                        <input wire:model="datetime" class="form-control" type="text" id="datetime" placeholder="DD/MM/YYYY HH:MM" required>
+                        @if ($editingTransactionId)
+                            <label class="form-label" for="datetime">Date &amp; Time</label>
+                            <input wire:model="datetime" class="form-control" type="text" id="datetime" placeholder="DD/MM/YYYY HH:MM" required>
+                        @else
+                            <label class="form-label" for="date">Date</label>
+                            <input wire:model="date" class="form-control" type="text" id="date" placeholder="DD/MM/YYYY" required>
+                        @endif
                         @if (isset($errors['datetime'])) <div class="text-danger">{{ implode(' ', $errors['datetime']) }}</div> @endif
                     </div>
                 </div>

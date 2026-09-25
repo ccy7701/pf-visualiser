@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Subcategory;
 use App\Models\Transaction;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -31,6 +32,62 @@ class TransactionLogPageTest extends TestCase
         $response->assertSee('Annually');
         $response->assertSee('Period');
         $response->assertSee('Filter transactions');
+    }
+
+    public function test_new_transactions_keep_the_entered_date_and_use_the_time_at_save(): void
+    {
+        $this->travelTo(Carbon::parse('2026-09-26 10:00', 'Asia/Kuala_Lumpur'));
+
+        $category = Category::query()->create(['name' => 'Salary', 'type' => 'income']);
+
+        $component = Livewire::test('transaction-log')
+            ->assertSet('date', '26/09/2026')
+            ->assertSee('id="date"', false)
+            ->assertDontSee('id="datetime"', false)
+            ->set('category_id', (string) $category->id)
+            ->set('date', '21/09/2026')
+            ->set('amount', '100.00')
+            ->set('note', 'First entry')
+            ->call('save')
+            ->assertSet('errors', [])
+            ->assertSet('date', '21/09/2026');
+
+        $this->assertSame(
+            '21/09/2026 10:00',
+            Transaction::query()->where('note', 'First entry')->firstOrFail()->datetime
+                ->setTimezone('Asia/Kuala_Lumpur')->format('d/m/Y H:i'),
+        );
+
+        $this->travelTo(Carbon::parse('2026-09-26 10:07', 'Asia/Kuala_Lumpur'));
+
+        $component
+            ->set('amount', '50.00')
+            ->set('note', 'Second entry')
+            ->call('save')
+            ->assertSet('errors', [])
+            ->assertSet('date', '21/09/2026');
+
+        $this->assertSame(
+            '21/09/2026 10:07',
+            Transaction::query()->where('note', 'Second entry')->firstOrFail()->datetime
+                ->setTimezone('Asia/Kuala_Lumpur')->format('d/m/Y H:i'),
+        );
+
+        $this->assertDatabaseCount('transactions', 2);
+
+        $firstEntry = Transaction::query()->where('note', 'First entry')->firstOrFail();
+        $component
+            ->call('edit', $firstEntry->id)
+            ->assertSet('datetime', '21/09/2026 10:00')
+            ->assertSee('id="datetime"', false)
+            ->set('datetime', '21/09/2026 08:45')
+            ->call('save')
+            ->assertSet('errors', []);
+
+        $this->assertSame(
+            '21/09/2026 08:45',
+            $firstEntry->fresh()->datetime->setTimezone('Asia/Kuala_Lumpur')->format('d/m/Y H:i'),
+        );
     }
 
     public function test_transactions_can_be_filtered_by_note_and_category_within_the_selected_period(): void
@@ -186,7 +243,7 @@ class TransactionLogPageTest extends TestCase
             ->assertSee('Lunch')
             ->assertSee('Dinner')
             ->set('subcategory_id', (string) $lunch->id)
-            ->set('datetime', '15/07/2026 12:30')
+            ->set('date', '15/07/2026')
             ->set('amount', '22.70')
             ->set('is_bnpl', true)
             ->set('note', 'Workday meal')
@@ -242,7 +299,7 @@ class TransactionLogPageTest extends TestCase
             ->set('type', 'expense')
             ->set('category_id', (string) $food->id)
             ->set('subcategory_id', (string) $fuel->id)
-            ->set('datetime', '15/07/2026 12:30')
+            ->set('date', '15/07/2026')
             ->set('amount', '22.70')
             ->call('save')
             ->assertSet('errors.subcategory_id.0', 'Subcategory does not belong to the selected category.');
@@ -258,7 +315,7 @@ class TransactionLogPageTest extends TestCase
             ->assertDontSee('This expense is part of a BNPL payment')
             ->set('type', 'income')
             ->set('category_id', (string) $salary->id)
-            ->set('datetime', '15/07/2026 17:30')
+            ->set('date', '15/07/2026')
             ->set('amount', '100.00')
             ->set('is_bnpl', true)
             ->call('save')
